@@ -14,10 +14,10 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 
 - [x] Create and bind the D1 database.
 - [x] Add versioned migrations and local migration scripts.
-- [ ] Create the Worker deployment.
-- [ ] Connect GitHub `main` to Cloudflare Builds.
-- [ ] Configure the custom hostname or temporary Workers domain.
-- [ ] Configure Cloudflare Access OTP with an exact email allow-list.
+- [x] Create the Worker deployment.
+- [x] Connect GitHub `main` to Cloudflare Builds.
+- [x] Configure the custom hostname or temporary Workers domain.
+- [x] Configure Cloudflare Access OTP with an exact email allow-list.
 
 ## Phase 2 — Core data model
 

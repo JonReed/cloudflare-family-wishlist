@@ -16,7 +16,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "typecheck": "wrangler types --check && react-router typegen && tsc -b",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy --keep-vars",
     "preview": "npm run build && vite preview",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",

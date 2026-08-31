@@ -30,34 +30,65 @@ npm run cf-typegen
 
 Migration files are append-only after release. Never edit a migration that another deployment may already have applied.
 
-## 3. Connect GitHub `main`
+## 3. Deploy once before configuring Access
+
+Apply the remote migrations, build, and deploy with the directory-bound Wrangler profile:
+
+```sh
+npm run db:migrate:remote
+npm run build
+npx wrangler deploy -c build/server/wrangler.json --domain wishlist.example.com --keep-vars
+```
+
+Replace `wishlist.example.com` with the hostname you want to use. Confirm that the Worker responds with `503 Authentication is not configured`. That response is intentional: it verifies Worker, D1 and hostname routing without leaving an unprotected application online.
+
+## 4. Connect GitHub `main`
 
 In **Workers & Pages → Create → Import a repository**, select this repository and use:
 
 - production branch: `main`;
-- deploy command: `npm run deploy`;
+- build command: `npm run build`;
+- deploy command: `npx wrangler deploy --keep-vars`;
 - root directory: `/`.
+
+Leave preview builds disabled when following the initial direct-to-`main` workflow.
 
 The repository CI runs formatting, lint, types, Workers-runtime tests, the production build and a production dependency audit. Cloudflare should deploy only commits from `main`.
 
 The Worker deliberately returns `503 Authentication is not configured` until the Access settings below exist. This makes the first infrastructure deployment safe while Access is being connected.
 
-## 4. Configure Cloudflare Access
+## 5. Configure Cloudflare Access
 
-Create a self-hosted Access application for the Worker's hostname. Enable the **One-time PIN** login method, then create an Allow policy containing the **exact email addresses** of the family members.
+Activate **Zero Trust Free**, then add **One-time PIN** under **Integrations → Identity providers**. Cloudflare may add its own account login method during onboarding; this is separate from OTP.
+
+Create a self-hosted Access application with a **Workers** destination and select the deployed Worker. Add an Allow policy containing the **exact email addresses** of the family members. In the application's Authentication settings:
+
+- turn off **Accept all available identity providers**;
+- select only **One-time PIN**;
+- enable instant authentication when Cloudflare offers it.
 
 One-time PIN is only the login method. It is not an allow-list by itself: an Allow policy containing only the OTP method would admit any valid email address.
 
-Add these Worker variables in the Cloudflare deployment settings:
+Add these text variables under **Worker → Settings → Runtime variables and secrets**:
 
 - `ACCESS_TEAM_DOMAIN`: the full team domain, such as `your-team.cloudflareaccess.com`;
 - `ACCESS_AUD`: the application audience tag shown by Access.
 
 Neither value is a password, but both are deployment-specific and should be configured in Cloudflare rather than hard-coded into a reusable fork.
 
+The repository's deployment command uses Wrangler's `--keep-vars` option so later source deployments preserve these dashboard-managed values.
+
 Every request is first checked by Access and then checked again by the Worker. The Worker validates the JWT signature, issuer, audience, expiry, subject and email before any route or database operation runs.
 
-## 5. Invite or remove family members
+Verify the boundary before logging in:
+
+```sh
+curl -sSI https://wishlist.example.com/
+```
+
+An unauthenticated request must redirect to the deployment's `cloudflareaccess.com` login page. Complete one OTP login with an allowed email and confirm that the application loads rather than returning its fail-closed `503` response.
+
+## 6. Invite or remove family members
 
 There is no application-managed invitation email or password. To invite someone, add their exact email address to the Access Allow policy and send them the application URL yourself. Their member record and single wishlist are created automatically after their first successful login.
 
