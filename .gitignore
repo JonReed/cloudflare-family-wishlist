@@ -6,6 +6,7 @@
 /node_modules/
 *.tsbuildinfo
 /coverage/
+/.private/
 
 # React Router
 /.react-router/
