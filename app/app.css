@@ -203,12 +203,21 @@
 
 .parcel-hero {
   position: relative;
-  min-height: 25rem;
+  min-height: 14.5rem;
   overflow: hidden;
   border-block: 1px solid rgb(48 51 41 / 0.14);
   background-color: #f3e8d6;
-  background-image: url('/images/parcel-table.webp');
-  background-position: center;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgb(243 232 214 / 0.94) 0%,
+      rgb(243 232 214 / 0.72) 34%,
+      transparent 68%
+    ),
+    url('/images/parcel-table.webp');
+  background-position:
+    center,
+    center 44%;
   background-size: cover;
   box-shadow: 0 5px 0 rgb(105 82 52 / 0.08);
 }
@@ -228,8 +237,8 @@
 .hero-copy-block {
   position: relative;
   z-index: 1;
-  width: min(55%, 39rem);
-  padding: 4.5rem 0 4rem 4.5rem;
+  width: min(58%, 39rem);
+  padding: 2.35rem 0 2.5rem 3.5rem;
 }
 
 .section-kicker {
@@ -252,34 +261,34 @@
 }
 
 .parcel-hero h1 {
-  max-width: 9ch;
-  margin: 1.15rem 0 0;
+  max-width: 14ch;
+  margin: 0.75rem 0 0;
   font-family: var(--font-display);
-  font-size: clamp(3.8rem, 6.4vw, 5.8rem);
-  line-height: 0.94;
+  font-size: clamp(3rem, 4.8vw, 4.2rem);
+  line-height: 0.96;
   font-weight: 600;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.05em;
   text-wrap: balance;
 }
 
 .hero-intro {
-  max-width: 35rem;
-  margin: 1.6rem 0 0;
+  max-width: 33rem;
+  margin: 0.9rem 0 0;
   color: #555747;
-  font-size: 1.08rem;
-  line-height: 1.75;
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 .content-wrap {
-  padding-block: 4rem 6rem;
+  padding-block: 2.75rem 6rem;
 }
 
 .family-picker {
   display: grid;
   grid-template-columns: minmax(12rem, 15rem) 1fr;
-  gap: 3rem;
+  gap: 2.5rem;
   align-items: start;
-  margin-bottom: 4rem;
+  margin-bottom: 2.75rem;
 }
 
 .picker-intro h2 {
@@ -942,12 +951,12 @@
 
 @media (max-width: 56rem) {
   .hero-copy-block {
-    width: 62%;
-    padding-left: 2.5rem;
+    width: 64%;
+    padding-left: 2rem;
   }
 
   .parcel-hero h1 {
-    font-size: clamp(3.5rem, 8vw, 4.8rem);
+    font-size: clamp(2.85rem, 6.5vw, 3.8rem);
   }
 
   .family-picker {
@@ -1003,40 +1012,43 @@
   }
 
   .parcel-hero {
-    min-height: 34rem;
-    background-position: 67% center;
+    min-height: 13rem;
+    background-image:
+      linear-gradient(
+        90deg,
+        rgb(243 232 214 / 0.97) 0%,
+        rgb(243 232 214 / 0.82) 52%,
+        transparent 92%
+      ),
+      url('/images/parcel-table.webp');
+    background-position:
+      center,
+      61% center;
   }
 
   .hero-copy-block {
-    position: absolute;
-    right: 0.65rem;
-    bottom: 0.75rem;
-    left: 0.65rem;
-    width: auto;
-    border: 1px solid rgb(80 68 50 / 0.13);
-    background: rgb(255 250 240 / 0.91);
-    box-shadow: 4px 5px 0 rgb(88 69 46 / 0.1);
-    padding: 1.65rem 1.45rem 1.7rem;
+    width: min(78%, 20rem);
+    padding: 1.45rem 0 1.55rem 1.2rem;
   }
 
   .parcel-hero h1 {
     max-width: 10ch;
-    margin-top: 0.8rem;
-    font-size: clamp(3.1rem, 14vw, 4rem);
+    margin-top: 0.55rem;
+    font-size: clamp(2.25rem, 10.5vw, 2.9rem);
+    line-height: 0.97;
   }
 
   .hero-intro {
-    margin-top: 1rem;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    display: none;
   }
 
   .content-wrap {
-    padding-block: 3rem 4.5rem;
+    padding-block: 1.65rem 4.5rem;
   }
 
   .family-picker {
-    margin-bottom: 3rem;
+    gap: 1.25rem;
+    margin-bottom: 2.25rem;
   }
 
   .family-tags {

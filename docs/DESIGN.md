@@ -84,9 +84,12 @@ Colours must retain sufficient contrast without resorting to saturated software-
 
 ### Imagery
 
-The hero uses [`public/images/parcel-table.webp`](../public/images/parcel-table.webp), a purpose-built
-editorial still life with year-round wrapping materials and negative space for the heading. It is a
-decorative CSS background, so it does not add redundant alternative text.
+The compact masthead uses
+[`public/images/parcel-table.webp`](../public/images/parcel-table.webp), a purpose-built editorial
+still life with year-round wrapping materials and negative space for the heading. It is a decorative
+CSS background, so it does not add redundant alternative text. Keep it shallow enough that the family
+selector and start of the active wishlist are visible in the first viewport: the image establishes
+atmosphere, but the family's lists are the page's purpose.
 
 New imagery should be natural, asymmetrical and materially believable. Avoid readable text, logos,
 Christmas-only motifs, glossy catalogue lighting and perfect 3D-rendered parcels. Optimise assets to
