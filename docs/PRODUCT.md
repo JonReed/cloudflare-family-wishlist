@@ -49,6 +49,7 @@ Any member can choose any family member's list and add, edit or remove an item. 
 - a short name;
 - optional notes;
 - an optional HTTP(S) product link;
+- an optional HTTPS product image;
 - optional GBP price guidance; and
 - a low, normal or high priority.
 
@@ -98,8 +99,8 @@ Working today:
 - self-service display-name editing from a personal profile page;
 - switching between all family wishlists;
 - adding, editing and deleting items;
-- filling a new wish's name and GBP price from a public product link, with optional AI help when the
-  page does not publish reliable product metadata;
+- filling a new wish's name, image and GBP price from a public product link, with optional AI help
+  when the page does not publish a reliable name or price;
 - adding a product to one or more family lists from a browser bookmarklet;
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased; and
@@ -127,7 +128,9 @@ Still planned:
 
 The link helper reads ordinary product metadata first. If a page is poorly marked up and Workers AI
 is enabled, the application may use it to recover a missing product name or current GBP price from a
-small, cleaned excerpt of the public page. The result remains an editable draft: AI never adds a wish
+small, cleaned excerpt of the public page. During that same fallback it may also choose the most
+likely product image from a short, validated list of images found on the page. It cannot invent an
+image address or fetch a different page. The result remains an editable draft: AI never adds a wish
 or changes saved family data by itself.
 
 Quota, capacity, model and extraction failures must be indistinguishable from an ordinary page that

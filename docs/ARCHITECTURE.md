@@ -114,7 +114,7 @@ items
   id (UUID) PK
   wishlist_id FK
   created_by_member_id FK -> members
-  position, title, notes, product link, price, priority
+  position, title, notes, product link, image link, price, priority
        |
        | 1:0..1 (claims.item_id is the primary key)
        v
@@ -179,18 +179,30 @@ Product import is deliberately staged:
    using a clean canonical product URL where a retailer adapter can derive one, then leave the form
    available for manual entry if the product is still blocked.
 3. Run the bounded HTML through one native `HTMLRewriter` evidence pass. Ordered rules prefer a
-   retailer's explicit current/base price, then JSON-LD, Open Graph, schema.org microdata and known
-   visible product fields. Retailer adapters contain narrowly scoped rules such as Amazon UK title
-   cleanup and price selection; standard metadata remains the default for every other site.
+   retailer's explicit current/base price and primary product image, then JSON-LD, Open Graph,
+   schema.org microdata and known visible product fields. Retailer adapters contain narrowly scoped
+   rules such as Amazon UK title cleanup, price selection and high-resolution image selection;
+   standard metadata remains the default for every other site.
 4. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
    navigation, site headers and footers, forms, cookie controls, adverts, recommendations, reviews,
    social controls and repeated text. Headings, price-adjacent lines and main product content are
-   prioritised, deduplicated and capped at 10,000 characters.
-5. Ask the configured Workers AI model only for the missing fields. Page text is explicitly treated
-   as untrusted data, not instructions, and model output is accepted only when the returned title or
-   price also appears in the reduced source text.
+   prioritised, deduplicated and capped at 10,000 characters. If deterministic rules found no image,
+   collect at most eight public HTTPS image candidates from that same reduced page, rejecting obvious
+   logos, icons, tracking pixels and small assets.
+5. Ask the configured Workers AI model only for the missing fields and, when candidates exist, the
+   index of the most likely primary product image. Page evidence is explicitly treated as untrusted
+   data, not instructions. A returned title or price is accepted only when it appears in the reduced
+   source text; an image selection is accepted only when its integer index resolves to the original
+   validated candidate. The model cannot provide or invent an image URL.
 6. Return an editable draft. AI timeouts, exhausted free allocation, capacity errors and invalid
    output quietly leave the deterministic result in place.
+
+Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the
+first choice; AI image selection happens only as part of an already-needed text fallback and only
+from the page's bounded candidate list. Images are optional, editable and loaded with no cross-site
+referrer. Literal local/private-network addresses and credential-bearing URLs are rejected because
+an image loads automatically in the family member's browser. This keeps the feature within the
+existing Worker and D1 setup; no R2 bucket or image-processing service is required.
 
 No Access assertion, cookie, family data or requesting-user identity is sent to the model. The model
 cannot fetch another URL, invoke a tool or persist anything. Only the ordinary add-wish action can
@@ -230,6 +242,8 @@ without becoming a new persistence or availability dependency.
 - form actions remain same-origin, with a `same-origin` referrer policy so browsers send a verifiable
   `Origin` header for ordinary HTML form posts;
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
+- automatically loaded product images accept only HTTPS, reject embedded credentials and obvious
+  local/private-network targets, and send no cross-site referrer;
 - product metadata fetches accept only public HTTP(S) pages, validate each redirect, send no user
   credentials, stop after 8 seconds, inspect at most 512 KiB of HTML and reject verification pages;
 - AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and

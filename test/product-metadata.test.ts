@@ -25,6 +25,7 @@ describe('fetchProductMetadata', () => {
             <meta content="A &amp; B scarf" property="og:title">
             <meta property="product:price:amount" content="£1,299.50">
             <meta property="product:price:currency" content="GBP">
+            <meta property="og:image" content="/images/scarf-large.jpg">
           </head>
         </html>
         `)
@@ -37,6 +38,7 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://shop.example/scarf',
       title: 'A & B scarf',
       price: '1299.50',
+      imageUrl: 'https://shop.example/images/scarf-large.jpg',
       aiAssisted: false
     });
 
@@ -75,6 +77,7 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://shop.example/bowl',
       title: 'Handmade bowl',
       price: '',
+      imageUrl: '',
       aiAssisted: false
     });
   });
@@ -132,6 +135,83 @@ describe('fetchProductMetadata', () => {
     ).resolves.toMatchObject({ title: 'Wooden marble run', price: '28.00' });
   });
 
+  it('reads Product image arrays and ImageObject URLs from JSON-LD', async () => {
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`
+          <script type="application/ld+json">
+            {
+              "@type": "Product",
+              "name": "Wooden marble run",
+              "image": [
+                { "@type": "ImageObject", "contentUrl": "/products/marble-run-large.webp" },
+                "https://cdn.example/marble-run-small.webp"
+              ]
+            }
+          </script>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/toys/marble-run', 'wishlist.example', {
+        fetchPage
+      })
+    ).resolves.toMatchObject({
+      title: 'Wooden marble run',
+      imageUrl: 'https://shop.example/products/marble-run-large.webp'
+    });
+  });
+
+  it('continues through image rules when a preferred candidate is unsafe', async () => {
+    await expect(
+      fetchProductMetadata('https://shop.example/product', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <meta property="og:title" content="Safe product">
+              <meta property="og:image:secure_url" content="http://cdn.example/unsafe.jpg">
+              <meta property="og:image" content="https://cdn.example/product.jpg">
+            `)
+          )
+      })
+    ).resolves.toMatchObject({ imageUrl: 'https://cdn.example/product.jpg' });
+  });
+
+  it('requests the larger RH image variant used by its product pages', async () => {
+    await expect(
+      fetchProductMetadata('https://rh.com/us/en/catalog/product/product.jsp', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <meta property="og:title" content="Linen duvet cover">
+              <meta property="og:image" content="https://media.rh.com/is/image/rhis/$GAL4$/12345.jpg">
+            `)
+          )
+      })
+    ).resolves.toMatchObject({
+      imageUrl: 'https://media.rh.com/is/image/rhis/$np-fullwidth-lg$/12345.jpg'
+    });
+  });
+
+  it.each([
+    'http://cdn.example/product.jpg',
+    'https://user:secret@cdn.example/product.jpg',
+    'https://127.0.0.1/product.jpg',
+    'data:image/png;base64,abc'
+  ])('does not return an unsafe automatically loaded image: %s', async (imageUrl) => {
+    await expect(
+      fetchProductMetadata('https://shop.example/product', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <meta property="og:title" content="Safe product">
+              <meta property="og:image" content="${imageUrl}">
+            `)
+          )
+      })
+    ).resolves.toMatchObject({ title: 'Safe product', imageUrl: '' });
+  });
+
   it('extracts nested schema.org microdata without relying on regular-expression HTML parsing', async () => {
     const fetchPage = () =>
       Promise.resolve(
@@ -172,6 +252,7 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://shop.example/products/scarf',
       title: 'Red scarf',
       price: '',
+      imageUrl: '',
       aiAssisted: false
     });
     expect(requestedUrls).toEqual([
@@ -260,6 +341,11 @@ describe('fetchProductMetadata', () => {
           <span class="a-price a-text-price"><span class="a-offscreen">£3.49</span></span>
           <input type="hidden" name="items[0.base][customerVisiblePrice][displayString]" value="£3.00">
           <input type="hidden" name="items[0.subscribe][customerVisiblePrice][displayString]" value="£2.55">
+          <div id="imgTagWrapperId">
+            <img id="landingImage"
+              src="https://m.media-amazon.com/images/I/61Btm2-GrFL._AC_SY300_.jpg"
+              data-old-hires="https://m.media-amazon.com/images/I/61Btm2-GrFL._AC_SL1000_.jpg">
+          </div>
           <span id="productTitle">${amazonTitleHtml}</span>
         `)
       );
@@ -274,7 +360,29 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://www.amazon.co.uk/dp/B085Y25JJ7?ref=example',
       title: "Montezuma's Black Forest",
       price: '3.00',
+      imageUrl: 'https://m.media-amazon.com/images/I/61Btm2-GrFL._AC_SL1000_.jpg',
       aiAssisted: false
+    });
+  });
+
+  it('chooses the largest Amazon dynamic image when a high-resolution source is absent', async () => {
+    const dynamicImages = JSON.stringify({
+      'https://m.media-amazon.com/images/I/product._SX300_.jpg': [300, 300],
+      'https://m.media-amazon.com/images/I/product._SX679_.jpg': [679, 679]
+    });
+
+    await expect(
+      fetchProductMetadata('https://www.amazon.co.uk/dp/B012345678', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <span id="productTitle">Family board game</span>
+              <img id="landingImage" data-a-dynamic-image='${dynamicImages}'>
+            `)
+          )
+      })
+    ).resolves.toMatchObject({
+      imageUrl: 'https://m.media-amazon.com/images/I/product._SX679_.jpg'
     });
   });
 
@@ -409,6 +517,7 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://www.amazon.co.uk/dp/B085Y25JJ7',
       title: "Montezuma's Black Forest",
       price: '3.00',
+      imageUrl: '',
       aiAssisted: false
     });
   });
@@ -451,7 +560,8 @@ describe('fetchProductMetadata', () => {
       Promise.resolve({
         title: 'Hand-knitted wool scarf',
         price: '42.50',
-        currency: 'GBP'
+        currency: 'GBP',
+        imageIndex: 0
       })
     );
     const fetchPage = () =>
@@ -460,14 +570,26 @@ describe('fetchProductMetadata', () => {
           <html>
             <head><title>Scarves – Example Shop</title></head>
             <body>
-              <header><nav>Home Catalogue Sign in Basket</nav></header>
+              <header>
+                <nav>Home Catalogue Sign in Basket</nav>
+                <img src="https://shop.example/assets/logo.png" alt="Example Shop logo">
+              </header>
               <div class="cookie-banner">Accept all cookies</div>
               <main>
                 <h1>Hand-knitted wool scarf</h1>
+                <img
+                  src="https://cdn.example/scarf-small.jpg"
+                  srcset="https://cdn.example/scarf-small.jpg 320w, https://cdn.example/scarf-large.jpg 1200w"
+                  alt="Hand-knitted wool scarf in moss green"
+                  width="1200"
+                  height="1200">
                 <p>Soft lambswool in moss green.</p>
                 <p>Now £42.50</p>
                 ${'<p>Long but useful product detail.</p>'.repeat(800)}
-                <section class="reviews">Reviews £5.00 delivery Five stars</section>
+                <section class="reviews">
+                  Reviews £5.00 delivery Five stars
+                  <img src="https://cdn.example/reviewer-avatar.jpg" alt="Reviewer avatar">
+                </section>
               </main>
               <footer>Privacy policy Newsletter Instagram</footer>
             </body>
@@ -484,6 +606,7 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://shop.example/scarf',
       title: 'Hand-knitted wool scarf',
       price: '42.50',
+      imageUrl: 'https://cdn.example/scarf-large.jpg',
       aiAssisted: true
     });
 
@@ -494,6 +617,37 @@ describe('fetchProductMetadata', () => {
     expect(request?.pageText).toContain('Now £42.50');
     expect(request?.pageText).not.toMatch(/cookie|reviews|newsletter|basket/i);
     expect(request?.pageText.length).toBeLessThanOrEqual(10_000);
+    expect(request?.imageCandidates).toEqual([
+      {
+        index: 0,
+        url: 'https://cdn.example/scarf-large.jpg',
+        alt: 'Hand-knitted wool scarf in moss green',
+        title: '',
+        width: 1200,
+        height: 1200
+      }
+    ]);
+  });
+
+  it('does not invoke AI only because otherwise complete metadata has no image', async () => {
+    const extractWithAi = vi.fn<ProductAiExtractor>();
+
+    await expect(
+      fetchProductMetadata('https://shop.example/scarf', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <meta property="og:title" content="Reliable scarf">
+              <meta property="product:price:amount" content="42.50">
+              <meta property="product:price:currency" content="GBP">
+              <main><img src="https://cdn.example/scarf.jpg" alt="Reliable scarf"></main>
+            `)
+          ),
+        extractWithAi
+      })
+    ).resolves.toMatchObject({ title: 'Reliable scarf', price: '42.50', imageUrl: '' });
+
+    expect(extractWithAi).not.toHaveBeenCalled();
   });
 
   it('keeps deterministic details when AI is unavailable', async () => {
@@ -513,6 +667,7 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://shop.example/scarf',
       title: 'Reliable scarf',
       price: '',
+      imageUrl: '',
       aiAssisted: false
     });
   });
@@ -527,12 +682,18 @@ describe('fetchProductMetadata', () => {
             )
           ),
         extractWithAi: () =>
-          Promise.resolve({ title: 'Invented blue hat', price: '99.99', currency: 'GBP' })
+          Promise.resolve({
+            title: 'Invented blue hat',
+            price: '99.99',
+            currency: 'GBP',
+            imageIndex: 99
+          })
       })
     ).resolves.toEqual({
       productUrl: 'https://shop.example/scarf',
       title: 'Example Shop',
       price: '',
+      imageUrl: '',
       aiAssisted: false
     });
   });
@@ -547,7 +708,12 @@ describe('fetchProductMetadata', () => {
             )
           ),
         extractWithAi: () =>
-          Promise.resolve({ title: 'Green scarf', price: '42.5', currency: 'GBP' })
+          Promise.resolve({
+            title: 'Green scarf',
+            price: '42.5',
+            currency: 'GBP',
+            imageIndex: null
+          })
       })
     ).resolves.toMatchObject({ title: 'Green scarf', price: '42.50', aiAssisted: true });
   });

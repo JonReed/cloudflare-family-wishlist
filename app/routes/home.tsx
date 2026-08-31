@@ -1,6 +1,7 @@
 import { redirect } from 'react-router';
 
 import { Brand } from '../components/brand';
+import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
@@ -62,6 +63,7 @@ function itemInput(formData: FormData): ItemInput {
     title: formData.get('title'),
     notes: formData.get('notes'),
     productUrl: formData.get('productUrl'),
+    imageUrl: formData.get('imageUrl'),
     price: formData.get('price'),
     priority: formData.get('priority')
   };
@@ -88,6 +90,7 @@ function productFormDraft(
 ): ProductFormDraft {
   const existingTitle = boundedDraftValue(formData, 'title', 160);
   const existingPrice = boundedDraftValue(formData, 'price', 32);
+  const existingImageUrl = boundedDraftValue(formData, 'imageUrl', 2048);
   const rawPriority = boundedDraftValue(formData, 'priority', 16);
 
   return {
@@ -95,6 +98,7 @@ function productFormDraft(
     productUrl,
     title: existingTitle.trim() ? existingTitle : product.title,
     price: existingPrice.trim() ? existingPrice : product.price,
+    imageUrl: existingImageUrl.trim() ? existingImageUrl : product.imageUrl,
     notes: boundedDraftValue(formData, 'notes', 2000),
     priority: isDraftPriority(rawPriority) ? rawPriority : 'normal'
   };
@@ -129,7 +133,7 @@ export async function action({ request, context }: Route.ActionArgs) {
             wishlistId,
             product: productFormDraft(
               formData,
-              { productUrl: '', title: '', price: '', aiAssisted: false },
+              { productUrl: '', title: '', price: '', imageUrl: '', aiAssisted: false },
               typeof productUrl === 'string' ? productUrl.slice(0, 2048) : ''
             ),
             fetchError: error.message
@@ -235,6 +239,12 @@ function ItemFields({
           data-product-title={urlFirst ? '' : undefined}
         />
       </div>
+
+      <ProductImageField
+        formId={formId}
+        defaultValue={item?.imageUrl ?? draft?.imageUrl}
+        enhanced={urlFirst}
+      />
 
       <div>
         <label htmlFor={`${formId}-notes`} className="form-label">
@@ -370,25 +380,40 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
 
   return (
     <li className={`wish-row wish-row-${item.priority}`}>
-      <div className="wish-content">
-        <div className="wish-heading">
-          <h3>{item.title}</h3>
-          <span className={`priority priority-${item.priority}`}>
-            {priorityLabels[item.priority]}
-          </span>
-        </div>
+      <div className={item.imageUrl ? 'wish-content wish-content-with-image' : 'wish-content'}>
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt=""
+            width="160"
+            height="160"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="wish-image"
+          />
+        ) : null}
 
-        {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
+        <div className="wish-copy">
+          <div className="wish-heading">
+            <h3>{item.title}</h3>
+            <span className={`priority priority-${item.priority}`}>
+              {priorityLabels[item.priority]}
+            </span>
+          </div>
 
-        <div className="wish-meta">
-          {item.priceAmountMinor !== null && item.priceCurrency ? (
-            <span>About {formatPrice(item.priceAmountMinor, item.priceCurrency)}</span>
-          ) : null}
-          {item.productUrl ? (
-            <a href={item.productUrl} target="_blank" rel="noreferrer">
-              See where to find it <span aria-hidden="true">↗</span>
-            </a>
-          ) : null}
+          {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
+
+          <div className="wish-meta">
+            {item.priceAmountMinor !== null && item.priceCurrency ? (
+              <span>About {formatPrice(item.priceAmountMinor, item.priceCurrency)}</span>
+            ) : null}
+            {item.productUrl ? (
+              <a href={item.productUrl} target="_blank" rel="noreferrer">
+                See where to find it <span aria-hidden="true">↗</span>
+              </a>
+            ) : null}
+          </div>
         </div>
 
         <details className="edit-panel">

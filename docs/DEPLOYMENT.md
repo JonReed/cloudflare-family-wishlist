@@ -31,6 +31,11 @@ npm run cf-typegen
 
 Migration files are append-only after release. Never edit a migration that another deployment may already have applied.
 
+Product pictures use validated remote HTTPS URLs stored in D1. They do not require an R2 bucket,
+Cloudflare Images or another binding. Existing deployments upgrading from a version before item
+images must run `npm run db:migrate:remote` before deploying the application code that reads the new
+column.
+
 ## 3. Workers AI is enabled with the deployment
 
 No API key, separate model deployment or additional account is required. The checked-in

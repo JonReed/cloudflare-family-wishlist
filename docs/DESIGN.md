@@ -48,6 +48,11 @@ JavaScript, while pasting or leaving the link field triggers the same lookup whe
 available. Adding a wish without a link remains supported. Titles, useful buying notes, an approximate
 price and a human description of priority are enough.
 
+When a shop publishes a product image, show it as a modest square preview rather than turning the
+wishlist into a catalogue grid. The picture is an editable convenience: it may be removed or replaced
+before saving. Saved images support recognition beside the wish's written details; they do not replace
+the wish name, and repeated adjacent alt text should be avoided.
+
 ### Quietly buying a gift
 
 On someone else's list, “I’ll get this” is a direct, reversible action. The person choosing it can

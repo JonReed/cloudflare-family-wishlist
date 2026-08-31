@@ -1,6 +1,7 @@
 import { data, Form, redirect, useNavigation } from 'react-router';
 
 import { Brand } from '../components/brand';
+import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
@@ -39,6 +40,7 @@ function blankProduct(productUrl = ''): ProductDraft {
     productUrl,
     title: '',
     price: '',
+    imageUrl: '',
     aiAssisted: false,
     notes: '',
     priority: 'normal'
@@ -50,6 +52,7 @@ function itemInput(formData: FormData): ItemInput {
     title: formData.get('title'),
     notes: formData.get('notes'),
     productUrl: formData.get('productUrl'),
+    imageUrl: formData.get('imageUrl'),
     price: formData.get('price'),
     priority: formData.get('priority')
   };
@@ -67,6 +70,7 @@ function formDraft(formData: FormData): ProductDraft {
     productUrl: formValue(formData, 'productUrl', 2048),
     title: formValue(formData, 'title', 160),
     price: formValue(formData, 'price', 10),
+    imageUrl: formValue(formData, 'imageUrl', 2048),
     notes: formValue(formData, 'notes', 2000),
     priority: priority === 'low' || priority === 'high' ? priority : 'normal',
     aiAssisted: false
@@ -213,6 +217,8 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
                 placeholder="A book, cosy socks, the good chocolate…"
               />
             </div>
+
+            <ProductImageField formId="bookmarklet" defaultValue={draft.imageUrl} />
 
             <div>
               <label htmlFor="bookmarklet-notes" className="form-label">

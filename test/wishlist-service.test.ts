@@ -19,6 +19,7 @@ function itemInput(overrides: Partial<ItemInput> = {}): ItemInput {
     title: 'A thoughtful present',
     notes: '',
     productUrl: '',
+    imageUrl: '',
     price: '',
     priority: 'normal',
     ...overrides
@@ -45,6 +46,9 @@ describe('wishlist service', () => {
     [{ notes: 'x'.repeat(2001) }, 'extra details'],
     [{ productUrl: 'javascript:alert(1)' }, 'link doesn’t look right'],
     [{ productUrl: 'https://user:secret@example.com/gift' }, 'link doesn’t look right'],
+    [{ imageUrl: 'http://example.com/gift.jpg' }, 'picture link doesn’t look right'],
+    [{ imageUrl: 'https://127.0.0.1/gift.jpg' }, 'picture link doesn’t look right'],
+    [{ imageUrl: 'https://user:secret@example.com/gift.jpg' }, 'picture link doesn’t look right'],
     [{ price: '-1' }, 'pounds and pence'],
     [{ price: '12.345' }, 'pounds and pence'],
     [{ price: '10000000' }, 'pounds and pence'],
@@ -76,6 +80,7 @@ describe('wishlist service', () => {
         title: '  Red scarf  ',
         notes: '  Warm, not itchy  ',
         productUrl: ' https://example.com/scarf?q=red ',
+        imageUrl: ' https://cdn.example.com/scarf-large.webp ',
         price: '24.5',
         priority: 'high'
       })
@@ -88,6 +93,7 @@ describe('wishlist service', () => {
       title: 'Red scarf',
       notes: 'Warm, not itchy',
       productUrl: 'https://example.com/scarf?q=red',
+      imageUrl: 'https://cdn.example.com/scarf-large.webp',
       priceAmountMinor: 2450,
       priceCurrency: 'GBP',
       priority: 'high',
@@ -106,6 +112,7 @@ describe('wishlist service', () => {
     view = await listFamilyWishlists(env.DB, member.id);
     expect(view[0]?.items[0]).toMatchObject({
       title: 'Blue scarf',
+      imageUrl: null,
       priceAmountMinor: 0,
       priceCurrency: 'GBP',
       priority: 'low'
@@ -124,7 +131,11 @@ describe('wishlist service', () => {
       env.DB,
       alex.id,
       [alex.wishlistId, robin.wishlistId, robin.wishlistId],
-      itemInput({ title: 'Board game', productUrl: 'https://example.com/game' })
+      itemInput({
+        title: 'Board game',
+        productUrl: 'https://example.com/game',
+        imageUrl: 'https://cdn.example.com/game.webp'
+      })
     );
 
     const view = await listFamilyWishlists(env.DB, alex.id);
@@ -133,6 +144,9 @@ describe('wishlist service', () => {
       ['Board game'],
       ['Board game']
     ]);
+    expect(view.every((wishlist) => wishlist.items[0]?.imageUrl?.endsWith('/game.webp'))).toBe(
+      true
+    );
     expect(view[0]?.items[0]?.id).not.toBe(view[1]?.items[0]?.id);
   });
 

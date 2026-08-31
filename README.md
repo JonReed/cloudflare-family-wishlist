@@ -14,6 +14,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - invitation-only access;
 - one wishlist per family member;
 - shared editing across the family;
+- editable names, pictures and GBP prices filled from product links when shops publish them;
 - a browser bookmarklet for adding something to one or more lists while shopping;
 - private claims that the recipient cannot see;
 - no application-managed passwords;

@@ -1,4 +1,4 @@
-import { normaliseProductUrl } from '../product-url';
+import { normaliseProductImageUrl, normaliseProductUrl } from '../product-url';
 
 export const ITEM_PRIORITIES = ['low', 'normal', 'high'] as const;
 export const CLAIM_STATES = ['claimed', 'purchased'] as const;
@@ -18,6 +18,7 @@ type WishlistItemBase = {
   title: string;
   notes: string | null;
   productUrl: string | null;
+  imageUrl: string | null;
   priceAmountMinor: number | null;
   priceCurrency: string | null;
   priority: ItemPriority;
@@ -41,6 +42,7 @@ export type ItemInput = {
   title: FormDataEntryValue | null;
   notes: FormDataEntryValue | null;
   productUrl: FormDataEntryValue | null;
+  imageUrl: FormDataEntryValue | null;
   price: FormDataEntryValue | null;
   priority: FormDataEntryValue | null;
 };
@@ -53,6 +55,7 @@ type WishlistRow = {
   item_title: string | null;
   item_notes: string | null;
   item_product_url: string | null;
+  item_image_url: string | null;
   item_price_amount_minor: number | null;
   item_price_currency: string | null;
   item_priority: ItemPriority | null;
@@ -66,6 +69,7 @@ type NormalisedItemInput = {
   title: string;
   notes: string | null;
   productUrl: string | null;
+  imageUrl: string | null;
   priceAmountMinor: number | null;
   priceCurrency: 'GBP' | null;
   priority: ItemPriority;
@@ -82,6 +86,7 @@ const LIST_FAMILY_WISHLISTS = `
     items.title AS item_title,
     items.notes AS item_notes,
     items.product_url AS item_product_url,
+    items.image_url AS item_image_url,
     items.price_amount_minor AS item_price_amount_minor,
     items.price_currency AS item_price_currency,
     items.priority AS item_priority,
@@ -140,6 +145,14 @@ function normaliseItemInput(input: ItemInput): NormalisedItemInput {
     );
   }
 
+  const imageUrlValue = requireString(input.imageUrl, 'A picture link').trim();
+  const imageUrl = normaliseProductImageUrl(imageUrlValue);
+  if (imageUrlValue && !imageUrl) {
+    throw new WishlistInputError(
+      'That picture link doesn’t look right. Use a public address beginning with https://.'
+    );
+  }
+
   const priceValue = requireString(input.price, 'The price').trim();
   let priceAmountMinor: number | null = null;
   if (priceValue) {
@@ -161,6 +174,7 @@ function normaliseItemInput(input: ItemInput): NormalisedItemInput {
     title,
     notes: notesValue || null,
     productUrl,
+    imageUrl,
     priceAmountMinor,
     priceCurrency: priceAmountMinor === null ? null : 'GBP',
     priority: priority as ItemPriority
@@ -208,6 +222,7 @@ export async function listFamilyWishlists(
       title: row.item_title,
       notes: row.item_notes,
       productUrl: row.item_product_url,
+      imageUrl: row.item_image_url,
       priceAmountMinor: row.item_price_amount_minor,
       priceCurrency: row.item_price_currency,
       priority: row.item_priority,
@@ -248,25 +263,26 @@ export async function createWishlistItem(
   const result = await db
     .prepare(
       `INSERT INTO items (
-         id, wishlist_id, title, notes, product_url, price_amount_minor,
-         price_currency, priority, position, created_by_member_id
+         id, wishlist_id, title, notes, product_url, image_url,
+         price_amount_minor, price_currency, priority, position, created_by_member_id
        )
        SELECT
-         ?1, wishlists.id, ?2, ?3, ?4, ?5, ?6, ?7,
+         ?1, wishlists.id, ?2, ?3, ?4, ?5, ?6, ?7, ?8,
          COALESCE((
            SELECT MAX(existing_items.position) + 1
            FROM items AS existing_items
            WHERE existing_items.wishlist_id = wishlists.id
          ), 0),
-         ?8
+         ?9
        FROM wishlists
-       WHERE wishlists.id = ?9`
+       WHERE wishlists.id = ?10`
     )
     .bind(
       crypto.randomUUID(),
       item.title,
       item.notes,
       item.productUrl,
+      item.imageUrl,
       item.priceAmountMinor,
       item.priceCurrency,
       item.priority,
@@ -310,13 +326,13 @@ export async function createWishlistItems(
          VALUES ${selectedValues}
        )
        INSERT INTO items (
-         id, wishlist_id, title, notes, product_url, price_amount_minor,
-         price_currency, priority, position, created_by_member_id
+         id, wishlist_id, title, notes, product_url, image_url,
+         price_amount_minor, price_currency, priority, position, created_by_member_id
        )
        SELECT
          selected_wishlists.item_id,
          wishlists.id,
-         ?, ?, ?, ?, ?, ?,
+         ?, ?, ?, ?, ?, ?, ?,
          COALESCE((
            SELECT MAX(existing_items.position) + 1
            FROM items AS existing_items
@@ -340,6 +356,7 @@ export async function createWishlistItems(
       item.title,
       item.notes,
       item.productUrl,
+      item.imageUrl,
       item.priceAmountMinor,
       item.priceCurrency,
       item.priority,
@@ -369,16 +386,18 @@ export async function updateWishlistItem(
          title = ?1,
          notes = ?2,
          product_url = ?3,
-         price_amount_minor = ?4,
-         price_currency = ?5,
-         priority = ?6,
+         image_url = ?4,
+         price_amount_minor = ?5,
+         price_currency = ?6,
+         priority = ?7,
          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-       WHERE id = ?7`
+       WHERE id = ?8`
     )
     .bind(
       item.title,
       item.notes,
       item.productUrl,
+      item.imageUrl,
       item.priceAmountMinor,
       item.priceCurrency,
       item.priority,

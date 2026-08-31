@@ -1,4 +1,4 @@
-/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLInputElement, document, fetch, setTimeout */
+/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, document, fetch, setTimeout */
 
 const forms = document.querySelectorAll('[data-product-import-form]');
 
@@ -6,6 +6,9 @@ for (const form of forms) {
   const urlInput = form.querySelector('[data-product-url]');
   const titleInput = form.querySelector('[data-product-title]');
   const priceInput = form.querySelector('[data-product-price]');
+  const imageInput = form.querySelector('[data-product-image]');
+  const imagePreview = form.querySelector('[data-product-image-preview]');
+  const imagePreviewImage = form.querySelector('[data-product-image-preview-image]');
   const fetchButton = form.querySelector('[data-product-fetch]');
   const status = form.querySelector('[data-product-status]');
 
@@ -14,6 +17,9 @@ for (const form of forms) {
     !(urlInput instanceof HTMLInputElement) ||
     !(titleInput instanceof HTMLInputElement) ||
     !(priceInput instanceof HTMLInputElement) ||
+    !(imageInput instanceof HTMLInputElement) ||
+    !(imagePreview instanceof HTMLElement) ||
+    !(imagePreviewImage instanceof HTMLImageElement) ||
     !(fetchButton instanceof HTMLButtonElement) ||
     !(status instanceof HTMLElement)
   ) {
@@ -24,6 +30,7 @@ for (const form of forms) {
   let lastRequestedUrl = '';
   let generatedTitle = '';
   let generatedPrice = '';
+  let generatedImageUrl = '';
 
   const setStatus = (message, isError = false) => {
     status.textContent = message;
@@ -31,9 +38,30 @@ for (const form of forms) {
   };
 
   const fillGeneratedField = (input, value, previousValue) => {
-    if (value && (!input.value || input.value === previousValue)) input.value = value;
-    return value || previousValue;
+    if (typeof value !== 'string') return previousValue;
+    if (!input.value || input.value === previousValue) input.value = value;
+    return value;
   };
+
+  const updateImagePreview = () => {
+    const imageUrl = imageInput.value.trim();
+    if (!/^https:\/\//i.test(imageUrl)) {
+      imagePreview.hidden = true;
+      imagePreviewImage.removeAttribute('src');
+      return;
+    }
+
+    imagePreviewImage.src = imageUrl;
+    imagePreview.hidden = false;
+  };
+
+  imagePreviewImage.addEventListener('load', () => {
+    imagePreview.hidden = false;
+  });
+  imagePreviewImage.addEventListener('error', () => {
+    imagePreview.hidden = true;
+  });
+  imageInput.addEventListener('input', updateImagePreview);
 
   const fetchDetails = async (candidate, force = false) => {
     const productUrl = candidate.trim();
@@ -85,6 +113,8 @@ for (const form of forms) {
       urlInput.value = result.productUrl;
       generatedTitle = fillGeneratedField(titleInput, result.title, generatedTitle);
       generatedPrice = fillGeneratedField(priceInput, result.price, generatedPrice);
+      generatedImageUrl = fillGeneratedField(imageInput, result.imageUrl, generatedImageUrl);
+      updateImagePreview();
       setStatus(
         result.aiAssisted
           ? 'We filled what we could find, with a little AI help. Check the details before adding.'
