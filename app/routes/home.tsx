@@ -332,9 +332,7 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
 }
 
 function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
-  const addFormId = `add-${wishlist.id}`;
   const possessiveName = wishlist.isOwn ? 'Your' : `${wishlist.owner.displayName}’s`;
-  const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
 
   return (
     <article id="wishlist" className="wishlist-sheet">
@@ -360,8 +358,8 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
         </p>
       ) : (
         <p className="giver-note">
-          Thinking of buying something? Let the family know below. {wishlist.owner.displayName}{' '}
-          won’t see a thing.
+          Thinking of buying something? Let the family know on the list.{' '}
+          {wishlist.owner.displayName} won’t see a thing.
         </p>
       )}
 
@@ -378,28 +376,40 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
             <h3>A lovely blank page</h3>
             <p>
               Add something {wishlist.isOwn ? 'you’d' : `${wishlist.owner.displayName} would`} love
-              below. Anyone in the family can lend a hand.
+              to get things started. Anyone in the family can lend a hand.
             </p>
           </div>
         </div>
       )}
-
-      <details className="add-wish">
-        <summary>
-          <span aria-hidden="true">＋</span>
-          {wishlist.isOwn
-            ? 'Add something to your wishlist'
-            : `Add something for ${wishlist.owner.displayName}`}
-        </summary>
-        <form method="post" action="?index" className="add-form">
-          <ActionFields wishlistId={wishlist.id} />
-          <ItemFields formId={addFormId} recipientName={recipientName} />
-          <button name="intent" value="add-item" className="button-primary">
-            Add to the list
-          </button>
-        </form>
-      </details>
     </article>
+  );
+}
+
+function AddWishPanel({ wishlist }: { wishlist: FamilyWishlist }) {
+  const addFormId = `add-${wishlist.id}`;
+  const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
+
+  return (
+    <aside className="add-wish-panel" aria-labelledby={`${addFormId}-title`}>
+      <span aria-hidden="true" className="add-panel-tape" />
+      <p className="section-kicker">A new idea</p>
+      <h2 id={`${addFormId}-title`}>
+        {wishlist.isOwn
+          ? 'Add to your wishlist'
+          : `Add something for ${wishlist.owner.displayName}`}
+      </h2>
+      <p className="add-panel-intro">
+        A name is enough to start. Add a link or a little guidance if it helps.
+      </p>
+
+      <form method="post" action="?index" className="add-form add-form-sidebar">
+        <ActionFields wishlistId={wishlist.id} />
+        <ItemFields formId={addFormId} recipientName={recipientName} />
+        <button name="intent" value="add-item" className="button-primary">
+          Add to the list
+        </button>
+      </form>
+    </aside>
   );
 }
 
@@ -422,18 +432,17 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       </header>
 
       <main>
-        <section className="parcel-hero page-wrap" aria-labelledby="page-title">
-          <div className="hero-copy-block">
-            <p className="section-kicker hero-kicker">Your wishlist, shared with your family</p>
-            <h1 id="page-title">What would make their day?</h1>
-            <p className="hero-intro">
-              Keep everyone’s gift ideas together. If you’re planning to buy something, let the
-              family know—without giving the surprise away.
-            </p>
-          </div>
-        </section>
+        <div className="overview-wrap page-wrap">
+          <section className="parcel-hero" aria-labelledby="page-title">
+            <div className="hero-copy-block">
+              <p className="section-kicker hero-kicker">Your wishlist, shared with your family</p>
+              <h1 id="page-title">What would make their day?</h1>
+              <p className="hero-intro">
+                Keep everyone’s gift ideas together, without giving the surprise away.
+              </p>
+            </div>
+          </section>
 
-        <div className="content-wrap page-wrap">
           <section className="family-picker" aria-labelledby="family-picker-title">
             <div className="picker-intro">
               <p className="section-kicker">The family</p>
@@ -463,7 +472,9 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
               })}
             </nav>
           </section>
+        </div>
 
+        <div className="content-wrap page-wrap">
           {actionData?.error ? (
             <div role="alert" className="form-alert">
               <strong>Sorry, that didn’t work.</strong> {actionData.error}
@@ -471,7 +482,10 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           ) : null}
 
           {activeWishlist ? (
-            <WishlistSheet wishlist={activeWishlist} />
+            <div className="wishlist-workspace">
+              <WishlistSheet wishlist={activeWishlist} />
+              <AddWishPanel wishlist={activeWishlist} />
+            </div>
           ) : (
             <section className="wishlist-sheet no-lists">
               <h2>Your wishlist is nearly ready</h2>

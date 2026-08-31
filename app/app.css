@@ -81,7 +81,7 @@
 }
 
 .page-wrap {
-  width: min(calc(100% - 2rem), 75rem);
+  width: min(calc(100% - 2.5rem), 90rem);
   margin-inline: auto;
 }
 
@@ -104,8 +104,7 @@
 .footer-links a:focus-visible,
 .footer-repo:focus-visible,
 .wish-meta a:focus-visible,
-.edit-panel summary:focus-visible,
-.add-wish summary:focus-visible {
+.edit-panel summary:focus-visible {
   outline: 2px solid var(--leaf);
   outline-offset: 4px;
 }
@@ -201,11 +200,19 @@
   text-underline-offset: 0.25rem;
 }
 
+.overview-wrap {
+  display: grid;
+  grid-template-columns: minmax(24rem, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: stretch;
+  padding-bottom: 2rem;
+}
+
 .parcel-hero {
   position: relative;
-  min-height: 14.5rem;
+  min-height: 13.5rem;
   overflow: hidden;
-  border-block: 1px solid rgb(48 51 41 / 0.14);
+  border: 1px solid rgb(48 51 41 / 0.14);
   background-color: #f3e8d6;
   background-image:
     linear-gradient(
@@ -237,8 +244,8 @@
 .hero-copy-block {
   position: relative;
   z-index: 1;
-  width: min(58%, 39rem);
-  padding: 2.35rem 0 2.5rem 3.5rem;
+  width: min(76%, 29rem);
+  padding: 1.8rem 0 2rem 2rem;
 }
 
 .section-kicker {
@@ -261,10 +268,10 @@
 }
 
 .parcel-hero h1 {
-  max-width: 14ch;
-  margin: 0.75rem 0 0;
+  max-width: 10ch;
+  margin: 0.65rem 0 0;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 4.8vw, 4.2rem);
+  font-size: clamp(2.65rem, 3.3vw, 3.55rem);
   line-height: 0.96;
   font-weight: 600;
   letter-spacing: -0.05em;
@@ -272,23 +279,23 @@
 }
 
 .hero-intro {
-  max-width: 33rem;
-  margin: 0.9rem 0 0;
+  max-width: 24rem;
+  margin: 0.7rem 0 0;
   color: #555747;
-  font-size: 1rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .content-wrap {
-  padding-block: 2.75rem 6rem;
+  padding-block: 1rem 6rem;
 }
 
 .family-picker {
   display: grid;
-  grid-template-columns: minmax(12rem, 15rem) 1fr;
-  gap: 2.5rem;
-  align-items: start;
-  margin-bottom: 2.75rem;
+  grid-template-columns: minmax(10rem, 11.5rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+  padding-block: 1rem;
 }
 
 .picker-intro h2 {
@@ -309,16 +316,16 @@
 
 .family-tags {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  gap: 1rem 1.15rem;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.8rem 0.95rem;
 }
 
 .family-tag {
   position: relative;
   display: grid;
-  min-height: 4.8rem;
+  min-height: 4.45rem;
   align-content: center;
-  padding: 0.9rem 2.5rem 0.9rem 1.2rem;
+  padding: 0.75rem 2.3rem 0.75rem 1rem;
   clip-path: polygon(0 0, calc(100% - 1.15rem) 0, 100% 50%, calc(100% - 1.15rem) 100%, 0 100%);
   background: #fbf3e5;
   box-shadow: inset 0 0 0 1px rgb(48 51 41 / 0.22);
@@ -383,8 +390,7 @@
 }
 
 .form-alert {
-  max-width: 62rem;
-  margin: -1.5rem auto 3rem;
+  margin: 0 0 2rem;
   border: 1px solid rgb(157 73 54 / 0.4);
   border-left: 5px solid var(--rust);
   background: #f9e5da;
@@ -393,10 +399,16 @@
   line-height: 1.6;
 }
 
+.wishlist-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 23rem);
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
+  align-items: start;
+}
+
 .wishlist-sheet {
   position: relative;
-  max-width: 62rem;
-  margin-inline: auto;
+  width: 100%;
   scroll-margin-top: 2rem;
   border: 1px solid rgb(80 68 50 / 0.15);
   border-radius: 1px;
@@ -656,41 +668,74 @@
   line-height: 1.6;
 }
 
-.add-wish {
-  margin-top: 2.5rem;
-  border: 1px dashed rgb(40 80 62 / 0.45);
-  background: rgb(238 227 207 / 0.4);
+.add-wish-panel {
+  position: sticky;
+  top: 1.5rem;
+  border: 1px solid rgb(80 68 50 / 0.18);
+  background-color: #f9f0df;
+  background-image:
+    linear-gradient(rgb(116 87 53 / 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(116 87 53 / 0.02) 1px, transparent 1px);
+  background-size: 17px 17px;
+  box-shadow:
+    6px 8px 0 rgb(88 69 46 / 0.08),
+    0 14px 28px rgb(88 69 46 / 0.09);
+  padding: 2.25rem 1.5rem 1.5rem;
 }
 
-.add-wish > summary {
-  display: flex;
-  min-height: 4rem;
-  cursor: pointer;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 1rem 1.2rem;
-  color: var(--leaf);
-  font-weight: 800;
-  list-style: none;
+.add-panel-tape {
+  position: absolute;
+  top: -1.15rem;
+  left: calc(50% - 3.8rem);
+  width: 7.6rem;
+  height: 2.15rem;
+  background: var(--tape);
+  box-shadow: inset 0 0 0 1px rgb(139 104 72 / 0.1);
+  transform: rotate(-2.5deg);
 }
 
-.add-wish > summary::-webkit-details-marker {
-  display: none;
-}
-
-.add-wish > summary span {
+.add-wish-panel h2 {
+  margin: 0.55rem 0 0;
   font-family: var(--font-display);
-  font-size: 1.6rem;
-  font-weight: 400;
+  font-size: clamp(2rem, 2.5vw, 2.55rem);
   line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
 }
 
-.add-wish[open] > summary {
-  border-bottom: 1px dashed rgb(40 80 62 / 0.32);
+.add-panel-intro {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
 }
 
 .add-form {
   padding: 1.5rem;
+}
+
+.add-form-sidebar {
+  margin-top: 1.35rem;
+  border-top: 1px dashed rgb(48 51 41 / 0.25);
+  padding: 1.35rem 0 0;
+}
+
+.add-form-sidebar .form-fields {
+  gap: 1rem;
+}
+
+.add-form-sidebar .form-split {
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.add-form-sidebar textarea {
+  min-height: 4.75rem;
+}
+
+.add-form-sidebar .button-primary {
+  width: 100%;
+  margin-top: 1.2rem;
 }
 
 .form-fields {
@@ -841,7 +886,7 @@
 
 .site-footer-inner {
   display: grid;
-  width: min(calc(100% - 2rem), 75rem);
+  width: min(calc(100% - 2.5rem), 90rem);
   margin-inline: auto;
   grid-template-columns: minmax(16rem, 1fr) auto;
   gap: 1.5rem 3rem;
@@ -949,6 +994,37 @@
   color: var(--paper);
 }
 
+@media (max-width: 70rem) {
+  .overview-wrap {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .parcel-hero {
+    min-height: 12.5rem;
+  }
+
+  .hero-copy-block {
+    width: min(60%, 34rem);
+  }
+
+  .family-picker {
+    grid-template-columns: minmax(11rem, 13rem) minmax(0, 1fr);
+  }
+
+  .wishlist-workspace {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .add-wish-panel {
+    position: relative;
+    top: auto;
+    width: min(100%, 42rem);
+    margin-inline: auto;
+  }
+}
+
 @media (max-width: 56rem) {
   .hero-copy-block {
     width: 64%;
@@ -980,7 +1056,7 @@
 
 @media (max-width: 40rem) {
   .page-wrap {
-    width: min(calc(100% - 1.25rem), 75rem);
+    width: min(calc(100% - 1.25rem), 90rem);
   }
 
   .site-header {
@@ -1012,7 +1088,7 @@
   }
 
   .parcel-hero {
-    min-height: 13rem;
+    min-height: 10.75rem;
     background-image:
       linear-gradient(
         90deg,
@@ -1028,7 +1104,7 @@
 
   .hero-copy-block {
     width: min(78%, 20rem);
-    padding: 1.45rem 0 1.55rem 1.2rem;
+    padding: 1.25rem 0 1.4rem 1.2rem;
   }
 
   .parcel-hero h1 {
@@ -1043,12 +1119,17 @@
   }
 
   .content-wrap {
-    padding-block: 1.65rem 4.5rem;
+    padding-block: 0.75rem 4.5rem;
   }
 
   .family-picker {
     gap: 1.25rem;
-    margin-bottom: 2.25rem;
+    padding-block: 0;
+  }
+
+  .overview-wrap {
+    gap: 1.25rem;
+    padding-bottom: 1rem;
   }
 
   .family-tags {
@@ -1102,6 +1183,14 @@
 
   .add-form {
     padding: 1.1rem;
+  }
+
+  .add-wish-panel {
+    padding: 2.25rem 1.15rem 1.25rem;
+  }
+
+  .add-form-sidebar {
+    padding: 1.25rem 0 0;
   }
 
   .site-footer-inner {

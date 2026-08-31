@@ -14,9 +14,10 @@ novelty.
 The signed-in home has five stable regions:
 
 1. **Identity:** the Family Wishlist mark, the current member and sign out.
-2. **Orientation:** a short visual introduction that explains shared editing and private claims.
-3. **Family selector:** one gift tag per member.
-4. **Active wishlist:** one person's complete list at a time.
+2. **Orientation:** a compact visual introduction paired with the family selector on wider screens.
+3. **Family selector:** one gift tag per member, kept at the top of the working surface.
+4. **Active wishlist:** one person's complete list, with an always-open add form alongside it on
+   wider screens.
 5. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
 
 Only one wishlist is rendered as the active working area. This prevents a family with many members
@@ -34,9 +35,10 @@ feel like an admin console.
 
 ### Adding or improving an idea
 
-Any admitted member can choose a person, add a wish or expand “Edit this wish”. Forms are disclosed
-where they are needed rather than occupying the page by default. Titles, useful buying notes, an
-optional link, an approximate price and a human description of priority are enough.
+Any admitted member can choose a person, add a wish or expand “Edit this wish”. The add form stays in
+reach beside the active list on laptop-sized screens and follows the list on small screens; edit
+forms are disclosed beside the item they change. Titles, useful buying notes, an optional link, an
+approximate price and a human description of priority are enough.
 
 ### Quietly buying a gift
 
@@ -90,6 +92,11 @@ still life with year-round wrapping materials and negative space for the heading
 CSS background, so it does not add redundant alternative text. Keep it shallow enough that the family
 selector and start of the active wishlist are visible in the first viewport: the image establishes
 atmosphere, but the family's lists are the page's purpose.
+
+On wider screens, use the available horizontal space as a working surface rather than scaling the
+masthead up. Pair the masthead with family navigation, let the active list use the main column and
+keep its add form in a taped, sticky side panel. Collapse this to a natural single-column reading
+order on smaller screens.
 
 New imagery should be natural, asymmetrical and materially believable. Avoid readable text, logos,
 Christmas-only motifs, glossy catalogue lighting and perfect 3D-rendered parcels. Optimise assets to
