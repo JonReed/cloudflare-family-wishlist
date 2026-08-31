@@ -57,8 +57,9 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 
 ## Phase 7 — Release readiness
 
-- Accessibility and mobile QA.
-- Backup, restore and upgrade documentation.
-- Abuse-case and privacy review.
-- Fresh-deployment walkthrough.
-- First tagged release.
+- [x] Accessibility and mobile QA.
+- [x] Product, architecture and developer handoff documentation.
+- [ ] Backup, restore and upgrade documentation.
+- [ ] Abuse-case and privacy review.
+- [ ] Fresh-deployment walkthrough.
+- [ ] First tagged release.

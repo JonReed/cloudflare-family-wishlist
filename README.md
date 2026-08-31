@@ -28,9 +28,16 @@ Most wishlist applications are either public, advertising-supported, complicated
 - TypeScript, React and Tailwind CSS
 - Vitest running in the Cloudflare Workers runtime
 
-The architectural reasoning is recorded in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The
-family-first information architecture, visual language and interface rules live in
-[docs/DESIGN.md](docs/DESIGN.md).
+## Documentation
+
+- [Product model](docs/PRODUCT.md) — who the application serves, core workflows and non-goals.
+- [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
+- [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
+- [Design guide](docs/DESIGN.md) — family-first IA, visual language, copy and accessibility.
+- [Deployment guide](docs/DEPLOYMENT.md) — Cloudflare setup for a fork.
+- [Roadmap](docs/ROADMAP.md) — completed phases and remaining release work.
+
+Agents and automated contributors should begin with [AGENTS.md](AGENTS.md).
 
 ## Local development
 
@@ -41,6 +48,7 @@ Requirements:
 
 ```sh
 npm install
+npm run db:migrate:local
 npm run dev
 ```
 
@@ -56,6 +64,9 @@ npm run quality      # complete local/CI quality gate
 ```
 
 Wrangler creates local Cloudflare state under `.wrangler/`. Development requests to a localhost URL use a fixed local-only identity; production builds always require a valid Cloudflare Access assertion.
+
+See the [development guide](docs/DEVELOPMENT.md) before changing the database, authentication or
+Cloudflare configuration.
 
 ## Deployment model
 

@@ -1,6 +1,22 @@
 # Cloudflare Family Wishlist
 
-Private family wishlist deployed as a Cloudflare Worker.
+This is a private, self-hosted family wishlist for one household per deployment. It runs as a
+Cloudflare Worker with D1 and sits behind Cloudflare Access. Work directly on `main`; successful
+pushes are deployed automatically by Cloudflare Builds.
+
+## Start here
+
+Read these before making a material change:
+
+1. [docs/PRODUCT.md](docs/PRODUCT.md) — the user model, supported workflows and non-goals.
+2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — request flow, data model and privacy boundaries.
+3. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — setup, tests and safe change recipes.
+4. [docs/DESIGN.md](docs/DESIGN.md) for interface or copy work.
+5. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Cloudflare setup or operations.
+
+The maintainer checkout may contain `.private/WRANGLER_PROFILE.md`. It is deliberately ignored and
+contains account-specific operational context. Read it before using Wrangler against the reference
+deployment, never quote its contents into public files, and never commit it.
 
 ## Stack
 
@@ -11,6 +27,35 @@ Private family wishlist deployed as a Cloudflare Worker.
 - Vitest with `@cloudflare/vitest-plugin`
 
 Retrieve current Cloudflare and React Router documentation before relying on API signatures or configuration fields.
+
+## Five-minute mental model
+
+- Cloudflare Access is the admission list and login UI. The application does not store passwords or
+  send login email.
+- A successfully authenticated email is provisioned as one `member` plus one `wishlist` on first
+  request. Access admission must happen before provisioning; there is no public sign-up flow.
+- Every admitted member can see and edit every wishlist. “Owner” and “gift-giver” are contextual
+  relationships, not permission roles.
+- Claims are separate rows. Other family members can see them; the wishlist owner must not receive
+  them at all. The SQL join and the returned TypeScript union enforce this.
+- React Router loaders and actions call the D1 service layer. Core flows use ordinary server-rendered
+  forms and do not depend on client JavaScript.
+
+## Code map
+
+| Area                                               | Source of truth                                |
+| -------------------------------------------------- | ---------------------------------------------- |
+| Worker entry, authentication gate, headers and CSP | `workers/app.ts`                               |
+| Access JWT validation and local-only identity      | `app/lib/auth/access.ts`                       |
+| Request context                                    | `app/lib/context.ts`                           |
+| First-login member/list provisioning               | `app/lib/db/members.ts`                        |
+| Wishlist queries, mutations and claim privacy      | `app/lib/db/wishlists.ts`                      |
+| Form dispatch and current UI                       | `app/routes/home.tsx`                          |
+| App shell and error boundary                       | `app/root.tsx`                                 |
+| Visual system                                      | `app/app.css`, `app/components/`               |
+| Database schema                                    | `migrations/`                                  |
+| Worker bindings and deployment config              | `wrangler.jsonc`                               |
+| Workers-runtime test setup                         | `vitest.config.ts`, `test/apply-migrations.ts` |
 
 ## Commands
 
@@ -31,6 +76,18 @@ Retrieve current Cloudflare and React Router documentation before relying on API
 - Run `npm run quality` and `npm run audit` before every commit or push.
 - Do not run a manual production deployment unless explicitly requested; `main` is connected to Cloudflare Builds.
 - Preserve unrelated or user-authored changes.
+
+For a normal change:
+
+1. Read the relevant source, tests and documentation before editing.
+2. Keep route code concerned with HTTP/forms and put database rules in `app/lib/db/`.
+3. Add or update tests for invalid input, permission/privacy boundaries, concurrency and the happy path.
+4. Update the relevant documentation when behaviour, setup or operational steps change.
+5. Review `git diff`, then run `npm run quality` and `npm run audit`.
+
+Do not apply remote D1 migrations, edit Access policy, alter DNS, deploy manually or otherwise mutate
+the reference Cloudflare account unless the maintainer explicitly asks. Local migrations and local
+development data are safe within this repository.
 
 ## Security and privacy
 
@@ -53,3 +110,10 @@ Retrieve current Cloudflare and React Router documentation before relying on API
 - Claim state is visible to other gift-givers but hidden from the list owner.
 - Authentication is Cloudflare Access email OTP with an exact email allow-list.
 - Keep the normal family deployment within Cloudflare's free tier and minimise setup.
+
+## Definition of done
+
+A change is not finished until its implementation, tests and documentation agree; the privacy
+invariants still hold; the complete diff has been reviewed; and both required gates pass. For visual
+work, also inspect desktop and narrow mobile layouts and exercise the affected form flow rather than
+relying on a build alone.
