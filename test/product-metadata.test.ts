@@ -44,7 +44,12 @@ describe('fetchProductMetadata', () => {
     const [requestedUrl, requestInit] = fetchPage.mock.calls[0] ?? [];
     expect(requestedUrl).toBe('https://shop.example/scarf');
     expect(requestInit).toMatchObject({ method: 'GET', redirect: 'manual', cache: 'no-store' });
-    expect(new Headers(requestInit?.headers).has('Authorization')).toBe(false);
+    const requestHeaders = new Headers(requestInit?.headers);
+    expect(requestHeaders.get('User-Agent')).toBe('Family-Wishlist/0.1 product-metadata-fetcher');
+    expect(requestHeaders.get('Accept-Language')).toBe('en-GB,en;q=0.8');
+    expect(requestHeaders.has('Authorization')).toBe(false);
+    expect(requestHeaders.has('Cookie')).toBe(false);
+    expect(requestHeaders.has('Referer')).toBe(false);
   });
 
   it('falls back to JSON-LD and ignores a non-GBP price', async () => {
@@ -72,6 +77,78 @@ describe('fetchProductMetadata', () => {
       price: '',
       aiAssisted: false
     });
+  });
+
+  it('reads Product and AggregateOffer variants across JSON-LD graphs and offer arrays', async () => {
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`
+          <script type="application/ld+json">{ invalid JSON }</script>
+          <script type="application/ld+json">
+            {
+              "@context": "https://schema.org",
+              "@graph": [{
+                "@type": ["Thing", "Product"],
+                "name": "Oak train set",
+                "offers": [
+                  { "@type": "Offer", "price": "99.00", "priceCurrency": "EUR" },
+                  { "@type": "AggregateOffer", "lowPrice": "42.50", "highPrice": "60.00", "priceCurrency": "GBP" }
+                ]
+              }]
+            }
+          </script>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/train', 'wishlist.example', { fetchPage })
+    ).resolves.toMatchObject({ title: 'Oak train set', price: '42.50', aiAssisted: false });
+  });
+
+  it('uses the final JSON-LD breadcrumb as a product-name fallback', async () => {
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`
+          <script type="application/ld+json">
+            {
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "BreadcrumbList",
+                  "itemListElement": [
+                    { "@type": "ListItem", "name": "Toys" },
+                    { "@type": "ListItem", "item": { "name": "Wooden marble run" } }
+                  ]
+                },
+                { "@type": "Product", "offers": { "price": "28", "priceCurrency": "GBP" } }
+              ]
+            }
+          </script>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/marble-run', 'wishlist.example', { fetchPage })
+    ).resolves.toMatchObject({ title: 'Wooden marble run', price: '28.00' });
+  });
+
+  it('extracts nested schema.org microdata without relying on regular-expression HTML parsing', async () => {
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`
+          <div itemprop="name">Example Shop</div>
+          <data itemprop="price" content="5.00">Delivery £5.00</data>
+          <article itemscope itemtype="https://schema.org/Product">
+            <h1 itemprop="name"><span>Hand-painted <strong>jigsaw puzzle</strong></span></h1>
+            <data itemprop="price" content="19.95">Now <span>£19.95</span></data>
+            <meta itemprop="priceCurrency" content="GBP">
+          </article>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/jigsaw', 'wishlist.example', { fetchPage })
+    ).resolves.toMatchObject({ title: 'Hand-painted jigsaw puzzle', price: '19.95' });
   });
 
   it('follows a small number of redirects manually and returns the final product URL', async () => {
@@ -166,6 +243,174 @@ describe('fetchProductMetadata', () => {
     await expect(
       fetchProductMetadata('https://shop.example/train', 'wishlist.example', { fetchPage })
     ).resolves.toMatchObject({ title: 'Wooden train', price: '29.50' });
+  });
+
+  it('uses Amazon product markup for a concise title and the current customer price', async () => {
+    const amazonTitle =
+      "Montezuma's Black Forest, 70% Cocoa, Dark Chocolate With Cherry, Gluten Free & Naturally Vegan, 90g Bar";
+    const amazonTitleHtml =
+      'Montezuma&#39;s Black Forest, 70% Cocoa, Dark Chocolate With Cherry, Gluten Free &amp; Naturally Vegan, 90g Bar';
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`
+          <title>${amazonTitleHtml} : Amazon.co.uk: Grocery</title>
+          <script type="application/ld+json">
+            { "@type": "Product", "name": "${amazonTitle}", "offers": { "price": "3.49", "priceCurrency": "GBP" } }
+          </script>
+          <span class="a-price a-text-price"><span class="a-offscreen">£3.49</span></span>
+          <input type="hidden" name="items[0.base][customerVisiblePrice][displayString]" value="£3.00">
+          <input type="hidden" name="items[0.subscribe][customerVisiblePrice][displayString]" value="£2.55">
+          <span id="productTitle">${amazonTitleHtml}</span>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata(
+        'https://www.amazon.co.uk/dp/B085Y25JJ7?ref=example',
+        'wishlist.example',
+        { fetchPage }
+      )
+    ).resolves.toEqual({
+      productUrl: 'https://www.amazon.co.uk/dp/B085Y25JJ7?ref=example',
+      title: "Montezuma's Black Forest",
+      price: '3.00',
+      aiAssisted: false
+    });
+  });
+
+  it.each([
+    ['<div data-asin-price="16.25" data-asin-currency-code="GBP"></div>', '16.25'],
+    ['<input id="attach-base-product-price" value="£18.75">', '18.75'],
+    ['<span class="a-price"><span class="a-offscreen">£21.50</span></span>', '21.50'],
+    [
+      '<span class="priceToPay"><span><span>£</span><span>24</span><span>.99</span></span></span>',
+      '24.99'
+    ]
+  ])('supports an established Amazon price representation: %s', async (priceMarkup, price) => {
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`<span id="productTitle">Family board game</span>${priceMarkup}`)
+      );
+
+    await expect(
+      fetchProductMetadata('https://www.amazon.co.uk/dp/B012345678', 'wishlist.example', {
+        fetchPage
+      })
+    ).resolves.toMatchObject({ title: 'Family board game', price });
+  });
+
+  it.each([
+    ['<span id="btAsinTitle">Classic wooden blocks</span>', 'Classic wooden blocks'],
+    ['<h1 class="a-size-large">Illustrated story book</h1>', 'Illustrated story book'],
+    ['<div id="item_name">Ceramic plant pot</div>', 'Ceramic plant pot']
+  ])('supports an established visible product-title representation: %s', async (markup, title) => {
+    await expect(
+      fetchProductMetadata('https://www.amazon.co.uk/dp/B012345678', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(htmlResponse(`${markup}<div data-asin-price="12.00"></div>`))
+      })
+    ).resolves.toMatchObject({ title, price: '12.00' });
+  });
+
+  it('uses visible product fields without shortening non-Amazon titles', async () => {
+    const fetchPage = () =>
+      Promise.resolve(
+        htmlResponse(`
+          <title>Example shop</title>
+          <h1 id="product-name">Cards Against Humanity, UK Edition</h1>
+          <div class="product-price"><span>Now £24.99</span></div>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/cards', 'wishlist.example', { fetchPage })
+    ).resolves.toMatchObject({
+      title: 'Cards Against Humanity, UK Edition',
+      price: '24.99',
+      aiAssisted: false
+    });
+  });
+
+  it('prefers a visibly marked current price over a previous price in the same element', async () => {
+    await expect(
+      fetchProductMetadata('https://shop.example/cards', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <h1 id="product-name">Family card game</h1>
+              <div class="product-price"><span>Was £29.99</span><strong>Now £21.50</strong></div>
+            `)
+          )
+      })
+    ).resolves.toMatchObject({ title: 'Family card game', price: '21.50' });
+  });
+
+  it('removes a known shop suffix from a document-title fallback', async () => {
+    await expect(
+      fetchProductMetadata('https://shop.example/cards', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <meta property="og:site_name" content="Example Shop">
+              <title>Cards Against Humanity, UK Edition | Example Shop | Games</title>
+            `)
+          )
+      })
+    ).resolves.toMatchObject({ title: 'Cards Against Humanity, UK Edition' });
+  });
+
+  it('retries an Amazon challenge at its clean product URL and never sends it to AI', async () => {
+    const fetchPage = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(() =>
+      Promise.resolve(
+        htmlResponse(`
+          <title>Robot Check</title>
+          <form action="/errors/validateCaptcha">
+            <input id="captchacharacters">
+          </form>
+        `)
+      )
+    );
+    const extractWithAi = vi.fn<ProductAiExtractor>();
+
+    await expect(
+      fetchProductMetadata(
+        'https://www.amazon.co.uk/gp/product/B085Y25JJ7?ref=tracking',
+        'wishlist.example',
+        { fetchPage, extractWithAi }
+      )
+    ).rejects.toThrow('verification page');
+
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+    expect(fetchPage.mock.calls.map(([url]) => url)).toEqual([
+      'https://www.amazon.co.uk/gp/product/B085Y25JJ7?ref=tracking',
+      'https://www.amazon.co.uk/dp/B085Y25JJ7'
+    ]);
+    expect(extractWithAi).not.toHaveBeenCalled();
+  });
+
+  it('uses product details when a clean-URL retry gets past a shop challenge', async () => {
+    const fetchPage = vi
+      .fn<(url: string, init: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(htmlResponse('<title>Robot Check</title>'))
+      .mockResolvedValueOnce(
+        htmlResponse(`
+          <span id="productTitle">Montezuma's Black Forest, Dark Chocolate</span>
+          <span class="a-price"><span class="a-offscreen">£3.00</span></span>
+        `)
+      );
+
+    await expect(
+      fetchProductMetadata(
+        'https://www.amazon.co.uk/dp/B085Y25JJ7?ref=tracking',
+        'wishlist.example',
+        { fetchPage }
+      )
+    ).resolves.toEqual({
+      productUrl: 'https://www.amazon.co.uk/dp/B085Y25JJ7',
+      title: "Montezuma's Black Forest",
+      price: '3.00',
+      aiAssisted: false
+    });
   });
 
   it('reads only the bounded start of a large page', async () => {
@@ -314,7 +559,8 @@ describe('fetchProductMetadata', () => {
       'ordinary product page'
     ],
     [() => Promise.resolve(htmlResponse('<p>No product metadata here</p>')), 'name or price'],
-    [() => Promise.resolve(new Response('Forbidden', { status: 403 })), 'wouldn’t share']
+    [() => Promise.resolve(new Response('Forbidden', { status: 403 })), 'wouldn’t share'],
+    [() => Promise.resolve(htmlResponse('<title>Access Denied</title>')), 'verification page']
   ])('returns a useful error when the page cannot provide details', async (fetchPage, message) => {
     await expect(
       fetchProductMetadata('https://shop.example/product', 'wishlist.example', { fetchPage })

@@ -1293,9 +1293,8 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .product-fetch-row .button-quiet {
+  .product-fetch-button {
     width: 100%;
-    min-height: 2.75rem;
   }
 
   .add-form {

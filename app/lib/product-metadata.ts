@@ -154,19 +154,220 @@ function cleanText(value: string): string {
   return decodeHtmlEntities(value).replace(/\s+/g, ' ').trim();
 }
 
-function collectMetaValues(html: string): Map<string, string> {
-  const values = new Map<string, string>();
+type PageEvidence = {
+  meta: Map<string, string>;
+  values: Map<string, string[]>;
+  challengeDetected: boolean;
+};
 
-  for (const match of html.matchAll(/<meta\b[^>]*>/gi)) {
-    const attributes = parseAttributes(match[0]);
-    const key = attributes.get('property') ?? attributes.get('name') ?? attributes.get('itemprop');
-    const content = attributes.get('content');
-    if (key && content && !values.has(key.toLowerCase())) {
-      values.set(key.toLowerCase(), cleanText(content));
+type PriceCandidate = {
+  price: string;
+  currency: string;
+};
+
+function addEvidence(evidence: PageEvidence, key: string, rawValue: string): void {
+  const value = cleanText(rawValue);
+  if (!value) return;
+
+  const values = evidence.values.get(key) ?? [];
+  if (!values.includes(value)) values.push(value);
+  evidence.values.set(key, values);
+}
+
+function firstEvidence(evidence: PageEvidence, keys: string[]): string {
+  for (const key of keys) {
+    const value = evidence.values.get(key)?.[0];
+    if (value) return value;
+  }
+  return '';
+}
+
+function textCaptureHandler(
+  evidence: PageEvidence,
+  keyForElement: string | (() => string)
+): HTMLRewriterElementContentHandlers {
+  const activeCaptures: Array<{ chunks: string[]; key: string }> = [];
+
+  return {
+    element(element) {
+      const capture = {
+        chunks: [] as string[],
+        key: typeof keyForElement === 'string' ? keyForElement : keyForElement()
+      };
+      activeCaptures.push(capture);
+      element.onEndTag(() => {
+        const index = activeCaptures.indexOf(capture);
+        if (index >= 0) activeCaptures.splice(index, 1);
+        addEvidence(evidence, capture.key, capture.chunks.join(' '));
+      });
+    },
+    text(text) {
+      for (const capture of activeCaptures) capture.chunks.push(text.text);
     }
+  };
+}
+
+const TEXT_EVIDENCE_SELECTORS = [
+  ['document-title', 'title'],
+  ['title-product', '#productTitle'],
+  ['title-amazon-legacy', '#btAsinTitle'],
+  ['title-amazon-heading', 'h1.a-size-large'],
+  ['title-item-name', '#item_name'],
+  ['title-product-name', '#product-name'],
+  ['title-product-name', '#product_name'],
+  ['title-product-name', '#productName'],
+  ['price-to-pay', '.priceToPay'],
+  ['price-to-pay', '.apex-pricetopay-value'],
+  ['price-amazon-offscreen', '.a-price .a-offscreen'],
+  ['price-visible', '.product-price'],
+  ['price-visible', '.product_price'],
+  ['price-visible', '.price-amount']
+] as const;
+
+async function extractPageEvidence(html: string): Promise<PageEvidence> {
+  const evidence: PageEvidence = {
+    meta: new Map(),
+    values: new Map(),
+    challengeDetected: false
+  };
+  let productMicrodataDepth = 0;
+
+  let rewriter = new HTMLRewriter();
+  for (const [key, selector] of TEXT_EVIDENCE_SELECTORS) {
+    rewriter = rewriter.on(selector, textCaptureHandler(evidence, key));
   }
 
-  return values;
+  rewriter = rewriter
+    .on('[itemtype*="Product"]', {
+      element(element) {
+        productMicrodataDepth += 1;
+        element.onEndTag(() => {
+          productMicrodataDepth -= 1;
+        });
+      }
+    })
+    .on(
+      '[itemprop="name"]',
+      textCaptureHandler(evidence, () =>
+        productMicrodataDepth > 0 ? 'product-microdata-name-text' : 'microdata-name-text'
+      )
+    )
+    .on(
+      '[itemprop="price"]',
+      textCaptureHandler(evidence, () =>
+        productMicrodataDepth > 0 ? 'product-microdata-price-text' : 'microdata-price-text'
+      )
+    )
+    .on('meta', {
+      element(element) {
+        const key =
+          element.getAttribute('property') ??
+          element.getAttribute('name') ??
+          element.getAttribute('itemprop');
+        const content = element.getAttribute('content');
+        if (key && content && !evidence.meta.has(key.toLowerCase())) {
+          evidence.meta.set(key.toLowerCase(), cleanText(content));
+        }
+      }
+    })
+    .on('[itemprop]', {
+      element(element) {
+        const itemProperties = (element.getAttribute('itemprop') ?? '').toLowerCase().split(/\s+/);
+        const value = element.getAttribute('content') ?? element.getAttribute('value') ?? '';
+
+        if (itemProperties.includes('name')) addEvidence(evidence, 'microdata-name', value);
+        if (itemProperties.includes('price')) addEvidence(evidence, 'microdata-price', value);
+        if (itemProperties.includes('pricecurrency')) {
+          addEvidence(evidence, 'microdata-currency', value);
+        }
+        if (productMicrodataDepth > 0) {
+          if (itemProperties.includes('name')) {
+            addEvidence(evidence, 'product-microdata-name', value);
+          }
+          if (itemProperties.includes('price')) {
+            addEvidence(evidence, 'product-microdata-price', value);
+          }
+          if (itemProperties.includes('pricecurrency')) {
+            addEvidence(evidence, 'product-microdata-currency', value);
+          }
+        }
+      }
+    })
+    .on('[data-asin-price]', {
+      element(element) {
+        addEvidence(evidence, 'amazon-data-price', element.getAttribute('data-asin-price') ?? '');
+        addEvidence(
+          evidence,
+          'amazon-data-currency',
+          element.getAttribute('data-asin-currency-code') ?? ''
+        );
+      }
+    })
+    .on('[data-asin-currency-code]', {
+      element(element) {
+        addEvidence(
+          evidence,
+          'amazon-data-currency',
+          element.getAttribute('data-asin-currency-code') ?? ''
+        );
+      }
+    })
+    .on('#attach-base-product-price', {
+      element(element) {
+        addEvidence(evidence, 'amazon-attach-base-price', element.getAttribute('value') ?? '');
+      }
+    })
+    .on('input[name]', {
+      element(element) {
+        const name = element.getAttribute('name')?.toLowerCase() ?? '';
+        const match = /^items\[\d+\.base\]\[customervisibleprice\]\[(\w+)\]$/.exec(name);
+        if (!match?.[1]) return;
+
+        const field = match[1];
+        const value = element.getAttribute('value') ?? '';
+        if (field === 'displaystring') addEvidence(evidence, 'amazon-base-display', value);
+        if (field === 'amount') addEvidence(evidence, 'amazon-base-amount', value);
+        if (field === 'currencycode') addEvidence(evidence, 'amazon-base-currency', value);
+      }
+    })
+    .on('#captchacharacters', {
+      element() {
+        evidence.challengeDetected = true;
+      }
+    })
+    .on('form[action]', {
+      element(element) {
+        if ((element.getAttribute('action') ?? '').toLowerCase().includes('validatecaptcha')) {
+          evidence.challengeDetected = true;
+        }
+      }
+    })
+    .on('img[src]', {
+      element(element) {
+        if ((element.getAttribute('src') ?? '').toLowerCase().includes('captcha')) {
+          evidence.challengeDetected = true;
+        }
+      }
+    });
+
+  await rewriter
+    .transform(
+      new Response(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      })
+    )
+    .arrayBuffer();
+
+  const documentTitle = firstEvidence(evidence, ['document-title']);
+  if (
+    /\b(?:robot check|captcha|verify (?:that )?you are human|security check|access denied|request blocked)\b/i.test(
+      documentTitle
+    )
+  ) {
+    evidence.challengeDetected = true;
+  }
+
+  return evidence;
 }
 
 function firstMetaValue(values: Map<string, string>, keys: string[]): string {
@@ -195,67 +396,116 @@ function valueAsString(value: unknown): string {
 }
 
 type JsonLdProduct = {
-  title: string;
-  price: string;
-  currency: string;
+  titles: string[];
+  breadcrumbTitles: string[];
+  prices: PriceCandidate[];
 };
 
-function productFromJsonLd(value: unknown, depth = 0): JsonLdProduct | null {
-  if (depth > 8) return null;
-
-  if (Array.isArray(value)) {
-    for (const entry of value) {
-      const product = productFromJsonLd(entry, depth + 1);
-      if (product) return product;
-    }
-    return null;
-  }
-
-  if (!isRecord(value)) return null;
-
-  const type: unknown = value['@type'];
-  const types: unknown[] = Array.isArray(type) ? type : [type];
-  const isProduct = types.some(
-    (entry) => typeof entry === 'string' && entry.toLowerCase() === 'product'
-  );
-
-  if (isProduct) {
-    const rawOffers: unknown = value.offers;
-    const offersValue: unknown = Array.isArray(rawOffers) ? (rawOffers as unknown[])[0] : rawOffers;
-    const offers = isRecord(offersValue) ? offersValue : null;
-    const priceSpecification =
-      offers && isRecord(offers.priceSpecification) ? offers.priceSpecification : null;
-
-    return {
-      title: valueAsString(value.name),
-      price: valueAsString(offers?.price) || valueAsString(priceSpecification?.price),
-      currency:
-        valueAsString(offers?.priceCurrency) || valueAsString(priceSpecification?.priceCurrency)
-    };
-  }
-
-  for (const entry of Object.values(value)) {
-    const product = productFromJsonLd(entry, depth + 1);
-    if (product) return product;
-  }
-
-  return null;
+function addUniqueValue(values: string[], rawValue: unknown): void {
+  const value = cleanText(valueAsString(rawValue));
+  if (value && !values.includes(value)) values.push(value);
 }
 
-function extractJsonLdProduct(html: string): JsonLdProduct | null {
+function schemaTypes(value: Record<string, unknown>): string[] {
+  const rawType = value['@type'];
+  return (Array.isArray(rawType) ? rawType : [rawType])
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => entry.toLowerCase());
+}
+
+function addPriceCandidate(
+  prices: PriceCandidate[],
+  rawPrice: unknown,
+  rawCurrency: unknown
+): void {
+  const price = valueAsString(rawPrice);
+  if (!price) return;
+
+  const candidate = { price, currency: valueAsString(rawCurrency) };
+  if (
+    !prices.some(
+      (existing) => existing.price === candidate.price && existing.currency === candidate.currency
+    )
+  ) {
+    prices.push(candidate);
+  }
+}
+
+function collectOfferPrices(
+  rawOffers: unknown,
+  prices: PriceCandidate[],
+  fallbackCurrency: string
+): void {
+  const offers = Array.isArray(rawOffers) ? rawOffers : [rawOffers];
+
+  for (const rawOffer of offers) {
+    if (!isRecord(rawOffer)) continue;
+
+    const currency = valueAsString(rawOffer.priceCurrency) || fallbackCurrency;
+    addPriceCandidate(prices, rawOffer.price, currency);
+
+    const specifications = Array.isArray(rawOffer.priceSpecification)
+      ? rawOffer.priceSpecification
+      : [rawOffer.priceSpecification];
+    for (const specification of specifications) {
+      if (!isRecord(specification)) continue;
+      addPriceCandidate(
+        prices,
+        specification.price,
+        valueAsString(specification.priceCurrency) || currency
+      );
+    }
+
+    addPriceCandidate(prices, rawOffer.lowPrice, currency);
+    addPriceCandidate(prices, rawOffer.highPrice, currency);
+  }
+}
+
+function collectJsonLdEvidence(value: unknown, evidence: JsonLdProduct, depth = 0): void {
+  if (depth > 8) return;
+
+  if (Array.isArray(value)) {
+    for (const entry of value) collectJsonLdEvidence(entry, evidence, depth + 1);
+    return;
+  }
+
+  if (!isRecord(value)) return;
+
+  const types = schemaTypes(value);
+  if (types.includes('product')) {
+    addUniqueValue(evidence.titles, value.name);
+    const currency = valueAsString(value.priceCurrency);
+    addPriceCandidate(evidence.prices, value.price, currency);
+    collectOfferPrices(value.offers, evidence.prices, currency);
+  }
+
+  if (types.includes('breadcrumblist') && Array.isArray(value.itemListElement)) {
+    const breadcrumbItems: unknown[] = value.itemListElement;
+    const lastItem: unknown = breadcrumbItems.at(-1);
+    if (isRecord(lastItem)) {
+      const nestedItem = isRecord(lastItem.item) ? lastItem.item : null;
+      addUniqueValue(evidence.breadcrumbTitles, lastItem.name || nestedItem?.name);
+    }
+  }
+
+  for (const entry of Object.values(value)) collectJsonLdEvidence(entry, evidence, depth + 1);
+}
+
+function extractJsonLdProduct(html: string): JsonLdProduct {
+  const evidence: JsonLdProduct = { titles: [], breadcrumbTitles: [], prices: [] };
+
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     const attributes = parseAttributes(match[1] ?? '');
     if (attributes.get('type')?.toLowerCase() !== 'application/ld+json') continue;
 
     try {
-      const product = productFromJsonLd(JSON.parse(match[2] ?? ''));
-      if (product) return product;
+      collectJsonLdEvidence(JSON.parse(match[2] ?? ''), evidence);
     } catch {
       // Invalid structured data should not prevent the ordinary meta tags from being used.
     }
   }
 
-  return null;
+  return evidence;
 }
 
 function normalisePrice(rawPrice: string, rawCurrency: string): string {
@@ -265,7 +515,11 @@ function normalisePrice(rawPrice: string, rawCurrency: string): string {
   if (currency && currency !== 'GBP') return '';
   if (!currency && /[$€¥]/.test(price)) return '';
 
-  const match = /(?:£|GBP\s*)?(\d[\d,\s]*(?:\.\d{1,2})?)/i.exec(price);
+  const markedCurrentPrice =
+    /(?:\bnow\b|\bcurrent price\b|\bour price\b|\bsale price\b)\s*:?\s*(?:£|GBP\s*)?(\d[\d,\s]*(?:\.\d{1,2})?)/i.exec(
+      price
+    );
+  const match = markedCurrentPrice ?? /(?:£|GBP\s*)?(\d[\d,\s]*(?:\.\d{1,2})?)/i.exec(price);
   if (!match?.[1]) return '';
 
   const amount = Number(match[1].replace(/[\s,]/g, ''));
@@ -275,41 +529,158 @@ function normalisePrice(rawPrice: string, rawCurrency: string): string {
 
 type ExtractedMetadata = ProductMetadata & {
   titleIsReliable: boolean;
+  challengeDetected: boolean;
 };
 
-function extractMetadata(html: string, productUrl: string): ExtractedMetadata {
-  const meta = collectMetaValues(html);
+type RetailerAdapter = {
+  matches: (url: URL) => boolean;
+  cleanTitle: (title: string) => string;
+  titleCandidates: (evidence: PageEvidence) => string[];
+  priceCandidates: (evidence: PageEvidence) => PriceCandidate[];
+  retryUrl: (url: URL) => URL;
+};
+
+const AMAZON_UK_ADAPTER: RetailerAdapter = {
+  matches(url) {
+    const hostname = url.hostname.toLowerCase();
+    return hostname === 'amazon.co.uk' || hostname.endsWith('.amazon.co.uk');
+  },
+  cleanTitle(rawTitle) {
+    const title = cleanText(rawTitle).replace(/\s*:\s*Amazon\.co\.uk(?::.*)?$/i, '');
+    const firstClause = title.split(/\s*,\s*/, 1)[0] ?? '';
+    return firstClause.length >= 12 ? firstClause : title;
+  },
+  titleCandidates(evidence) {
+    return [
+      firstEvidence(evidence, ['title-amazon-legacy']),
+      firstEvidence(evidence, ['title-amazon-heading'])
+    ];
+  },
+  priceCandidates(evidence) {
+    const currency = firstEvidence(evidence, ['amazon-base-currency', 'amazon-data-currency']);
+    return [
+      { price: firstEvidence(evidence, ['amazon-base-display']), currency },
+      { price: firstEvidence(evidence, ['amazon-base-amount']), currency },
+      { price: firstEvidence(evidence, ['amazon-attach-base-price']), currency },
+      { price: firstEvidence(evidence, ['amazon-data-price']), currency },
+      { price: firstEvidence(evidence, ['price-to-pay']), currency },
+      { price: firstEvidence(evidence, ['price-amazon-offscreen']), currency }
+    ];
+  },
+  retryUrl(url) {
+    const asin = /\/(?:dp|gp\/product)\/([a-z0-9]{10})(?:[/?]|$)/i.exec(url.pathname)?.[1];
+    return asin ? new URL(`/dp/${asin.toUpperCase()}`, url.origin) : url;
+  }
+};
+
+const RETAILER_ADAPTERS = [AMAZON_UK_ADAPTER] as const;
+
+function retailerAdapter(productUrl: string | URL): RetailerAdapter | null {
+  const url = typeof productUrl === 'string' ? new URL(productUrl) : productUrl;
+  return RETAILER_ADAPTERS.find((adapter) => adapter.matches(url)) ?? null;
+}
+
+function firstValidPrice(candidates: PriceCandidate[]): string {
+  for (const candidate of candidates) {
+    const price = normalisePrice(candidate.price, candidate.currency);
+    if (price) return price;
+  }
+  return '';
+}
+
+function cleanFallbackTitle(rawTitle: string, evidence: PageEvidence, productUrl: string): string {
+  const title = cleanText(rawTitle);
+  const adapter = retailerAdapter(productUrl);
+  if (adapter) return adapter.cleanTitle(title);
+
+  const siteName = evidence.meta.get('og:site_name') ?? '';
+  if (!siteName) return title;
+
+  const comparableSiteName = cleanText(siteName).toLocaleLowerCase('en-GB');
+  for (const separator of [' | ', ' – ', ' — ', ' : ']) {
+    const parts = title.split(separator);
+    if (parts.length < 2) continue;
+    const siteIndex = parts.findIndex(
+      (part, index) =>
+        index > 0 && cleanText(part).toLocaleLowerCase('en-GB').includes(comparableSiteName)
+    );
+    if (siteIndex > 0) return parts.slice(0, siteIndex).join(separator);
+  }
+
+  return title;
+}
+
+async function extractMetadata(html: string, productUrl: string): Promise<ExtractedMetadata> {
+  const evidence = await extractPageEvidence(html);
   const jsonLd = extractJsonLdProduct(html);
-  const titleElement = /<title\b[^>]*>([\s\S]*?)<\/title\s*>/i.exec(html)?.[1] ?? '';
-  const structuredTitle =
-    firstMetaValue(meta, ['og:title', 'twitter:title', 'name']) || jsonLd?.title || '';
-  const title = cleanText(structuredTitle || titleElement).slice(0, 160);
-  const rawPrice =
-    firstMetaValue(meta, [
-      'product:price:amount',
-      'og:price:amount',
-      'product.price.amount',
-      'price'
-    ]) ||
-    labelledTwitterPrice(meta) ||
-    jsonLd?.price ||
+  const metaTitle = firstMetaValue(evidence.meta, ['og:title', 'twitter:title', 'name', 'title']);
+  const adapter = retailerAdapter(productUrl);
+  const adapterTitle = adapter?.titleCandidates(evidence).find(Boolean) ?? '';
+  const elementTitle = firstEvidence(evidence, [
+    'title-product',
+    'title-product-name',
+    'title-item-name',
+    'product-microdata-name',
+    'product-microdata-name-text',
+    'microdata-name',
+    'microdata-name-text'
+  ]);
+  const reliableTitle =
+    jsonLd.titles[0] ||
+    metaTitle ||
+    adapterTitle ||
+    elementTitle ||
+    jsonLd.breadcrumbTitles[0] ||
     '';
-  const currency =
-    firstMetaValue(meta, [
-      'product:price:currency',
-      'og:price:currency',
-      'product.price.currency',
-      'pricecurrency'
-    ]) ||
-    jsonLd?.currency ||
-    '';
+  const documentTitle = firstEvidence(evidence, ['document-title']);
+  const rawTitle = reliableTitle || documentTitle;
+  const title = (
+    adapter ? adapter.cleanTitle(rawTitle) : cleanFallbackTitle(rawTitle, evidence, productUrl)
+  ).slice(0, 160);
+
+  const metaCurrency = firstMetaValue(evidence.meta, [
+    'product:price:currency',
+    'og:price:currency',
+    'product.price.currency',
+    'pricecurrency'
+  ]);
+  const standardCandidates: PriceCandidate[] = [
+    {
+      price: firstMetaValue(evidence.meta, [
+        'product:price:amount',
+        'og:price:amount',
+        'product.price.amount',
+        'price'
+      ]),
+      currency: metaCurrency
+    },
+    { price: labelledTwitterPrice(evidence.meta), currency: metaCurrency },
+    ...jsonLd.prices,
+    {
+      price: firstEvidence(evidence, ['product-microdata-price', 'product-microdata-price-text']),
+      currency: firstEvidence(evidence, ['product-microdata-currency']) || metaCurrency
+    },
+    {
+      price: firstEvidence(evidence, ['microdata-price', 'microdata-price-text']),
+      currency: firstEvidence(evidence, ['microdata-currency']) || metaCurrency
+    },
+    {
+      price: firstEvidence(evidence, ['price-visible']),
+      currency: metaCurrency
+    }
+  ];
+  const price = firstValidPrice([
+    ...(adapter?.priceCandidates(evidence) ?? []),
+    ...standardCandidates
+  ]);
 
   return {
     productUrl,
     title,
-    price: normalisePrice(rawPrice, currency),
+    price,
     aiAssisted: false,
-    titleIsReliable: Boolean(structuredTitle)
+    titleIsReliable: Boolean(reliableTitle),
+    challengeDetected: evidence.challengeDetected
   };
 }
 
@@ -668,9 +1039,11 @@ export async function fetchProductMetadata(
 
   let target = new URL(normalised);
   const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+  let redirectCount = 0;
+  let challengeRetries = 0;
 
   try {
-    for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {
+    while (true) {
       assertPublicTarget(target, blockedHostname);
 
       const response = await fetchPage(target.toString(), {
@@ -687,11 +1060,12 @@ export async function fetchProductMetadata(
 
       if ([301, 302, 303, 307, 308].includes(response.status)) {
         const location = response.headers.get('location');
-        if (!location || redirectCount === MAX_REDIRECTS) {
+        if (!location || redirectCount >= MAX_REDIRECTS) {
           await response.body?.cancel();
           throw new ProductMetadataError('That shop sent us through too many redirects.');
         }
         await response.body?.cancel();
+        redirectCount += 1;
         target = new URL(location, target);
         continue;
       }
@@ -708,7 +1082,17 @@ export async function fetchProductMetadata(
       }
 
       const html = await readBoundedHtml(response);
-      let metadata = extractMetadata(html, target.toString());
+      let metadata = await extractMetadata(html, target.toString());
+      if (metadata.challengeDetected) {
+        if (challengeRetries === 0) {
+          challengeRetries += 1;
+          target = retailerAdapter(target)?.retryUrl(target) ?? target;
+          continue;
+        }
+        throw new ProductMetadataError(
+          'That shop showed a verification page instead of the product. You can still add the details by hand.'
+        );
+      }
       if (options.extractWithAi) {
         metadata = await enhanceMetadataWithAi(html, metadata, options.extractWithAi);
       }
@@ -729,6 +1113,4 @@ export async function fetchProductMetadata(
     if (error instanceof ProductMetadataError) throw error;
     throw new ProductMetadataError('We couldn’t fetch that page. Check the link and try again.');
   }
-
-  throw new ProductMetadataError('That shop sent us through too many redirects.');
 }

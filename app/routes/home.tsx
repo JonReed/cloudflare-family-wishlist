@@ -474,7 +474,7 @@ function AddWishPanel({
       <button
         name="intent"
         value="fetch-product"
-        className="button-quiet"
+        className="button-secondary product-fetch-button"
         formNoValidate
         data-product-fetch
       >
