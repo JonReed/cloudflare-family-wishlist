@@ -50,7 +50,9 @@ mark the gift bought or leave it for someone else. Choices made by another perso
 rather than actionable.
 
 On the recipient's own list, claim data must not merely be hidden with CSS: it must be absent from
-the server response. The small “Psst…” note explains the result without teaching the implementation.
+the server response. Do not spend permanent page space explaining this invariant. Keep the warm,
+plain-language reassurance in project guidance instead: “If someone decides to get you something
+from this list, we’ll keep it secret so the surprise isn’t spoiled.”
 
 ### Finding the right person
 

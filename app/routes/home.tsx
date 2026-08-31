@@ -425,9 +425,6 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
 
       <header className="wishlist-heading">
         <div>
-          <p className="section-kicker">
-            {wishlist.isOwn ? 'A few things you’d love' : 'A few things they’d love'}
-          </p>
           <h2>{possessiveName} wishlist</h2>
         </div>
         <p className="wish-count">
@@ -435,17 +432,12 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
         </p>
       </header>
 
-      {wishlist.isOwn ? (
-        <p className="surprise-note">
-          <span aria-hidden="true">Psst…</span> if someone decides to get you something from this
-          list, we’ll keep it secret so the surprise isn’t spoiled.
-        </p>
-      ) : (
+      {!wishlist.isOwn ? (
         <p className="giver-note">
           Thinking of buying something? Let the family know on the list.{' '}
           {wishlist.owner.displayName} won’t see a thing.
         </p>
-      )}
+      ) : null}
 
       {wishlist.items.length ? (
         <ul className="wish-list">

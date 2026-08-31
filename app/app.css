@@ -491,25 +491,6 @@
   text-transform: uppercase;
 }
 
-.surprise-note {
-  width: fit-content;
-  max-width: 35rem;
-  margin: 2rem 0 0 1rem;
-  border: 1px solid rgb(146 112 55 / 0.2);
-  background: #f7e7ad;
-  box-shadow: 3px 4px 0 rgb(108 82 42 / 0.08);
-  padding: 0.85rem 1.15rem;
-  color: #65532e;
-  font-family: var(--font-display);
-  font-size: 1.02rem;
-  line-height: 1.5;
-  transform: rotate(-0.6deg);
-}
-
-.surprise-note span {
-  font-weight: 700;
-}
-
 .giver-note {
   max-width: 42rem;
   margin: 1.8rem 0 0;
@@ -1315,10 +1296,6 @@ button:disabled {
   .wish-count {
     margin-top: 1rem;
     font-size: 0.65rem;
-  }
-
-  .surprise-note {
-    margin-left: 0;
   }
 
   .wish-row {
