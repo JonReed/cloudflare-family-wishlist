@@ -3,7 +3,6 @@ import { data, Form, useNavigation } from 'react-router';
 import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
-import { createBookmarkletHref } from '../lib/bookmarklet';
 import { ensureMemberForEmail, MemberInputError, updateMemberDisplayName } from '../lib/db/members';
 
 import type { Route } from './+types/profile';
@@ -18,12 +17,12 @@ export function meta() {
   ];
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
   const member = await ensureMemberForEmail(env.DB, identity.email);
 
-  return { member, bookmarkletHref: createBookmarkletHref(request.url) };
+  return { member };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -44,21 +43,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-function BookmarkletLink({ href }: { href: string }) {
-  return (
-    <a
-      href="#bookmarklet-help"
-      data-bookmarklet-href={href}
-      className="button-secondary"
-      title="Drag this to your bookmarks bar"
-    >
-      Add to Family Wishlist
-    </a>
-  );
-}
-
 export default function Profile({ loaderData, actionData }: Route.ComponentProps) {
-  const { member, bookmarkletHref } = loaderData;
+  const { member } = loaderData;
   const [emailLocalPart, emailDomain] = member.email.split('@', 2);
   const navigation = useNavigation();
   const isSaving = navigation.state === 'submitting';
@@ -138,29 +124,11 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                 Cloudflare Access manages this address. Your display name only changes what your
                 family sees here.
               </p>
+              <a href="/bookmarklet" className="button-quiet mt-5">
+                Set up the browser button
+              </a>
             </aside>
           </div>
-
-          <section
-            id="bookmarklet-help"
-            className="profile-identity mt-12 max-w-2xl"
-            aria-labelledby="bookmarklet-title"
-          >
-            <p className="profile-identity-label">Save things while browsing</p>
-            <h2 id="bookmarklet-title" className="mt-2 text-2xl font-bold">
-              Add the wishlist button to your browser
-            </h2>
-            <p className="mt-3 leading-7">
-              Drag this button to your bookmarks bar. When you find a present online, click it to
-              open Family Wishlist and choose whose lists to add it to.
-            </p>
-            <div className="mt-5">
-              <BookmarkletLink href={bookmarkletHref} />
-            </div>
-            <p className="mt-4">
-              If your bookmarks bar is hidden, show it from your browser’s View menu first.
-            </p>
-          </section>
         </section>
       </main>
 

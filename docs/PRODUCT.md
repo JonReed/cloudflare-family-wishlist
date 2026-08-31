@@ -57,10 +57,12 @@ model terms such as “one list per member”.
 
 ### Save something while browsing
 
-The profile page provides a deployment-specific “Add to Family Wishlist” bookmarklet. A member drags
-it to their browser's bookmarks bar, then clicks it on a product page. Family Wishlist opens in a new
-tab with the product link and any details the shop makes available. The member can edit the draft and
-choose one or more family lists before anything is saved. Their own list is selected by default.
+The dedicated browser-button setup page provides a deployment-specific “Add to Family Wishlist”
+bookmarklet, with a visual explanation of the unfamiliar drag-to-bookmarks interaction. A member
+drags it to their browser's bookmarks bar, then clicks it on a product page. Family Wishlist opens in
+a new tab with the product link and any details the shop makes available. The member can edit the
+draft and choose one or more family lists before anything is saved. Their own list is selected by
+default.
 
 Adding to several lists creates an independent wish on each list. The operation is all-or-nothing: a
 stale or missing list must not leave only some of the selected lists updated.

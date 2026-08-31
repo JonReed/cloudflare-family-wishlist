@@ -82,6 +82,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/context.ts`                              | Typed identity and binding handoff to loaders/actions                              |
 | `app/routes/home.tsx`                             | HTTP-level loading, form intent dispatch and page composition                      |
 | `app/routes/add.tsx`                              | Bookmarklet landing page, multi-list chooser and save action                       |
+| `app/routes/bookmarklet.tsx`                      | Browser-button installation and visual drag guidance                               |
 | `app/routes/product-details.ts`                   | Same-origin progressive-enhancement endpoint for product-link metadata             |
 | `app/lib/bookmarklet.ts`, `public/bookmarklet.js` | Deployment-specific bookmarklet generation and safe browser installation           |
 | `app/lib/product-metadata.ts`                     | Bounded public-page fetching, redirect policy and metadata extraction              |
@@ -157,10 +158,11 @@ form action remains the fallback when JavaScript is unavailable, and creating a 
 the script. The server remains authoritative. `unsafe-inline` and `unsafe-eval` are not acceptable
 shortcuts.
 
-The profile page also exposes a bookmarklet. React does not server-render a `javascript:` link; a
-small nonce-authorised, self-hosted script copies a server-generated, deployment-specific value from
-a data attribute into the draggable link. The bookmarklet carries only the current page URL to
-`/add`; authentication, metadata lookup, validation and saving all remain inside the protected Worker.
+The browser-button setup page exposes the bookmarklet and profile links to that page. React does not
+server-render a `javascript:` link; a small nonce-authorised, self-hosted script copies a
+server-generated, deployment-specific value from a data attribute into the draggable link. The
+bookmarklet carries only the current page URL to `/add`; authentication, metadata lookup, validation
+and saving all remain inside the protected Worker.
 
 Multi-list adds use one parameter-bound `INSERT … SELECT` statement. A completeness check inside the
 statement suppresses every insert when any selected wishlist no longer exists, avoiding partial saves.

@@ -26,6 +26,11 @@ query parameter so it remains linkable and survives form actions.
 The product model remains deliberately small: one member, one list. Birthdays, Christmas and other
 occasions do not create separate list types. A wish can stay useful throughout the year.
 
+The browser bookmarklet is an exception to the otherwise familiar form interactions. Give it a
+dedicated setup page, call it the “browser button” in family-facing copy, and visually demonstrate the
+drag from the real button towards a labelled bookmarks bar. Do not assume that a conventional button
+label alone explains how bookmarklet installation works.
+
 Future household administration should be a separate, infrequently visited area. Member admission,
 deployment setup and Access policy are operational concerns and should not make the everyday list
 feel like an admin console.

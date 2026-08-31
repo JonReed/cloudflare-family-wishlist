@@ -1,0 +1,333 @@
+.bookmarklet-main {
+  padding-block: clamp(1rem, 3vw, 2.5rem) clamp(4rem, 8vw, 7rem);
+}
+
+.bookmarklet-sheet {
+  position: relative;
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  border: 1px solid rgb(80 68 50 / 0.18);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(90deg, rgb(139 104 72 / 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 86% 12%, rgb(187 145 101 / 0.09), transparent 22rem);
+  background-size:
+    14px 100%,
+    auto;
+  box-shadow: 8px 9px 0 rgb(88 69 46 / 0.09);
+  padding: clamp(2rem, 5vw, 4.5rem);
+}
+
+.bookmarklet-sheet::before {
+  position: absolute;
+  top: -1.45rem;
+  left: clamp(2rem, 8vw, 6rem);
+  width: 9rem;
+  height: 2rem;
+  content: '';
+  background-color: var(--tape);
+  background-image: var(--tape-texture);
+  clip-path: var(--tape-edge-a);
+  filter: drop-shadow(0 1px 0 rgb(96 66 35 / 0.13));
+  transform: rotate(-1.5deg);
+}
+
+.bookmarklet-heading {
+  max-width: 48rem;
+}
+
+.bookmarklet-kicker {
+  margin: 0;
+  color: var(--rust);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bookmarklet-heading h1 {
+  max-width: 44rem;
+  margin: 0.45rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 7vw, 5.4rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.94;
+}
+
+.bookmarklet-heading > p:last-child {
+  max-width: 42rem;
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2vw, 1.12rem);
+  line-height: 1.75;
+}
+
+.bookmarklet-steps {
+  display: grid;
+  margin-top: clamp(2.5rem, 5vw, 4.5rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.bookmarklet-step,
+.bookmarklet-finish {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.bookmarklet-step {
+  border-top: 3px solid var(--kraft);
+  background: rgb(187 145 101 / 0.09);
+  padding: 1.35rem;
+}
+
+.bookmarklet-step-number {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1px solid var(--leaf-dark);
+  border-radius: 2px;
+  background: var(--leaf);
+  box-shadow: 2px 2px 0 rgb(29 61 47 / 0.16);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  transform: rotate(-2deg);
+}
+
+.bookmarklet-step h2,
+.bookmarklet-finish h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.bookmarklet-step p,
+.bookmarklet-finish p {
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.bookmarklet-demo {
+  position: relative;
+  overflow: hidden;
+  margin-top: 1.25rem;
+  border: 1px solid rgb(48 51 41 / 0.24);
+  background:
+    radial-gradient(circle at 25% 85%, rgb(135 168 143 / 0.15), transparent 18rem), #eee4d3;
+  box-shadow: inset 0 0 0 6px rgb(255 250 240 / 0.55);
+}
+
+.bookmarklet-browser-example {
+  border-bottom: 1px solid rgb(48 51 41 / 0.2);
+  background: #e0d6c4;
+}
+
+.bookmarklet-browser-toolbar {
+  display: flex;
+  min-height: 3.2rem;
+  align-items: center;
+  gap: 0.45rem;
+  border-bottom: 1px solid rgb(48 51 41 / 0.13);
+  padding: 0.7rem 1rem;
+}
+
+.bookmarklet-browser-toolbar > span {
+  width: 0.68rem;
+  height: 0.68rem;
+  border-radius: 50%;
+  background: var(--kraft);
+}
+
+.bookmarklet-browser-toolbar > span:nth-child(2) {
+  background: var(--mint);
+}
+
+.bookmarklet-browser-toolbar > span:nth-child(3) {
+  background: #d29d86;
+}
+
+.bookmarklet-address {
+  min-width: 0;
+  margin-left: 0.55rem;
+  flex: 1;
+  border: 1px solid rgb(48 51 41 / 0.14);
+  border-radius: 2px;
+  background: rgb(255 250 240 / 0.7);
+  padding: 0.42rem 0.7rem;
+  color: rgb(105 104 88 / 0.72);
+  font-size: 0.72rem;
+}
+
+.bookmarklet-target-bar {
+  display: flex;
+  min-height: 3.6rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 2px dashed rgb(40 80 62 / 0.36);
+  padding: 0.8rem 1.2rem;
+  color: var(--leaf-dark);
+}
+
+.bookmarklet-target-bar span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.bookmarklet-target-bar strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.bookmarklet-drag-stage {
+  position: relative;
+  display: grid;
+  min-height: 21rem;
+  place-items: end center;
+  padding: 3rem 1.5rem 2.4rem;
+}
+
+.bookmarklet-drag-arrow {
+  position: absolute;
+  top: 0.35rem;
+  left: 50%;
+  width: min(28rem, 78%);
+  height: 14.5rem;
+  color: var(--rust);
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 6;
+  transform: translateX(-50%);
+}
+
+.bookmarklet-drag-label {
+  position: absolute;
+  top: 7.9rem;
+  left: calc(50% + 4.4rem);
+  color: var(--rust);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-style: italic;
+  font-weight: 600;
+  transform: rotate(-8deg);
+}
+
+.bookmarklet-button {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  min-height: 3.4rem;
+  cursor: grab;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: 1px solid var(--leaf-dark);
+  border-radius: 2px;
+  background: var(--leaf);
+  box-shadow: 4px 4px 0 rgb(29 61 47 / 0.18);
+  padding: 0.8rem 1.25rem;
+  color: var(--paper);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease;
+}
+
+.bookmarklet-button::before {
+  position: absolute;
+  top: -0.55rem;
+  left: 1rem;
+  width: 4.6rem;
+  height: 1rem;
+  content: '';
+  background-color: var(--tape);
+  background-image: var(--tape-texture);
+  clip-path: var(--tape-edge-b);
+  transform: rotate(-2deg);
+}
+
+.bookmarklet-button:hover {
+  background: var(--leaf-dark);
+  transform: translateY(-2px) rotate(-0.5deg);
+}
+
+.bookmarklet-button:active {
+  cursor: grabbing;
+}
+
+.bookmarklet-button:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 4px;
+}
+
+.bookmarklet-click-help {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.65rem;
+  left: 1rem;
+  margin: 0;
+  color: var(--rust);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.bookmarklet-finish {
+  max-width: 48rem;
+  margin: 2rem auto 0;
+  border-top: 1px solid var(--line);
+  padding-top: 2rem;
+}
+
+@media (max-width: 48rem) {
+  .bookmarklet-sheet {
+    padding: 2.75rem 1.25rem;
+  }
+
+  .bookmarklet-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .bookmarklet-target-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .bookmarklet-drag-stage {
+    min-height: 18.5rem;
+  }
+
+  .bookmarklet-drag-arrow {
+    width: 22rem;
+    max-width: 92%;
+    height: 12.5rem;
+  }
+
+  .bookmarklet-drag-label {
+    top: 7rem;
+    left: 56%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmarklet-button {
+    transition: none;
+  }
+}
