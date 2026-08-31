@@ -1,0 +1,97 @@
+@import 'tailwindcss' source('.');
+
+@theme {
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+
+  --color-canvas: #f6f2e9;
+  --color-paper: #fffdf7;
+  --color-ink: #24312c;
+  --color-ink-muted: #5f6c66;
+  --color-leaf: #315f4d;
+  --color-mint: #86c7a8;
+  --color-peach: #f5d6bf;
+  --color-rust: #985139;
+
+  --shadow-soft: 0 24px 70px -36px rgb(43 58 51 / 0.35);
+}
+
+@layer base {
+  html {
+    background: var(--color-canvas);
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-peach);
+    color: var(--color-ink);
+  }
+}
+
+.page-glow {
+  position: fixed;
+  z-index: 0;
+  border-radius: 9999px;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.page-glow-one {
+  top: -11rem;
+  right: -10rem;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, rgb(134 199 168 / 0.28) 0%, rgb(134 199 168 / 0) 70%);
+}
+
+.page-glow-two {
+  bottom: -18rem;
+  left: -15rem;
+  width: 42rem;
+  height: 42rem;
+  background: radial-gradient(circle, rgb(245 214 191 / 0.5) 0%, rgb(245 214 191 / 0) 70%);
+}
+
+.feature-card {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 30px 80px -40px rgb(43 58 51 / 0.45);
+}
+
+.feature-card-1 {
+  background: #e3efe7;
+}
+
+.feature-card-2 {
+  background: #f7e5d8;
+}
+
+.feature-card-3 {
+  background: #e8e4f1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

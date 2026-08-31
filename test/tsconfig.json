@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "lib": ["DOM", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "types": [
+      "@cloudflare/workers-types/experimental",
+      "@cloudflare/vitest-plugin/types",
+      "@types/node",
+      "vite/client"
+    ]
+  },
+  "include": [
+    "./**/*.ts",
+    "../app/lib/auth/access.ts",
+    "../app/lib/db/members.ts",
+    "../app/lib/product-url.ts"
+  ]
+}
