@@ -51,7 +51,9 @@ email. Missing or invalid production configuration fails closed.
    the request origin before the action validates the request shape, invokes a service mutation and
    redirects. The add form can instead request an editable draft from a product link without creating
    an item.
-6. The Worker adds private caching, CSP and other defensive response headers to every response.
+6. `/add?url=` is the bookmarklet landing route. It loads an editable product draft and all family
+   list choices; its action inserts one independent item per selected list with a guarded D1 statement.
+7. The Worker adds private caching, CSP and other defensive response headers to every response.
 
 Authentication happens before provisioning. There is no application endpoint that accepts an email
 address and creates a member without a verified Access identity.
@@ -73,18 +75,20 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 
 ## Source boundaries
 
-| Layer                                            | Responsibility                                                                     |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `workers/app.ts`                                 | Production request boundary, Access enforcement, response headers and router entry |
-| `app/lib/auth/access.ts`                         | Access JWT verification and tightly constrained local identity                     |
-| `app/lib/context.ts`                             | Typed identity and binding handoff to loaders/actions                              |
-| `app/routes/home.tsx`                            | HTTP-level loading, form intent dispatch and page composition                      |
-| `app/routes/product-details.ts`                  | Same-origin progressive-enhancement endpoint for product-link metadata             |
-| `app/lib/product-metadata.ts`                    | Bounded public-page fetching, redirect policy and metadata extraction              |
-| `app/lib/db/members.ts`                          | Identity normalisation and member/list provisioning                                |
-| `app/lib/db/wishlists.ts`                        | Domain validation, reads, mutations, claim ownership and privacy                   |
-| `migrations/`                                    | Append-only persistent schema history                                              |
-| `app/root.tsx`, `app/app.css`, `app/components/` | Document shell, design system and shared presentation                              |
+| Layer                                             | Responsibility                                                                     |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `workers/app.ts`                                  | Production request boundary, Access enforcement, response headers and router entry |
+| `app/lib/auth/access.ts`                          | Access JWT verification and tightly constrained local identity                     |
+| `app/lib/context.ts`                              | Typed identity and binding handoff to loaders/actions                              |
+| `app/routes/home.tsx`                             | HTTP-level loading, form intent dispatch and page composition                      |
+| `app/routes/add.tsx`                              | Bookmarklet landing page, multi-list chooser and save action                       |
+| `app/routes/product-details.ts`                   | Same-origin progressive-enhancement endpoint for product-link metadata             |
+| `app/lib/bookmarklet.ts`, `public/bookmarklet.js` | Deployment-specific bookmarklet generation and safe browser installation           |
+| `app/lib/product-metadata.ts`                     | Bounded public-page fetching, redirect policy and metadata extraction              |
+| `app/lib/db/members.ts`                           | Identity normalisation and member/list provisioning                                |
+| `app/lib/db/wishlists.ts`                         | Domain validation, reads, mutations, claim ownership and privacy                   |
+| `migrations/`                                     | Append-only persistent schema history                                              |
+| `app/root.tsx`, `app/app.css`, `app/components/`  | Document shell, design system and shared presentation                              |
 
 Keep security and database rules below the component layer. A visual condition is allowed to explain a
 rule to the user, but it must not be the only enforcement of that rule.
@@ -153,22 +157,37 @@ form action remains the fallback when JavaScript is unavailable, and creating a 
 the script. The server remains authoritative. `unsafe-inline` and `unsafe-eval` are not acceptable
 shortcuts.
 
+The profile page also exposes a bookmarklet. React does not server-render a `javascript:` link; a
+small nonce-authorised, self-hosted script copies a server-generated, deployment-specific value from
+a data attribute into the draggable link. The bookmarklet carries only the current page URL to
+`/add`; authentication, metadata lookup, validation and saving all remain inside the protected Worker.
+
+Multi-list adds use one parameter-bound `INSERT … SELECT` statement. A completeness check inside the
+statement suppresses every insert when any selected wishlist no longer exists, avoiding partial saves.
+The wishlist primary key and existing `(wishlist_id, position, created_at)` item index support the
+selection join and per-list position lookup.
+
 ## Product-page extraction
 
 Product import is deliberately staged:
 
 1. Fetch at most 512 KiB from a public HTTP(S) target, with manual redirect validation and an
    eight-second timeout.
-2. Prefer JSON-LD, Open Graph and ordinary product metadata. Reliable structured values are never
-   replaced by AI.
-3. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
+2. Detect verification and CAPTCHA pages before accepting any details or invoking AI. Retry once,
+   using a clean canonical product URL where a retailer adapter can derive one, then leave the form
+   available for manual entry if the product is still blocked.
+3. Run the bounded HTML through one native `HTMLRewriter` evidence pass. Ordered rules prefer a
+   retailer's explicit current/base price, then JSON-LD, Open Graph, schema.org microdata and known
+   visible product fields. Retailer adapters contain narrowly scoped rules such as Amazon UK title
+   cleanup and price selection; standard metadata remains the default for every other site.
+4. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
    navigation, site headers and footers, forms, cookie controls, adverts, recommendations, reviews,
    social controls and repeated text. Headings, price-adjacent lines and main product content are
    prioritised, deduplicated and capped at 10,000 characters.
-4. Ask the configured Workers AI model only for the missing fields. Page text is explicitly treated
+5. Ask the configured Workers AI model only for the missing fields. Page text is explicitly treated
    as untrusted data, not instructions, and model output is accepted only when the returned title or
    price also appears in the reduced source text.
-5. Return an editable draft. AI timeouts, exhausted free allocation, capacity errors and invalid
+6. Return an editable draft. AI timeouts, exhausted free allocation, capacity errors and invalid
    output quietly leave the deterministic result in place.
 
 No Access assertion, cookie, family data or requesting-user identity is sent to the model. The model
@@ -210,7 +229,7 @@ without becoming a new persistence or availability dependency.
   `Origin` header for ordinary HTML form posts;
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
 - product metadata fetches accept only public HTTP(S) pages, validate each redirect, send no user
-  credentials, stop after 8 seconds and inspect at most 512 KiB of HTML;
+  credentials, stop after 8 seconds, inspect at most 512 KiB of HTML and reject verification pages;
 - AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and
   cannot override deterministic metadata or persist data;
 - every user-controlled database value uses a prepared statement with `.bind()`;

@@ -34,6 +34,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <>
       <Outlet />
       <script src="/product-import.js" nonce={loaderData.cspNonce} defer />
+      <script src="/bookmarklet.js" nonce={loaderData.cspNonce} defer />
     </>
   );
 }

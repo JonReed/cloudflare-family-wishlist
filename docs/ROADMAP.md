@@ -48,6 +48,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [ ] Reorder items.
 - [x] Optional notes, price guidance, priority and safe external product links.
 - [x] Look up product details from a pasted link and offer them as editable suggestions.
+- [x] Add products to one or more family lists from a browser bookmarklet.
 - [x] Validate every mutation server-side.
 
 ## Phase 6 — Secret claims

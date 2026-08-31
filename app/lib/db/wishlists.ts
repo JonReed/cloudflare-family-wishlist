@@ -278,6 +278,82 @@ export async function createWishlistItem(
   requireChanged(result, 'We couldn’t find that wishlist. Refresh the page and try again.');
 }
 
+export async function createWishlistItems(
+  db: D1Database,
+  actorMemberId: string,
+  wishlistIds: readonly unknown[],
+  input: ItemInput
+): Promise<void> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+
+  if (wishlistIds.length < 1) {
+    throw new WishlistInputError('Choose at least one wishlist.');
+  }
+
+  if (wishlistIds.length > 50) {
+    throw new WishlistInputError('Choose up to 50 wishlists at a time.');
+  }
+
+  const targetWishlistIds = [
+    ...new Set(wishlistIds.map((wishlistId) => requireUuid(wishlistId, 'The wishlist')))
+  ];
+  const item = normaliseItemInput(input);
+  const selectedValues = targetWishlistIds.map(() => '(?, ?)').join(', ');
+  const selectedBindings = targetWishlistIds.flatMap((wishlistId) => [
+    wishlistId,
+    crypto.randomUUID()
+  ]);
+
+  const result = await db
+    .prepare(
+      `WITH selected_wishlists (wishlist_id, item_id) AS (
+         VALUES ${selectedValues}
+       )
+       INSERT INTO items (
+         id, wishlist_id, title, notes, product_url, price_amount_minor,
+         price_currency, priority, position, created_by_member_id
+       )
+       SELECT
+         selected_wishlists.item_id,
+         wishlists.id,
+         ?, ?, ?, ?, ?, ?,
+         COALESCE((
+           SELECT MAX(existing_items.position) + 1
+           FROM items AS existing_items
+           WHERE existing_items.wishlist_id = wishlists.id
+         ), 0),
+         ?
+       FROM selected_wishlists
+       INNER JOIN wishlists ON wishlists.id = selected_wishlists.wishlist_id
+       WHERE (
+         SELECT COUNT(*)
+         FROM selected_wishlists AS requested_wishlists
+       ) = (
+         SELECT COUNT(*)
+         FROM selected_wishlists AS available_wishlists
+         INNER JOIN wishlists AS existing_wishlists
+           ON existing_wishlists.id = available_wishlists.wishlist_id
+       )`
+    )
+    .bind(
+      ...selectedBindings,
+      item.title,
+      item.notes,
+      item.productUrl,
+      item.priceAmountMinor,
+      item.priceCurrency,
+      item.priority,
+      actorId
+    )
+    .run();
+
+  if (!result.success || result.meta.changes !== targetWishlistIds.length) {
+    throw new WishlistInputError(
+      'We couldn’t find every wishlist. Refresh the page and choose them again.'
+    );
+  }
+}
+
 export async function updateWishlistItem(
   db: D1Database,
   itemId: string,

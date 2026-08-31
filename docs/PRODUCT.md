@@ -55,6 +55,16 @@ Any member can choose any family member's list and add, edit or remove an item. 
 The interface should speak in family language (“wish”, “their list”, “your family”), not expose data
 model terms such as “one list per member”.
 
+### Save something while browsing
+
+The profile page provides a deployment-specific “Add to Family Wishlist” bookmarklet. A member drags
+it to their browser's bookmarks bar, then clicks it on a product page. Family Wishlist opens in a new
+tab with the product link and any details the shop makes available. The member can edit the draft and
+choose one or more family lists before anything is saved. Their own list is selected by default.
+
+Adding to several lists creates an independent wish on each list. The operation is all-or-nothing: a
+stale or missing list must not leave only some of the selected lists updated.
+
 ### Coordinate a gift
 
 On somebody else's list, a member can claim an unclaimed item, release their own claim, or mark their
@@ -88,6 +98,7 @@ Working today:
 - adding, editing and deleting items;
 - filling a new wish's name and GBP price from a public product link, with optional AI help when the
   page does not publish reliable product metadata;
+- adding a product to one or more family lists from a browser bookmarklet;
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased; and
 - server-enforced claim secrecy for the recipient.

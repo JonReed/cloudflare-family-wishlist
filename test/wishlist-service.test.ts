@@ -5,6 +5,7 @@ import { ensureMemberForEmail, type MemberWithWishlist } from '../app/lib/db/mem
 import {
   claimWishlistItem,
   createWishlistItem,
+  createWishlistItems,
   deleteWishlistItem,
   listFamilyWishlists,
   setOwnClaimState,
@@ -113,6 +114,60 @@ describe('wishlist service', () => {
     await deleteWishlistItem(env.DB, itemId);
     view = await listFamilyWishlists(env.DB, member.id);
     expect(view[0]?.items).toEqual([]);
+  });
+
+  it('adds the same wish to several selected family lists', async () => {
+    const alex = await createMember('alex@example.com');
+    const robin = await createMember('robin@example.com');
+
+    await createWishlistItems(
+      env.DB,
+      alex.id,
+      [alex.wishlistId, robin.wishlistId, robin.wishlistId],
+      itemInput({ title: 'Board game', productUrl: 'https://example.com/game' })
+    );
+
+    const view = await listFamilyWishlists(env.DB, alex.id);
+    expect(view).toHaveLength(2);
+    expect(view.map((wishlist) => wishlist.items.map((item) => item.title))).toEqual([
+      ['Board game'],
+      ['Board game']
+    ]);
+    expect(view[0]?.items[0]?.id).not.toBe(view[1]?.items[0]?.id);
+  });
+
+  it('adds nothing when any selected family list no longer exists', async () => {
+    const alex = await createMember('alex@example.com');
+    const robin = await createMember('robin@example.com');
+    const missingWishlistId = crypto.randomUUID();
+
+    await expect(
+      createWishlistItems(
+        env.DB,
+        alex.id,
+        [alex.wishlistId, missingWishlistId, robin.wishlistId],
+        itemInput({ title: 'Shared idea' })
+      )
+    ).rejects.toThrow('find every wishlist');
+
+    const view = await listFamilyWishlists(env.DB, alex.id);
+    expect(view.every((wishlist) => wishlist.items.length === 0)).toBe(true);
+  });
+
+  it('requires at least one list and limits bookmarklet bulk adds', async () => {
+    const member = await createMember('owner@example.com');
+
+    await expect(createWishlistItems(env.DB, member.id, [], itemInput())).rejects.toThrow(
+      'at least one wishlist'
+    );
+    await expect(
+      createWishlistItems(
+        env.DB,
+        member.id,
+        Array.from({ length: 51 }, () => crypto.randomUUID()),
+        itemInput()
+      )
+    ).rejects.toThrow('up to 50 wishlists');
   });
 
   it('shows every family wishlist with the viewer first', async () => {

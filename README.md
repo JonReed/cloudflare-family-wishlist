@@ -5,7 +5,7 @@ A private, self-hosted family wishlist designed to run comfortably on Cloudflare
 Each family member has one wishlist. Everyone in the invited family group can view and edit every list, while claims and purchases are hidden from the owner of the list so surprises stay surprising.
 
 > [!NOTE]
-> The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls and private claims are working; release hardening and item reordering remain.
+> The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls, browser bookmarklet and private claims are working; release hardening and item reordering remain.
 
 ## Why this exists
 
@@ -14,6 +14,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - invitation-only access;
 - one wishlist per family member;
 - shared editing across the family;
+- a browser bookmarklet for adding something to one or more lists while shopping;
 - private claims that the recipient cannot see;
 - no application-managed passwords;
 - no application email service;
