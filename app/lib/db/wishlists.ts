@@ -122,20 +122,22 @@ function requireString(value: FormDataEntryValue | null, label: string): string 
 }
 
 function normaliseItemInput(input: ItemInput): NormalisedItemInput {
-  const title = requireString(input.title, 'A title').trim();
+  const title = requireString(input.title, 'A name for the wish').trim();
   if (title.length < 1 || title.length > 160) {
-    throw new WishlistInputError('The title must be between 1 and 160 characters.');
+    throw new WishlistInputError('Give the wish a name between 1 and 160 characters.');
   }
 
   const notesValue = requireString(input.notes, 'Notes').trim();
   if (notesValue.length > 2000) {
-    throw new WishlistInputError('Notes must be 2,000 characters or fewer.');
+    throw new WishlistInputError('Keep the extra details to 2,000 characters or fewer.');
   }
 
-  const productUrlValue = requireString(input.productUrl, 'The product link').trim();
+  const productUrlValue = requireString(input.productUrl, 'A link').trim();
   const productUrl = normaliseProductUrl(productUrlValue);
   if (productUrlValue && !productUrl) {
-    throw new WishlistInputError('The product link must be a valid HTTP or HTTPS address.');
+    throw new WishlistInputError(
+      'That link doesn’t look right. Use an address beginning with http:// or https://.'
+    );
   }
 
   const priceValue = requireString(input.price, 'The price').trim();
@@ -143,16 +145,16 @@ function normaliseItemInput(input: ItemInput): NormalisedItemInput {
   if (priceValue) {
     const match = /^(0|[1-9]\d{0,6})(?:\.(\d{1,2}))?$/.exec(priceValue);
     if (!match) {
-      throw new WishlistInputError('The price must be a positive amount with up to two decimals.');
+      throw new WishlistInputError('Enter a price in pounds and pence, such as 24.50.');
     }
 
     const [, pounds, pence = ''] = match;
     priceAmountMinor = Number(pounds) * 100 + Number(pence.padEnd(2, '0'));
   }
 
-  const priority = requireString(input.priority, 'Priority');
+  const priority = requireString(input.priority, 'A choice');
   if (!ITEM_PRIORITIES.includes(priority as ItemPriority)) {
-    throw new WishlistInputError('Priority is invalid.');
+    throw new WishlistInputError('Choose how much they’d like it from the options shown.');
   }
 
   return {
@@ -273,7 +275,7 @@ export async function createWishlistItem(
     )
     .run();
 
-  requireChanged(result, 'That wishlist could not be found.');
+  requireChanged(result, 'We couldn’t find that wishlist. Refresh the page and try again.');
 }
 
 export async function updateWishlistItem(
@@ -308,14 +310,14 @@ export async function updateWishlistItem(
     )
     .run();
 
-  requireChanged(result, 'That item could not be found.');
+  requireChanged(result, 'We couldn’t find that wish. It may have been removed.');
 }
 
 export async function deleteWishlistItem(db: D1Database, itemId: string): Promise<void> {
   const targetItemId = requireUuid(itemId, 'The item');
   const result = await db.prepare('DELETE FROM items WHERE id = ?1').bind(targetItemId).run();
 
-  requireChanged(result, 'That item could not be found.');
+  requireChanged(result, 'We couldn’t find that wish. It may have been removed.');
 }
 
 export async function claimWishlistItem(
@@ -339,7 +341,7 @@ export async function claimWishlistItem(
     .bind(actorId, targetItemId)
     .run();
 
-  requireChanged(result, 'This item cannot be claimed. It may be yours or already claimed.');
+  requireChanged(result, 'Someone may already be getting this, or it may be on your own wishlist.');
 }
 
 export async function setOwnClaimState(
@@ -352,7 +354,7 @@ export async function setOwnClaimState(
   const targetItemId = requireUuid(itemId, 'The item');
 
   if (!CLAIM_STATES.includes(state)) {
-    throw new WishlistInputError('Claim state is invalid.');
+    throw new WishlistInputError('We couldn’t update this gift. Refresh the page and try again.');
   }
 
   const result = await db
@@ -364,7 +366,7 @@ export async function setOwnClaimState(
     .bind(state, targetItemId, actorId)
     .run();
 
-  requireChanged(result, 'Only the family member who claimed this item can update it.');
+  requireChanged(result, 'Only the person getting this gift can mark it as bought.');
 }
 
 export async function unclaimWishlistItem(
@@ -379,5 +381,5 @@ export async function unclaimWishlistItem(
     .bind(targetItemId, actorId)
     .run();
 
-  requireChanged(result, 'Only the family member who claimed this item can unclaim it.');
+  requireChanged(result, 'Only the person getting this gift can leave it for someone else.');
 }

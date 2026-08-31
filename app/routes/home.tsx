@@ -25,7 +25,7 @@ export function meta() {
     { title: 'Family Wishlist' },
     {
       name: 'description',
-      content: 'A private place for family wishlists, without spoiling the surprise.'
+      content: 'Share wishlists with your family without spoiling the surprise.'
     }
   ];
 }
@@ -45,7 +45,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 function formString(formData: FormData, name: string): string {
   const value = formData.get(name);
   if (typeof value !== 'string') {
-    throw new WishlistInputError(`${name} is required.`);
+    throw new WishlistInputError('This page is out of date. Refresh it and try again.');
   }
 
   return value;
@@ -91,7 +91,9 @@ export async function action({ request, context }: Route.ActionArgs) {
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         break;
       default:
-        throw new WishlistInputError('That action is not supported.');
+        throw new WishlistInputError(
+          'We couldn’t work out what to do. Refresh the page and try again.'
+        );
     }
 
     return redirect(`/?list=${encodeURIComponent(wishlistId)}#wishlist`);
@@ -116,12 +118,20 @@ function priceInputValue(item: WishlistItem): string {
   return (item.priceAmountMinor / 100).toFixed(2);
 }
 
-function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
+function ItemFields({
+  item,
+  formId,
+  recipientName
+}: {
+  item?: WishlistItem;
+  formId: string;
+  recipientName: string;
+}) {
   return (
     <div className="form-fields">
       <div>
         <label htmlFor={`${formId}-title`} className="form-label">
-          What is it? <span aria-hidden="true">*</span>
+          What would {recipientName} love? <span aria-hidden="true">*</span>
         </label>
         <input
           id={`${formId}-title`}
@@ -136,7 +146,7 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
 
       <div>
         <label htmlFor={`${formId}-notes`} className="form-label">
-          Notes
+          Anything else to know?
         </label>
         <textarea
           id={`${formId}-notes`}
@@ -152,7 +162,7 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
       <div className="form-split">
         <div>
           <label htmlFor={`${formId}-url`} className="form-label">
-            Product link
+            Where can we find it?
           </label>
           <input
             id={`${formId}-url`}
@@ -166,7 +176,7 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
         </div>
         <div>
           <label htmlFor={`${formId}-price`} className="form-label">
-            Approximate price
+            Rough price
           </label>
           <div className="price-field">
             <span aria-hidden="true">£</span>
@@ -185,7 +195,7 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
 
       <div>
         <label htmlFor={`${formId}-priority`} className="form-label">
-          How much is it wanted?
+          How much would {recipientName} like it?
         </label>
         <select
           id={`${formId}-priority`}
@@ -226,6 +236,13 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
   }
 
   const isPurchased = item.claim.state === 'purchased';
+  const claimStatus = item.claim.isClaimedByViewer
+    ? isPurchased
+      ? 'You’ve bought this'
+      : 'You’re getting this'
+    : isPurchased
+      ? `${item.claim.claimedByDisplayName} has bought this`
+      : `${item.claim.claimedByDisplayName} is getting this`;
 
   return (
     <div className="claim-note">
@@ -233,8 +250,7 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
         <span className="claim-tick" aria-hidden="true">
           ✓
         </span>
-        {isPurchased ? 'Bought' : 'Claimed'} by{' '}
-        {item.claim.isClaimedByViewer ? 'you' : item.claim.claimedByDisplayName}
+        {claimStatus}
       </p>
       {item.claim.isClaimedByViewer ? (
         <div className="claim-actions">
@@ -242,14 +258,14 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
             <form method="post" action="?index">
               <ActionFields wishlistId={wishlist.id} itemId={item.id} />
               <button name="intent" value="mark-purchased" className="button-small">
-                Mark bought
+                I’ve bought it
               </button>
             </form>
           ) : null}
           <form method="post" action="?index">
             <ActionFields wishlistId={wishlist.id} itemId={item.id} />
             <button name="intent" value="unclaim-item" className="button-quiet">
-              {isPurchased ? 'Undo and release' : 'Release claim'}
+              I’m not getting this
             </button>
           </form>
         </div>
@@ -266,6 +282,7 @@ const priorityLabels = {
 
 function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
   const formId = `edit-${item.id}`;
+  const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
 
   return (
     <li className={`wish-row wish-row-${item.priority}`}>
@@ -285,7 +302,7 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
           ) : null}
           {item.productUrl ? (
             <a href={item.productUrl} target="_blank" rel="noreferrer">
-              View the idea <span aria-hidden="true">↗</span>
+              See where to find it <span aria-hidden="true">↗</span>
             </a>
           ) : null}
         </div>
@@ -294,13 +311,13 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
           <summary>Edit this wish</summary>
           <form method="post" action="?index" className="edit-form">
             <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-            <ItemFields item={item} formId={formId} />
+            <ItemFields item={item} formId={formId} recipientName={recipientName} />
             <div className="form-actions">
               <button name="intent" value="edit-item" className="button-primary">
                 Save changes
               </button>
               <button name="intent" value="delete-item" className="button-danger">
-                Delete item
+                Remove from the list
               </button>
             </div>
           </form>
@@ -317,6 +334,7 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
 function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
   const addFormId = `add-${wishlist.id}`;
   const possessiveName = wishlist.isOwn ? 'Your' : `${wishlist.owner.displayName}’s`;
+  const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
 
   return (
     <article id="wishlist" className="wishlist-sheet">
@@ -325,7 +343,9 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
 
       <header className="wishlist-heading">
         <div>
-          <p className="section-kicker">{wishlist.isOwn ? 'Your one and only' : 'Their ideas'}</p>
+          <p className="section-kicker">
+            {wishlist.isOwn ? 'A few things you’d love' : 'A few things they’d love'}
+          </p>
           <h2>{possessiveName} wishlist</h2>
         </div>
         <p className="wish-count">
@@ -335,12 +355,13 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
 
       {wishlist.isOwn ? (
         <p className="surprise-note">
-          <span aria-hidden="true">Psst…</span> other people’s claims are hidden here, so your
-          surprises stay surprising.
+          <span aria-hidden="true">Psst…</span> if someone decides to get you something from this
+          list, we’ll keep it secret so the surprise isn’t spoiled.
         </p>
       ) : (
         <p className="giver-note">
-          Claim something when you plan to buy it. {wishlist.owner.displayName} won’t see a thing.
+          Thinking of buying something? Let the family know below. {wishlist.owner.displayName}{' '}
+          won’t see a thing.
         </p>
       )}
 
@@ -355,7 +376,10 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
           <GiftIcon className="size-10" />
           <div>
             <h3>A lovely blank page</h3>
-            <p>Add the first idea below. Anyone in the family can lend a hand.</p>
+            <p>
+              Add something {wishlist.isOwn ? 'you’d' : `${wishlist.owner.displayName} would`} love
+              below. Anyone in the family can lend a hand.
+            </p>
           </div>
         </div>
       )}
@@ -363,11 +387,13 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
       <details className="add-wish">
         <summary>
           <span aria-hidden="true">＋</span>
-          Add a wish for {wishlist.owner.displayName}
+          {wishlist.isOwn
+            ? 'Add something to your wishlist'
+            : `Add something for ${wishlist.owner.displayName}`}
         </summary>
         <form method="post" action="?index" className="add-form">
           <ActionFields wishlistId={wishlist.id} />
-          <ItemFields formId={addFormId} />
+          <ItemFields formId={addFormId} recipientName={recipientName} />
           <button name="intent" value="add-item" className="button-primary">
             Add to the list
           </button>
@@ -398,11 +424,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       <main>
         <section className="parcel-hero page-wrap" aria-labelledby="page-title">
           <div className="hero-copy-block">
-            <p className="section-kicker hero-kicker">One list each, shared with the family</p>
+            <p className="section-kicker hero-kicker">Your wishlist, shared with your family</p>
             <h1 id="page-title">What would make their day?</h1>
             <p className="hero-intro">
-              Keep everyone’s gift ideas together. When you’re buying, quietly claim a wish so
-              nobody doubles up—and the recipient never gets a spoiler.
+              Keep everyone’s gift ideas together. If you’re planning to buy something, let the
+              family know—without giving the surprise away.
             </p>
           </div>
         </section>
@@ -412,7 +438,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <div className="picker-intro">
               <p className="section-kicker">The family</p>
               <h2 id="family-picker-title">Whose list?</h2>
-              <p>Pick a gift tag to see their ideas.</p>
+              <p>Choose a name to see what they’d love.</p>
             </div>
 
             <nav aria-label="Family wishlists" className="family-tags">
@@ -427,7 +453,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <span>{wishlist.owner.displayName}</span>
-                    {wishlist.isOwn ? <small>Your list</small> : <small>View wishes</small>}
+                    {wishlist.isOwn ? (
+                      <small>Your wishlist</small>
+                    ) : (
+                      <small>See their wishlist</small>
+                    )}
                   </a>
                 );
               })}
@@ -436,7 +466,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
           {actionData?.error ? (
             <div role="alert" className="form-alert">
-              <strong>That didn’t quite work.</strong> {actionData.error}
+              <strong>Sorry, that didn’t work.</strong> {actionData.error}
             </div>
           ) : null}
 
@@ -444,8 +474,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <WishlistSheet wishlist={activeWishlist} />
           ) : (
             <section className="wishlist-sheet no-lists">
-              <h2>No family lists yet</h2>
-              <p>Your list will be created automatically when you next sign in.</p>
+              <h2>Your wishlist is nearly ready</h2>
+              <p>Refresh the page in a moment and it should appear.</p>
             </section>
           )}
         </div>

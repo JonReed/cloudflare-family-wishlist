@@ -40,8 +40,9 @@ optional link, an approximate price and a human description of priority are enou
 
 ### Quietly buying a gift
 
-On someone else's list, “I’ll get this” is a direct, reversible action. A claimant can mark the gift
-bought or release it. Claims by another person are informative rather than actionable.
+On someone else's list, “I’ll get this” is a direct, reversible action. The person choosing it can
+mark the gift bought or leave it for someone else. Choices made by another person are informative
+rather than actionable.
 
 On the recipient's own list, claim data must not merely be hidden with CSS: it must be absent from
 the server response. The small “Psst…” note explains the result without teaching the implementation.
@@ -109,8 +110,9 @@ Asymmetry must still be intentional, and tactile detail must never reduce legibi
 
 ## Content voice
 
-Copy is plain, warm British English. Prefer “wish”, “gift”, “family” and “quietly claim” to platform
-language such as resource, workspace, role or permission. Empty states should be reassuring and
+Copy is plain, warm British English. Describe what the family is doing, not how the product is
+modelled. Prefer “wish”, “gift”, “family” and “I’m getting this” to system language such as claim,
+recipient, priority, resource, workspace, role or permission. Empty states should be reassuring and
 specific. Avoid forced whimsy: one human phrase is enough.
 
 ## Accessibility and interaction

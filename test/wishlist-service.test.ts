@@ -39,15 +39,15 @@ describe('wishlist service', () => {
   });
 
   it.each([
-    [{ title: '' }, 'title'],
-    [{ title: 'x'.repeat(161) }, 'title'],
-    [{ notes: 'x'.repeat(2001) }, 'Notes'],
-    [{ productUrl: 'javascript:alert(1)' }, 'product link'],
-    [{ productUrl: 'https://user:secret@example.com/gift' }, 'product link'],
-    [{ price: '-1' }, 'price'],
-    [{ price: '12.345' }, 'price'],
-    [{ price: '10000000' }, 'price'],
-    [{ priority: 'urgent' }, 'Priority']
+    [{ title: '' }, 'wish a name'],
+    [{ title: 'x'.repeat(161) }, 'wish a name'],
+    [{ notes: 'x'.repeat(2001) }, 'extra details'],
+    [{ productUrl: 'javascript:alert(1)' }, 'link doesn’t look right'],
+    [{ productUrl: 'https://user:secret@example.com/gift' }, 'link doesn’t look right'],
+    [{ price: '-1' }, 'pounds and pence'],
+    [{ price: '12.345' }, 'pounds and pence'],
+    [{ price: '10000000' }, 'pounds and pence'],
+    [{ priority: 'urgent' }, 'options shown']
   ])('rejects invalid item input: %o', async (overrides, message) => {
     const member = await createMember('owner@example.com');
 
@@ -167,16 +167,14 @@ describe('wishlist service', () => {
     )?.items[0]?.id;
     expect(itemId).toBeTruthy();
 
-    await expect(claimWishlistItem(env.DB, owner.id, itemId!)).rejects.toThrow('cannot be claimed');
+    await expect(claimWishlistItem(env.DB, owner.id, itemId!)).rejects.toThrow('own wishlist');
     await claimWishlistItem(env.DB, firstGiver.id, itemId!);
-    await expect(claimWishlistItem(env.DB, secondGiver.id, itemId!)).rejects.toThrow(
-      'already claimed'
-    );
+    await expect(claimWishlistItem(env.DB, secondGiver.id, itemId!)).rejects.toThrow('already');
     await expect(setOwnClaimState(env.DB, secondGiver.id, itemId!, 'purchased')).rejects.toThrow(
-      'who claimed'
+      'person getting this gift'
     );
     await expect(unclaimWishlistItem(env.DB, secondGiver.id, itemId!)).rejects.toThrow(
-      'who claimed'
+      'person getting this gift'
     );
 
     await unclaimWishlistItem(env.DB, firstGiver.id, itemId!);
