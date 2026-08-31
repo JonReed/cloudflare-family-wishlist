@@ -266,7 +266,7 @@ function ItemFields({
               pattern="(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,2})?"
               defaultValue={item ? priceInputValue(item) : (draft?.price ?? '')}
               className="form-control"
-              placeholder="24.50"
+              placeholder="0.99"
               data-product-price={urlFirst ? '' : undefined}
             />
           </div>
