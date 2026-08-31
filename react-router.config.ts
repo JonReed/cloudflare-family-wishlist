@@ -2,6 +2,7 @@ import type { Config } from '@react-router/dev/config';
 
 export default {
   ssr: true,
-  // Keep mutation requests same-origin. React Router also validates action origins by default.
+  // The Worker entry adds loopback hosts only in development. Production
+  // mutation requests must match the request origin exactly.
   allowedActionOrigins: []
 } satisfies Config;

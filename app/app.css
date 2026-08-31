@@ -38,6 +38,60 @@
   }
 }
 
+@layer components {
+  .form-label {
+    @apply text-ink mb-2 block text-sm font-bold;
+  }
+
+  .form-control {
+    @apply border-ink/15 bg-paper text-ink placeholder:text-ink-muted/65 focus:border-leaf focus:ring-leaf/20 min-h-11 w-full rounded-xl border px-4 py-3 shadow-sm outline-none focus:ring-4;
+  }
+
+  .button-primary,
+  .button-secondary,
+  .button-small,
+  .button-quiet,
+  .button-danger {
+    @apply focus-visible:outline-leaf inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-4;
+  }
+
+  .button-primary {
+    @apply bg-ink text-paper hover:bg-leaf;
+  }
+
+  .button-secondary {
+    @apply bg-leaf text-paper hover:bg-ink;
+  }
+
+  .button-small {
+    @apply bg-leaf text-paper min-h-9 px-4 py-2;
+  }
+
+  .button-quiet {
+    @apply border-leaf/20 bg-paper text-leaf hover:bg-mint/20 min-h-9 border px-4 py-2;
+  }
+
+  .button-danger {
+    @apply border-rust/20 bg-paper text-rust hover:bg-peach/40 border;
+  }
+
+  .priority {
+    @apply rounded-full px-2.5 py-1 text-xs font-bold;
+  }
+
+  .priority-low {
+    @apply bg-ink/6 text-ink-muted;
+  }
+
+  .priority-normal {
+    @apply bg-mint/25 text-leaf;
+  }
+
+  .priority-high {
+    @apply bg-peach/70 text-rust;
+  }
+}
+
 .page-glow {
   position: fixed;
   z-index: 0;

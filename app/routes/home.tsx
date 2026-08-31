@@ -1,5 +1,20 @@
-import { identityContext, cloudflareContext } from '../lib/context';
+import { redirect } from 'react-router';
+
+import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
+import {
+  claimWishlistItem,
+  createWishlistItem,
+  deleteWishlistItem,
+  listFamilyWishlists,
+  setOwnClaimState,
+  unclaimWishlistItem,
+  updateWishlistItem,
+  WishlistInputError,
+  type FamilyWishlist,
+  type ItemInput,
+  type WishlistItem
+} from '../lib/db/wishlists';
 
 import type { Route } from './+types/home';
 
@@ -16,84 +31,380 @@ export function meta() {
 export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
+  const member = await ensureMemberForEmail(env.DB, identity.email);
 
-  return ensureMemberForEmail(env.DB, identity.email);
+  return {
+    member,
+    wishlists: await listFamilyWishlists(env.DB, member.id)
+  };
 }
 
-const features = [
-  {
-    eyebrow: 'One list each',
-    title: 'Simple by design',
-    description:
-      'No folders, events or fiddly permissions. Just one useful, always-current list per person.',
-    icon: 'list'
-  },
-  {
-    eyebrow: 'Shared family space',
-    title: 'Everyone can help',
-    description:
-      'Family members can see, add and tidy items across every list once they are invited.',
-    icon: 'people'
-  },
-  {
-    eyebrow: 'Quietly claimed',
-    title: 'Surprises stay surprising',
-    description:
-      'Gift-givers can coordinate claims, while the person receiving the gift sees none of it.',
-    icon: 'gift'
-  }
-] as const;
-
-function FeatureIcon({ icon }: { icon: (typeof features)[number]['icon'] }) {
-  if (icon === 'people') {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="size-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
-        <path d="M8.2 11a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" />
-        <path d="M2.8 19.4c.4-3.3 2.2-5.2 5.4-5.2s5 1.9 5.4 5.2" />
-        <path d="M15.1 10.5a2.7 2.7 0 1 0 0-5.4M15 14c3.5 0 5.3 1.8 5.7 5" />
-      </svg>
-    );
+function formString(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  if (typeof value !== 'string') {
+    throw new WishlistInputError(`${name} is required.`);
   }
 
-  if (icon === 'gift') {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="size-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
-        <path d="M4 10.2h16v9.3H4zM2.8 6.7h18.4v3.5H2.8zM12 6.7v12.8" />
-        <path d="M11.8 6.5C9.9 6.4 7.2 5.7 7.2 3.8c0-1 .8-1.7 1.8-1.5 1.7.3 2.6 2.4 2.8 4.2ZM12.2 6.5c1.9-.1 4.6-.8 4.6-2.7 0-1-.8-1.7-1.8-1.5-1.7.3-2.6 2.4-2.8 4.2Z" />
-      </svg>
-    );
-  }
+  return value;
+}
 
+function itemInput(formData: FormData): ItemInput {
+  return {
+    title: formData.get('title'),
+    notes: formData.get('notes'),
+    productUrl: formData.get('productUrl'),
+    price: formData.get('price'),
+    priority: formData.get('priority')
+  };
+}
+
+export async function action({ request, context }: Route.ActionArgs) {
+  const { env } = context.get(cloudflareContext);
+  const identity = context.get(identityContext);
+  const member = await ensureMemberForEmail(env.DB, identity.email);
+
+  try {
+    const formData = await request.formData();
+    const intent = formString(formData, 'intent');
+    const wishlistId = formString(formData, 'wishlistId');
+
+    switch (intent) {
+      case 'add-item':
+        await createWishlistItem(env.DB, member.id, wishlistId, itemInput(formData));
+        break;
+      case 'edit-item':
+        await updateWishlistItem(env.DB, formString(formData, 'itemId'), itemInput(formData));
+        break;
+      case 'delete-item':
+        await deleteWishlistItem(env.DB, formString(formData, 'itemId'));
+        break;
+      case 'claim-item':
+        await claimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
+        break;
+      case 'mark-purchased':
+        await setOwnClaimState(env.DB, member.id, formString(formData, 'itemId'), 'purchased');
+        break;
+      case 'unclaim-item':
+        await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
+        break;
+      default:
+        throw new WishlistInputError('That action is not supported.');
+    }
+
+    return redirect(`/#wishlist-${encodeURIComponent(wishlistId)}`);
+  } catch (error) {
+    if (error instanceof WishlistInputError) {
+      return { error: error.message };
+    }
+
+    throw error;
+  }
+}
+
+function GiftIcon({ className = 'size-5' }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className="size-6"
+      className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.9"
     >
-      <path d="M8.5 6.5h11M8.5 12h11M8.5 17.5h11" />
-      <path d="m3.5 6.4 1.2 1.2 2-2.2M3.5 11.9l1.2 1.2 2-2.2M3.5 17.4l1.2 1.2 2-2.2" />
+      <path d="M4 10h16v10H4zM2.8 6.5h18.4V10H2.8zM12 6.5V20" />
+      <path d="M11.8 6.3C9.8 6.3 7.2 5.5 7.2 3.7c0-1 .8-1.7 1.8-1.5 1.7.3 2.6 2.3 2.8 4.1ZM12.2 6.3c2 0 4.6-.8 4.6-2.6 0-1-.8-1.7-1.8-1.5-1.7.3-2.6 2.3-2.8 4.1Z" />
     </svg>
   );
 }
 
-export default function Home({ loaderData: member }: Route.ComponentProps) {
+function formatPrice(amountMinor: number, currency: string): string {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency
+  }).format(amountMinor / 100);
+}
+
+function priceInputValue(item: WishlistItem): string {
+  if (item.priceAmountMinor === null) return '';
+  return (item.priceAmountMinor / 100).toFixed(2);
+}
+
+function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
+  return (
+    <div className="grid gap-4">
+      <div>
+        <label htmlFor={`${formId}-title`} className="form-label">
+          What is it? <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id={`${formId}-title`}
+          name="title"
+          required
+          maxLength={160}
+          defaultValue={item?.title}
+          className="form-control"
+          placeholder="A book, cosy socks, the good chocolate…"
+        />
+      </div>
+
+      <div>
+        <label htmlFor={`${formId}-notes`} className="form-label">
+          Notes
+        </label>
+        <textarea
+          id={`${formId}-notes`}
+          name="notes"
+          rows={3}
+          maxLength={2000}
+          defaultValue={item?.notes ?? ''}
+          className="form-control resize-y"
+          placeholder="Colour, size, edition, or anything else worth knowing"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor={`${formId}-url`} className="form-label">
+            Product link
+          </label>
+          <input
+            id={`${formId}-url`}
+            name="productUrl"
+            type="url"
+            maxLength={2048}
+            defaultValue={item?.productUrl ?? ''}
+            className="form-control"
+            placeholder="https://…"
+          />
+        </div>
+        <div>
+          <label htmlFor={`${formId}-price`} className="form-label">
+            Approximate price
+          </label>
+          <div className="relative">
+            <span className="text-ink-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">
+              £
+            </span>
+            <input
+              id={`${formId}-price`}
+              name="price"
+              inputMode="decimal"
+              pattern="(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,2})?"
+              defaultValue={item ? priceInputValue(item) : ''}
+              className="form-control pl-8"
+              placeholder="24.50"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor={`${formId}-priority`} className="form-label">
+          Priority
+        </label>
+        <select
+          id={`${formId}-priority`}
+          name="priority"
+          defaultValue={item?.priority ?? 'normal'}
+          className="form-control"
+        >
+          <option value="low">Nice to have</option>
+          <option value="normal">Would love</option>
+          <option value="high">Top wish</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function ActionFields({ wishlistId, itemId }: { wishlistId: string; itemId?: string }) {
+  return (
+    <>
+      <input type="hidden" name="wishlistId" value={wishlistId} />
+      {itemId ? <input type="hidden" name="itemId" value={itemId} /> : null}
+    </>
+  );
+}
+
+function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
+  if (wishlist.isOwn || item.claimVisibility === 'hidden') return null;
+
+  if (!item.claim) {
+    return (
+      <form method="post" action="?index">
+        <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+        <button name="intent" value="claim-item" className="button-secondary">
+          I’ll get this
+        </button>
+      </form>
+    );
+  }
+
+  const isPurchased = item.claim.state === 'purchased';
+
+  return (
+    <div className="border-leaf/15 bg-mint/18 rounded-2xl border p-4">
+      <p className="text-leaf text-sm font-bold">
+        {isPurchased ? 'Bought' : 'Claimed'} by{' '}
+        {item.claim.isClaimedByViewer ? 'you' : item.claim.claimedByDisplayName}
+      </p>
+      {item.claim.isClaimedByViewer ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {!isPurchased ? (
+            <form method="post" action="?index">
+              <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+              <button name="intent" value="mark-purchased" className="button-small">
+                Mark bought
+              </button>
+            </form>
+          ) : null}
+          <form method="post" action="?index">
+            <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+            <button name="intent" value="unclaim-item" className="button-quiet">
+              {isPurchased ? 'Undo and release' : 'Release claim'}
+            </button>
+          </form>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function WishlistItemCard({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
+  const formId = `edit-${item.id}`;
+  const priorityLabels = {
+    low: 'Nice to have',
+    normal: 'Would love',
+    high: 'Top wish'
+  } as const;
+
+  return (
+    <li className="border-ink/10 bg-paper rounded-[1.5rem] border p-5 shadow-sm sm:p-6">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-ink text-2xl font-semibold tracking-tight">
+              {item.title}
+            </h3>
+            <span className={`priority priority-${item.priority}`}>
+              {priorityLabels[item.priority]}
+            </span>
+          </div>
+          {item.notes ? (
+            <p className="text-ink-muted mt-3 max-w-2xl leading-7 whitespace-pre-wrap">
+              {item.notes}
+            </p>
+          ) : null}
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm font-semibold">
+            {item.priceAmountMinor !== null && item.priceCurrency ? (
+              <span className="text-ink">
+                Around {formatPrice(item.priceAmountMinor, item.priceCurrency)}
+              </span>
+            ) : null}
+            {item.productUrl ? (
+              <a
+                href={item.productUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-leaf focus-visible:outline-leaf rounded-sm underline decoration-2 underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                View product <span aria-hidden="true">↗</span>
+              </a>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="shrink-0">
+          <ClaimControls wishlist={wishlist} item={item} />
+        </div>
+      </div>
+
+      <details className="border-ink/10 mt-5 border-t pt-4">
+        <summary className="text-ink-muted hover:text-leaf focus-visible:outline-leaf cursor-pointer rounded-sm text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-4">
+          Edit item
+        </summary>
+        <form method="post" action="?index" className="mt-5">
+          <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+          <ItemFields item={item} formId={formId} />
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button name="intent" value="edit-item" className="button-primary">
+              Save changes
+            </button>
+            <button name="intent" value="delete-item" className="button-danger">
+              Delete item
+            </button>
+          </div>
+        </form>
+      </details>
+    </li>
+  );
+}
+
+function WishlistCard({ wishlist }: { wishlist: FamilyWishlist }) {
+  const addFormId = `add-${wishlist.id}`;
+
+  return (
+    <article
+      id={`wishlist-${wishlist.id}`}
+      className="border-ink/8 bg-canvas/75 scroll-mt-6 rounded-[2rem] border p-5 shadow-sm sm:p-8"
+    >
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-leaf text-xs font-bold tracking-[0.16em] uppercase">
+            {wishlist.isOwn ? 'Your wishlist' : 'Family wishlist'}
+          </p>
+          <h2 className="font-display text-ink mt-1 text-4xl font-semibold tracking-tight">
+            {wishlist.owner.displayName}
+          </h2>
+        </div>
+        <p className="text-ink-muted text-sm font-semibold">
+          {wishlist.items.length} {wishlist.items.length === 1 ? 'wish' : 'wishes'}
+        </p>
+      </header>
+
+      {wishlist.isOwn ? (
+        <p className="border-peach bg-peach/35 text-rust mt-5 rounded-2xl border px-4 py-3 text-sm leading-6 font-semibold">
+          Claim information is deliberately absent from your view. Surprises remain intact.
+        </p>
+      ) : null}
+
+      {wishlist.items.length ? (
+        <ul className="mt-6 grid list-none gap-4 p-0">
+          {wishlist.items.map((item) => (
+            <WishlistItemCard key={item.id} wishlist={wishlist} item={item} />
+          ))}
+        </ul>
+      ) : (
+        <div className="border-ink/10 bg-paper mt-6 rounded-[1.5rem] border border-dashed px-6 py-10 text-center">
+          <GiftIcon className="text-mint mx-auto size-10" />
+          <p className="font-display text-ink mt-4 text-2xl font-semibold">
+            Nothing wished for yet
+          </p>
+          <p className="text-ink-muted mx-auto mt-2 max-w-md leading-7">
+            Add the first idea below. Everyone in the family can help keep this list useful.
+          </p>
+        </div>
+      )}
+
+      <details className="border-leaf/15 bg-paper mt-6 rounded-[1.5rem] border p-5 sm:p-6">
+        <summary className="text-leaf focus-visible:outline-leaf cursor-pointer rounded-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-4">
+          Add a wish for {wishlist.owner.displayName}
+        </summary>
+        <form method="post" action="?index" className="mt-5">
+          <ActionFields wishlistId={wishlist.id} />
+          <ItemFields formId={addFormId} />
+          <button name="intent" value="add-item" className="button-primary mt-5">
+            Add to wishlist
+          </button>
+        </form>
+      </details>
+    </article>
+  );
+}
+
+export default function Home({ loaderData, actionData }: Route.ComponentProps) {
+  const { member, wishlists } = loaderData;
+
   return (
     <main className="min-h-screen overflow-hidden">
       <div aria-hidden="true" className="page-glow page-glow-one" />
@@ -105,80 +416,60 @@ export default function Home({ loaderData: member }: Route.ComponentProps) {
           className="focus-visible:outline-leaf inline-flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4"
         >
           <span className="bg-leaf text-paper grid size-10 place-items-center rounded-2xl shadow-sm">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-            >
-              <path d="M4 10h16v10H4zM2.8 6.5h18.4V10H2.8zM12 6.5V20" />
-              <path d="M11.8 6.3C9.8 6.3 7.2 5.5 7.2 3.7c0-1 .8-1.7 1.8-1.5 1.7.3 2.6 2.3 2.8 4.1ZM12.2 6.3c2 0 4.6-.8 4.6-2.6 0-1-.8-1.7-1.8-1.5-1.7.3-2.6 2.3-2.8 4.1Z" />
-            </svg>
+            <GiftIcon />
           </span>
           <span className="font-display text-ink text-xl font-semibold tracking-tight">
             Family Wishlist
           </span>
         </a>
-        <span className="border-leaf/15 bg-paper/70 text-leaf hidden items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-sm backdrop-blur sm:inline-flex">
+        <span className="border-leaf/15 bg-paper/70 text-leaf inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold shadow-sm backdrop-blur sm:px-4">
           <span className="bg-mint size-2 rounded-full" />
-          Signed in as {member.displayName}
+          <span className="hidden sm:inline">Signed in as </span>
+          {member.displayName}
         </span>
       </header>
 
-      <section className="relative z-10 mx-auto max-w-6xl px-5 pt-14 pb-20 sm:px-8 sm:pt-20 lg:pt-24">
-        <div className="max-w-4xl">
-          <p className="bg-peach/65 text-rust mb-5 inline-flex items-center rounded-full px-4 py-2 text-sm font-bold tracking-wide">
-            Made for birthdays, Christmas and just because
+      <section className="relative z-10 mx-auto max-w-6xl px-5 pt-10 pb-20 sm:px-8 sm:pt-16">
+        <div className="max-w-3xl">
+          <p className="bg-peach/65 text-rust mb-4 inline-flex items-center rounded-full px-4 py-2 text-sm font-bold tracking-wide">
+            One list each, shared with the family
           </p>
-          <h1 className="font-display text-ink text-5xl leading-[0.98] font-semibold tracking-[-0.045em] text-balance sm:text-7xl lg:text-[5.6rem]">
-            Thoughtful presents.
-            <span className="text-leaf block">Fewer family group chats.</span>
+          <h1 className="font-display text-ink text-5xl leading-none font-semibold tracking-[-0.045em] text-balance sm:text-7xl">
+            What would make their day?
           </h1>
-          <p className="text-ink-muted mt-7 max-w-2xl text-lg leading-8 sm:text-xl sm:leading-9">
-            A calm, private place where everyone keeps one wishlist—and the useful bit about who is
-            buying what stays safely out of sight.
+          <p className="text-ink-muted mt-6 max-w-2xl text-lg leading-8">
+            Add and tidy ideas together. Claims are visible to gift-givers and kept completely out
+            of sight on the recipient’s own list.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
-          {features.map((feature, index) => (
-            <article
-              key={feature.title}
-              className={`feature-card feature-card-${index + 1} border-ink/8 shadow-soft rounded-[1.75rem] border p-6 sm:p-7`}
+        <nav aria-label="Family wishlists" className="mt-8 flex flex-wrap gap-2">
+          {wishlists.map((wishlist) => (
+            <a
+              key={wishlist.id}
+              href={`#wishlist-${wishlist.id}`}
+              className="border-ink/10 bg-paper text-ink hover:border-leaf/30 hover:text-leaf focus-visible:outline-leaf rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition focus-visible:outline-2 focus-visible:outline-offset-4"
             >
-              <div className="bg-paper text-leaf grid size-12 place-items-center rounded-2xl shadow-sm">
-                <FeatureIcon icon={feature.icon} />
-              </div>
-              <p className="text-leaf mt-7 text-xs font-bold tracking-[0.16em] uppercase">
-                {feature.eyebrow}
-              </p>
-              <h2 className="font-display text-ink mt-2 text-2xl font-semibold tracking-tight">
-                {feature.title}
-              </h2>
-              <p className="text-ink-muted mt-3 leading-7">{feature.description}</p>
-            </article>
+              {wishlist.owner.displayName}
+              {wishlist.isOwn ? ' (you)' : ''}
+            </a>
+          ))}
+        </nav>
+
+        {actionData?.error ? (
+          <div
+            role="alert"
+            className="border-rust/20 bg-peach/50 text-rust mt-6 rounded-2xl border p-4 font-semibold"
+          >
+            {actionData.error}
+          </div>
+        ) : null}
+
+        <div className="mt-8 grid gap-8">
+          {wishlists.map((wishlist) => (
+            <WishlistCard key={wishlist.id} wishlist={wishlist} />
           ))}
         </div>
-
-        <aside className="border-ink/8 bg-ink text-paper shadow-soft mt-6 flex flex-col gap-5 rounded-[1.75rem] border p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-          <div>
-            <p className="text-mint text-xs font-bold tracking-[0.16em] uppercase">
-              Your family space is ready
-            </p>
-            <p className="font-display mt-2 text-2xl font-semibold tracking-tight">
-              Welcome, {member.displayName}.
-            </p>
-            <p className="text-paper/70 mt-2 max-w-2xl leading-7">
-              Your one wishlist has been created automatically. The shared family dashboard and item
-              controls are the next pieces being furnished.
-            </p>
-          </div>
-          <span className="border-paper/15 bg-paper/8 text-paper/80 shrink-0 self-start rounded-full border px-4 py-2 text-sm font-semibold sm:self-auto">
-            Private by default
-          </span>
-        </aside>
       </section>
     </main>
   );

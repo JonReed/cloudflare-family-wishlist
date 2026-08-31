@@ -22,7 +22,7 @@ Cloudflare D1
 members, wishlists, items and private claims
 ```
 
-Cloudflare Access is the outer access boundary. The Worker will also validate the Access JWT and its audience before trusting the email identity. Missing or invalid Access configuration fails closed.
+Cloudflare Access is the outer access boundary. The Worker also validates the Access JWT and its audience before trusting the email identity. Missing or invalid Access configuration fails closed.
 
 ## Framework decision
 
@@ -57,7 +57,7 @@ These rules are architectural, not merely presentational:
 6. All database values are passed through D1 prepared statements; user input is never interpolated into SQL.
 7. Public resource identifiers use random UUIDs rather than sequential database identifiers.
 
-Claim privacy will be enforced in the server query/service layer. UI hiding alone is not considered a security boundary.
+Claim privacy is enforced in the server query/service layer: the owner-facing query cannot join claim rows, and owner item objects omit the claim field entirely. UI hiding alone is not considered a security boundary.
 
 ## Cloudflare services
 

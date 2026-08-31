@@ -5,7 +5,7 @@ A private, self-hosted family wishlist designed to run comfortably on Cloudflare
 Each family member has one wishlist. Everyone in the invited family group can view and edit every list, while claims and purchases are hidden from the owner of the list so surprises stay surprising.
 
 > [!NOTE]
-> The project is in active development. The repository foundation, D1 schema and Access JWT verification are ready; the family dashboard and wishlist controls are next.
+> The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls and private claims are working; release hardening and item reordering remain.
 
 ## Why this exists
 
@@ -57,7 +57,7 @@ Wrangler creates local Cloudflare state under `.wrangler/`. Development requests
 
 ## Deployment model
 
-`main` is the only working and deployment branch for now. Once the Cloudflare project is connected to this repository, every pushed commit that passes CI will deploy the latest version. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+`main` is the only working and deployment branch for now. The reference deployment is connected to Cloudflare Builds, so each push to `main` deploys the latest version after the repository checks pass. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) to configure a fork.
 
 Do not expose a deployment containing family data until Cloudflare Access is configured with an **exact email allow-list**. Selecting “One-time PIN” as the only Access rule would allow any valid email address and is not sufficient.
 

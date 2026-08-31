@@ -4,7 +4,17 @@ import { AuthenticationError, authenticateAccessRequest } from '../app/lib/auth/
 import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/context';
 
 const requestHandler = createRequestHandler(
-  () => import('virtual:react-router/server-build'),
+  async () => {
+    const build = await import('virtual:react-router/server-build');
+
+    return {
+      ...build,
+      // The Cloudflare Vite proxy uses an internal request origin in local
+      // development. The fixed local identity and loopback dev server make a
+      // broad development exception safe; production remains same-origin only.
+      allowedActionOrigins: import.meta.env.DEV ? ['**'] : []
+    };
+  },
   import.meta.env.MODE
 );
 

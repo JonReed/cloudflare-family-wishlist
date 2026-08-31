@@ -25,7 +25,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] Enforce exactly one wishlist per member.
 - [x] Wishlist item schema, ordering and optional product links.
 - [x] Store claims and purchase state separately from owner-visible data.
-- [ ] Add the query and mutation service layer.
+- [x] Add the query and mutation service layer.
 
 ## Phase 3 — Identity and provisioning
 
@@ -36,23 +36,24 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 
 ## Phase 4 — Family dashboard
 
-- List family members and wishlists.
-- View any family member's wishlist.
-- Clearly identify the signed-in member and their own list.
-- Responsive, accessible navigation and useful empty states.
+- [x] List family members and wishlists.
+- [x] View any family member's wishlist.
+- [x] Clearly identify the signed-in member and their own list.
+- [x] Responsive, accessible navigation and useful empty states.
 
 ## Phase 5 — Wishlist items
 
-- Add, edit, delete and reorder items.
-- Optional notes, price guidance, priority and safe external product links.
-- Validate every mutation server-side.
+- [x] Add, edit and delete items.
+- [ ] Reorder items.
+- [x] Optional notes, price guidance, priority and safe external product links.
+- [x] Validate every mutation server-side.
 
 ## Phase 6 — Secret claims
 
-- Claim, unclaim and mark an item purchased.
-- Show claim state to other gift-givers.
-- Prove through query-level tests that owners never receive their own claim information.
-- Handle competing claims safely.
+- [x] Claim, unclaim and mark an item purchased.
+- [x] Show claim state to other gift-givers.
+- [x] Prove through query-level tests that owners never receive their own claim information.
+- [x] Handle competing claims safely.
 
 ## Phase 7 — Release readiness
 
