@@ -47,10 +47,10 @@ email. Missing or invalid production configuration fails closed.
    requests converge on one member and one wishlist.
 4. The loader requests all family wishlists for the viewer. Their own list sorts first; `?list=` chooses
    the active list rendered in the document.
-5. Forms post an explicit intent to an action. React Router accepts the configured public hostname
-   when Cloudflare's proxy-facing request URL differs from the browser origin, then the action validates
-   the request shape, invokes a service mutation and redirects. The add form can instead request an
-   editable draft from a product link without creating an item.
+5. Forms post an explicit intent to an action. React Router verifies that the browser origin matches
+   the request origin before the action validates the request shape, invokes a service mutation and
+   redirects. The add form can instead request an editable draft from a product link without creating
+   an item.
 6. The Worker adds private caching, CSP and other defensive response headers to every response.
 
 Authentication happens before provisioning. There is no application endpoint that accepts an email
@@ -206,7 +206,8 @@ without becoming a new persistence or availability dependency.
 
 - all application documents are `private, no-store`;
 - CSP allows only the resources the application currently needs and no third-party scripts/fonts;
-- form actions accept only the request origin or the deployment's explicit `PUBLIC_HOSTNAME`;
+- form actions remain same-origin, with a `same-origin` referrer policy so browsers send a verifiable
+  `Origin` header for ordinary HTML form posts;
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
 - product metadata fetches accept only public HTTP(S) pages, validate each redirect, send no user
   credentials, stop after 8 seconds and inspect at most 512 KiB of HTML;

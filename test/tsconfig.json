@@ -15,11 +15,11 @@
   },
   "include": [
     "./**/*.ts",
-    "../app/lib/action-origins.ts",
     "../app/lib/auth/access.ts",
     "../app/lib/db/members.ts",
     "../app/lib/db/wishlists.ts",
     "../app/lib/product-metadata.ts",
-    "../app/lib/product-url.ts"
+    "../app/lib/product-url.ts",
+    "../app/lib/security-headers.ts"
   ]
 }

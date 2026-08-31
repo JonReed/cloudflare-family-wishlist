@@ -14,7 +14,6 @@
     "remote": true
   },
   "vars": {
-    "PUBLIC_HOSTNAME": "wishlist.teamreed.net",
     "PRODUCT_AI_ENABLED": "true",
     "PRODUCT_AI_MODEL": "@cf/google/gemma-4-26b-a4b-it"
   },
