@@ -781,6 +781,10 @@
   align-items: end;
 }
 
+.product-image-field:has(.product-image-preview[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .product-image-preview {
   width: 6rem;
 }
