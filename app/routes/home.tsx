@@ -121,14 +121,35 @@ function priceInputValue(item: WishlistItem): string {
 function ItemFields({
   item,
   formId,
-  recipientName
+  recipientName,
+  urlFirst = false
 }: {
   item?: WishlistItem;
   formId: string;
   recipientName: string;
+  urlFirst?: boolean;
 }) {
+  const urlField = (
+    <div>
+      <label htmlFor={`${formId}-url`} className="form-label">
+        {urlFirst ? 'Start with a link' : 'Where can we find it?'}
+      </label>
+      <input
+        id={`${formId}-url`}
+        name="productUrl"
+        type="url"
+        maxLength={2048}
+        defaultValue={item?.productUrl ?? ''}
+        className="form-control"
+        placeholder={urlFirst ? 'Paste the shop or product link' : 'https://…'}
+      />
+    </div>
+  );
+
   return (
     <div className="form-fields">
+      {urlFirst ? urlField : null}
+
       <div>
         <label htmlFor={`${formId}-title`} className="form-label">
           What would {recipientName} love? <span aria-hidden="true">*</span>
@@ -160,20 +181,7 @@ function ItemFields({
       </div>
 
       <div className="form-split">
-        <div>
-          <label htmlFor={`${formId}-url`} className="form-label">
-            Where can we find it?
-          </label>
-          <input
-            id={`${formId}-url`}
-            name="productUrl"
-            type="url"
-            maxLength={2048}
-            defaultValue={item?.productUrl ?? ''}
-            className="form-control"
-            placeholder="https://…"
-          />
-        </div>
+        {urlFirst ? null : urlField}
         <div>
           <label htmlFor={`${formId}-price`} className="form-label">
             Rough price
@@ -399,12 +407,12 @@ function AddWishPanel({ wishlist }: { wishlist: FamilyWishlist }) {
           : `Add something for ${wishlist.owner.displayName}`}
       </h2>
       <p className="add-panel-intro">
-        A name is enough to start. Add a link or a little guidance if it helps.
+        Start with a link if you have one, then add the useful details.
       </p>
 
       <form method="post" action="?index" className="add-form add-form-sidebar">
         <ActionFields wishlistId={wishlist.id} />
-        <ItemFields formId={addFormId} recipientName={recipientName} />
+        <ItemFields formId={addFormId} recipientName={recipientName} urlFirst />
         <button name="intent" value="add-item" className="button-primary">
           Add to the list
         </button>
@@ -432,31 +440,18 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
       </header>
 
       <main>
-        <div className="overview-wrap page-wrap">
-          <section className="parcel-hero" aria-labelledby="page-title">
-            <div className="hero-copy-block">
-              <p className="section-kicker hero-kicker">Your wishlist, shared with your family</p>
-              <h1 id="page-title">What would make their day?</h1>
-              <p className="hero-intro">
-                Keep everyone’s gift ideas together, without giving the surprise away.
-              </p>
-            </div>
-          </section>
+        <section className="parcel-hero family-board page-wrap" aria-labelledby="page-title">
+          <h1 id="page-title" className="sr-only">
+            Family wishlists
+          </h1>
+          <nav aria-label="Choose a family wishlist" className="family-tags">
+            {wishlists.map((wishlist) => {
+              const isActive = activeWishlist?.id === wishlist.id;
 
-          <section className="family-picker" aria-labelledby="family-picker-title">
-            <div className="picker-intro">
-              <p className="section-kicker">The family</p>
-              <h2 id="family-picker-title">Whose list?</h2>
-              <p>Choose a name to see what they’d love.</p>
-            </div>
-
-            <nav aria-label="Family wishlists" className="family-tags">
-              {wishlists.map((wishlist) => {
-                const isActive = activeWishlist?.id === wishlist.id;
-
-                return (
+              return (
+                <div key={wishlist.id} className="family-tag-wrap">
+                  <span aria-hidden="true" className="tag-string" />
                   <a
-                    key={wishlist.id}
                     href={`/?list=${encodeURIComponent(wishlist.id)}#wishlist`}
                     className="family-tag"
                     aria-current={isActive ? 'page' : undefined}
@@ -468,11 +463,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       <small>See their wishlist</small>
                     )}
                   </a>
-                );
-              })}
-            </nav>
-          </section>
-        </div>
+                </div>
+              );
+            })}
+          </nav>
+        </section>
 
         <div className="content-wrap page-wrap">
           {actionData?.error ? (

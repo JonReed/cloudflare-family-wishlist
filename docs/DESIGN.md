@@ -11,14 +11,13 @@ novelty.
 
 ## Information architecture
 
-The signed-in home has five stable regions:
+The signed-in home has four stable regions:
 
 1. **Identity:** the Family Wishlist mark, the current member and sign out.
-2. **Orientation:** a compact visual introduction paired with the family selector on wider screens.
-3. **Family selector:** one gift tag per member, kept at the top of the working surface.
-4. **Active wishlist:** one person's complete list, with an always-open add form alongside it on
+2. **Family selector:** one string-tied gift tag per member over a quiet parcel-table image.
+3. **Active wishlist:** one person's complete list, with an always-open add form alongside it on
    wider screens.
-5. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
+4. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
 
 Only one wishlist is rendered as the active working area. This prevents a family with many members
 or long lists from becoming one enormous dashboard. The selected list is represented by a `list`
@@ -37,8 +36,10 @@ feel like an admin console.
 
 Any admitted member can choose a person, add a wish or expand “Edit this wish”. The add form stays in
 reach beside the active list on laptop-sized screens and follows the list on small screens; edit
-forms are disclosed beside the item they change. Titles, useful buying notes, an optional link, an
-approximate price and a human description of priority are enough.
+forms are disclosed beside the item they change. A new wish asks for its optional product link first
+so a future link-preview feature can fill the remaining fields; adding a wish without a link remains
+supported. Titles, useful buying notes, an approximate price and a human description of priority are
+enough.
 
 ### Quietly buying a gift
 
@@ -51,8 +52,9 @@ the server response. The small “Psst…” note explains the result without te
 
 ### Finding the right person
 
-Member navigation uses rectangular gift tags with a clear active state. Tags may wrap into additional
-rows and must work with long display names. They are navigation, not filter chips.
+Member navigation uses paper gift tags tied to a shared cotton string, with a clear active state.
+Tags may wrap into additional rows and must work with long display names. They are navigation, not
+filter chips.
 
 ## Visual language
 
@@ -86,17 +88,16 @@ Colours must retain sufficient contrast without resorting to saturated software-
 
 ### Imagery
 
-The compact masthead uses
+The family selector uses
 [`public/images/parcel-table.webp`](../public/images/parcel-table.webp), a purpose-built editorial
-still life with year-round wrapping materials and negative space for the heading. It is a decorative
-CSS background, so it does not add redundant alternative text. Keep it shallow enough that the family
-selector and start of the active wishlist are visible in the first viewport: the image establishes
-atmosphere, but the family's lists are the page's purpose.
+still life with year-round wrapping materials. It is faded beneath the family’s gift tags and remains
+a decorative CSS background, so it does not add redundant alternative text. It has no marketing copy:
+the family names are the useful content. Keep it shallow enough that the start of the active wishlist
+is visible in the first viewport.
 
 On wider screens, use the available horizontal space as a working surface rather than scaling the
-masthead up. Pair the masthead with family navigation, let the active list use the main column and
-keep its add form in a taped, sticky side panel. Collapse this to a natural single-column reading
-order on smaller screens.
+image up. Let the active list use the main column and keep its add form in a taped, sticky side panel.
+Collapse this to a natural single-column reading order on smaller screens.
 
 New imagery should be natural, asymmetrical and materially believable. Avoid readable text, logos,
 Christmas-only motifs, glossy catalogue lighting and perfect 3D-rendered parcels. Optimise assets to
