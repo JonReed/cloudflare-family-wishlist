@@ -33,6 +33,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] Fail closed when Access configuration or assertions are absent.
 - [x] Create a member and their single wishlist on first successful login.
 - [x] Provide a local-only development identity mechanism that cannot be enabled in production accidentally.
+- [x] Assign the first member the admin role and default later members to member.
 
 ## Phase 4 — Family dashboard
 
@@ -41,6 +42,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] Clearly identify the signed-in member and their own list.
 - [x] Let members edit their own display name from a profile page.
 - [x] Responsive, accessible navigation and useful empty states.
+- [x] Give the organiser a separate joined/waiting family page with exact-email Access admission.
 
 ## Phase 5 — Wishlist items
 

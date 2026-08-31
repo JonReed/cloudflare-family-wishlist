@@ -34,6 +34,8 @@ Retrieve current Cloudflare and React Router documentation before relying on API
   send login email.
 - A successfully authenticated email is provisioned as one `member` plus one `wishlist` on first
   request. Access admission must happen before provisioning; there is no public sign-up flow.
+- The first provisioned member has the `admin` role and is called the family organiser in the UI.
+  Later members default to `member`; role currently controls only the `/family` admission page.
 - Every admitted member can see and edit every wishlist. “Owner” and “gift-giver” are contextual
   relationships, not permission roles.
 - Claims are separate rows. Other family members can see them; the wishlist owner must not receive
@@ -43,19 +45,20 @@ Retrieve current Cloudflare and React Router documentation before relying on API
 
 ## Code map
 
-| Area                                               | Source of truth                                |
-| -------------------------------------------------- | ---------------------------------------------- |
-| Worker entry, authentication gate, headers and CSP | `workers/app.ts`                               |
-| Access JWT validation and local-only identity      | `app/lib/auth/access.ts`                       |
-| Request context                                    | `app/lib/context.ts`                           |
-| First-login member/list provisioning               | `app/lib/db/members.ts`                        |
-| Wishlist queries, mutations and claim privacy      | `app/lib/db/wishlists.ts`                      |
-| Form dispatch and current UI                       | `app/routes/home.tsx`                          |
-| App shell and error boundary                       | `app/root.tsx`                                 |
-| Visual system                                      | `app/app.css`, `app/components/`               |
-| Database schema                                    | `migrations/`                                  |
-| Worker bindings and deployment config              | `wrangler.jsonc`                               |
-| Workers-runtime test setup                         | `vitest.config.ts`, `test/apply-migrations.ts` |
+| Area                                                | Source of truth                                                                                    |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Worker entry, authentication gate, headers and CSP  | `workers/app.ts`                                                                                   |
+| Access JWT validation and local-only identity       | `app/lib/auth/access.ts`                                                                           |
+| Request context                                     | `app/lib/context.ts`                                                                               |
+| First-login member/list provisioning                | `app/lib/db/members.ts`                                                                            |
+| Family roles, waiting invitations and Access writes | `app/routes/family.tsx`, `app/lib/db/family-members.ts`, `app/lib/cloudflare/access-membership.ts` |
+| Wishlist queries, mutations and claim privacy       | `app/lib/db/wishlists.ts`                                                                          |
+| Form dispatch and current UI                        | `app/routes/home.tsx`                                                                              |
+| App shell and error boundary                        | `app/root.tsx`                                                                                     |
+| Visual system                                       | `app/app.css`, `app/components/`                                                                   |
+| Database schema                                     | `migrations/`                                                                                      |
+| Worker bindings and deployment config               | `wrangler.jsonc`                                                                                   |
+| Workers-runtime test setup                          | `vitest.config.ts`, `test/apply-migrations.ts`                                                     |
 
 ## Commands
 
@@ -109,6 +112,8 @@ development data are safe within this repository.
 - All admitted family members can view and edit all wishlists.
 - Claim state is visible to other gift-givers but hidden from the list owner.
 - Authentication is Cloudflare Access email OTP with an exact email allow-list.
+- The organiser adds exact emails through `/family`; the Worker uses a scoped Access policy API
+  token and does not send invitation email.
 - Keep the normal family deployment within Cloudflare's free tier and minimise setup.
 
 ## Definition of done

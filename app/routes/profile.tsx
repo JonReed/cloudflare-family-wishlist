@@ -58,6 +58,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
 
         <div className="account-links">
           <a href="/">Wishlists</a>
+          {member.role === 'admin' ? <a href="/family">Your family</a> : null}
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>
       </header>

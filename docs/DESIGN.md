@@ -31,9 +31,15 @@ dedicated setup page, call it the “browser button” in family-facing copy, an
 drag from the real button towards a labelled bookmarks bar. Do not assume that a conventional button
 label alone explains how bookmarklet installation works.
 
-Future household administration should be a separate, infrequently visited area. Member admission,
-deployment setup and Access policy are operational concerns and should not make the everyday list
-feel like an admin console.
+Household administration lives on the separate, infrequently visited **Your family** page. It shows
+joined people and those waiting for their first login, with an add form kept apart from the everyday
+wishlist. Cloudflare policy terminology and deployment setup stay out of family-facing copy so the
+normal list never feels like an admin console.
+
+The page calls the admin the “family organiser”. Waiting rows offer a prepared invitation to copy,
+but must not claim that an email was sent: the application authorises the exact address and the
+organiser shares the message through their preferred private channel. Status is plain text rather
+than a pill or software-dashboard badge.
 
 ## Core journeys
 

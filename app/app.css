@@ -1123,6 +1123,170 @@ button:disabled {
   line-height: 1.65;
 }
 
+.family-sheet {
+  width: min(100%, 82rem);
+}
+
+.family-page-message {
+  max-width: 45rem;
+  margin-top: 2rem;
+}
+
+.family-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 23rem);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.family-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 3px double rgb(48 51 41 / 0.3);
+  padding-bottom: 1rem;
+}
+
+.family-section-heading h2,
+.family-add-panel h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.family-section-heading p {
+  flex: none;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.family-people-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.family-person {
+  display: grid;
+  grid-template-columns: 3.1rem minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-block: 1.35rem;
+}
+
+.family-person-initial {
+  display: grid;
+  width: 3.1rem;
+  height: 3.1rem;
+  place-items: center;
+  border: 1px solid rgb(40 80 62 / 0.28);
+  background: rgb(135 168 143 / 0.16);
+  color: var(--leaf-dark);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  transform: rotate(-1deg);
+}
+
+.family-person-details {
+  min-width: 0;
+}
+
+.family-person-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.8rem;
+}
+
+.family-person-heading h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.family-person-status {
+  color: var(--leaf);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.family-person-status-waiting {
+  color: var(--rust);
+}
+
+.family-person-details p {
+  overflow-wrap: anywhere;
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.family-person-details small {
+  display: block;
+  margin-top: 0.35rem;
+  color: rgb(105 104 88 / 0.78);
+  font-size: 0.7rem;
+}
+
+.family-invite-copy {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.family-copy-status {
+  max-width: 13rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.family-add-panel {
+  position: sticky;
+  top: 1.5rem;
+  border: 1px solid rgb(80 68 50 / 0.18);
+  background-color: #f9f0df;
+  background-image:
+    linear-gradient(rgb(116 87 53 / 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(116 87 53 / 0.02) 1px, transparent 1px);
+  background-size: 17px 17px;
+  box-shadow: 6px 8px 0 rgb(88 69 46 / 0.08);
+  padding: 2.25rem 1.5rem 1.5rem;
+}
+
+.family-add-panel > p {
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.family-add-form {
+  margin-top: 1.35rem;
+  border-top: 1px dashed rgb(48 51 41 / 0.25);
+  padding-top: 1.35rem;
+}
+
+.family-add-form .button-primary {
+  width: 100%;
+}
+
 .error-page {
   display: grid;
   min-height: 100vh;
@@ -1213,6 +1377,16 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .family-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .family-add-panel {
+    position: relative;
+    top: auto;
+    width: min(100%, 34rem);
+  }
+
   .profile-identity {
     max-width: 30rem;
   }
@@ -1266,6 +1440,24 @@ button:disabled {
 
   .profile-sheet {
     padding: 2.5rem 1.25rem;
+  }
+
+  .family-person {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+  }
+
+  .family-person-initial {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .family-invite-copy {
+    grid-column: 2;
+    justify-items: start;
+  }
+
+  .family-copy-status {
+    text-align: left;
   }
 
   .parcel-hero {

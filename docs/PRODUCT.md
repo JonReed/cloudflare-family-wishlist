@@ -7,37 +7,43 @@ has one wishlist, everyone in the family can help maintain every list, and gift-
 without revealing surprises to the recipient.
 
 The intended unit is **one household or trusted family group per deployment**. It is not a hosted
-multi-tenant service and does not need organisations, roles, billing or a public directory.
+multi-tenant service and does not need organisations, billing or a public directory. It has one
+narrow household role: the first member is the family organiser and can admit other people.
 
 ## People and trust
 
-Cloudflare Access owns admission. A maintainer adds an exact set of email addresses to the Access
-policy; those people can request an emailed one-time PIN from Cloudflare. The application sees only a
-verified email identity after Access has admitted it.
+Cloudflare Access owns admission. The organiser adds a person's exact email address from the
+application's **Your family** page. The Worker creates an exact-email Allow policy through the
+Cloudflare API; only then can that person request an emailed one-time PIN from Cloudflare. The
+application sees only a verified email identity after Access has admitted it.
 
-On the first successful request, the application creates:
+The first successfully provisioned member becomes the family organiser. On every person's first
+successful request, the application creates:
 
 - one member record for that email; and
 - one wishlist owned by that member.
 
-There is no in-application invitation, registration, password, password reset or email-delivery flow.
-Removing someone from Access prevents future entry, but does not silently delete their wishlist or
-history from D1.
+The application records who is waiting to join but does not send an invitation email. The organiser
+copies a prepared message and shares it through email, WhatsApp or any other private channel. There
+is no application-managed password, password reset or public registration flow. Removing someone
+from Access prevents future entry, but does not silently delete their wishlist or history from D1.
 
 “Wishlist owner” and “gift-giver” describe the viewer's relationship to a particular list:
 
 - the owner can view and edit their own wishes but cannot see their claim state;
 - any other admitted member can view and edit those wishes and coordinate claims;
-- there are no administrator/editor/viewer roles inside the application.
+- the organiser role controls only family admission; it does not give different wishlist access.
 
 ## Core workflows
 
 ### Join the family space
 
-1. The maintainer admits an email address in Cloudflare Access.
-2. The person requests and enters Cloudflare's one-time PIN.
-3. The Worker validates the signed Access assertion.
-4. The application idempotently creates their member and wishlist if needed.
+1. The organiser enters a name and exact sign-in email on **Your family**.
+2. The Worker adds an exact-email Allow policy in Cloudflare Access and records the person as waiting.
+3. The organiser copies and privately shares the application link.
+4. The person requests and enters Cloudflare's one-time PIN.
+5. The Worker validates the signed Access assertion.
+6. The application idempotently creates their member and wishlist, using the invited display name.
 
 An arbitrary email address must never be able to create an account merely by possessing a working
 mailbox. The exact Access allow-list is the invitation boundary.
@@ -86,6 +92,7 @@ applies to rendered HTML, loader data, future APIs, logs and error details.
 6. An item can have at most one active claim.
 7. Core wishlist and claim actions work without browser JavaScript.
 8. A normal family deployment should fit within Cloudflare's free tier.
+9. The first member is an admin; later members default to the member role.
 
 If a proposed feature breaks one of these rules, treat it as a product decision requiring maintainer
 agreement rather than an ordinary implementation detail.
@@ -97,6 +104,7 @@ Working today:
 - Access OTP authentication and exact-email admission;
 - first-login member and wishlist provisioning;
 - self-service display-name editing from a personal profile page;
+- organiser-only family admission with joined and waiting-to-join states;
 - switching between all family wishlists;
 - adding, editing and deleting items;
 - filling a new wish's name, image and GBP price from a public product link, with optional AI help
@@ -119,7 +127,7 @@ Still planned:
 - multiple events or multiple lists per person;
 - application-managed passwords or login email;
 - self-service public registration;
-- granular per-list permissions;
+- granular per-list permissions or wishlist editing roles;
 - a multi-family SaaS control plane;
 - advertising, affiliate tracking or analytics scripts; and
 - extra Cloudflare services without a demonstrated need.

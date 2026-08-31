@@ -9,6 +9,7 @@ describe('ensureMemberForEmail', () => {
       env.DB.prepare('DELETE FROM claims'),
       env.DB.prepare('DELETE FROM items'),
       env.DB.prepare('DELETE FROM wishlists'),
+      env.DB.prepare('DELETE FROM family_invitations'),
       env.DB.prepare('DELETE FROM members')
     ]);
   });
@@ -25,7 +26,8 @@ describe('ensureMemberForEmail', () => {
 
     expect(member).toMatchObject({
       email: 'jamie.example@example.com',
-      displayName: 'jamie example'
+      displayName: 'jamie example',
+      role: 'admin'
     });
     expect(member.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(member.wishlistId).toMatch(/^[0-9a-f-]{36}$/);
@@ -54,6 +56,23 @@ describe('ensureMemberForEmail', () => {
     expect(counts).toEqual({ member_count: 1, wishlist_count: 1 });
   });
 
+  it('makes only the first member an admin and defaults later members to member', async () => {
+    const organiser = await ensureMemberForEmail(env.DB, 'organiser@example.com');
+    const relative = await ensureMemberForEmail(env.DB, 'relative@example.com');
+
+    expect(organiser.role).toBe('admin');
+    expect(relative.role).toBe('member');
+  });
+
+  it('assigns exactly one admin when two first logins arrive together', async () => {
+    const members = await Promise.all([
+      ensureMemberForEmail(env.DB, 'first@example.com'),
+      ensureMemberForEmail(env.DB, 'second@example.com')
+    ]);
+
+    expect(members.map((member) => member.role).sort()).toEqual(['admin', 'member']);
+  });
+
   it('enforces one wishlist per member at the database boundary', async () => {
     const member = await ensureMemberForEmail(env.DB, 'river@example.com');
 
@@ -71,6 +90,7 @@ describe('updateMemberDisplayName', () => {
       env.DB.prepare('DELETE FROM claims'),
       env.DB.prepare('DELETE FROM items'),
       env.DB.prepare('DELETE FROM wishlists'),
+      env.DB.prepare('DELETE FROM family_invitations'),
       env.DB.prepare('DELETE FROM members')
     ]);
   });

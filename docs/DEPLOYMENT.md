@@ -31,6 +31,9 @@ npm run cf-typegen
 
 Migration files are append-only after release. Never edit a migration that another deployment may already have applied.
 
+Migration `0002_family_members.sql` assigns the earliest existing member the admin role and creates
+the waiting-invitation table. Apply it before deploying application code that reads member roles.
+
 Product pictures use validated remote HTTPS URLs stored in D1. They do not require an R2 bucket,
 Cloudflare Images or another binding. Existing deployments upgrading from a version before item
 images must run `npm run db:migrate:remote` before deploying the application code that reads the new
@@ -120,11 +123,59 @@ organiser must now complete one OTP login and confirm that their wishlist appear
 fail-closed `503` response. Treat this as a required setup step: do not admit anyone else until the
 organiser's first login has succeeded.
 
-## 7. Invite or remove family members
+## 7. Let the organiser add family members
 
-After the organiser's first login has been verified, invite someone by adding their exact email
-address to the Access Allow policy and sending them the application URL yourself. There is no
-application-managed invitation email or password. Their member record and single wishlist are created
-automatically after their first successful login.
+The **Your family** page can add exact email addresses to this Access application without giving the
+organiser access to the Cloudflare dashboard. It needs one narrowly scoped Cloudflare API token.
 
-To prevent future access, remove the email address from the Access policy. Removing Access does not delete the member's wishlist or historical data.
+In **My Profile → API Tokens**, create a custom token with:
+
+- permission: **Account → Access: Apps and Policies → Edit** (`Access: Apps and Policies Write` in
+  the API documentation); and
+- account resource: only the account containing this family wishlist.
+
+Do not use the Global API Key. The custom token can change Access policy, so keep it out of source,
+chat, shell history and `.dev.vars`. Store it through Wrangler's private interactive prompt:
+
+```sh
+npx wrangler secret put ACCESS_MANAGEMENT_API_TOKEN
+```
+
+The two identifiers are not sensitive, but they are deployment-specific. The simplest CLI-only
+setup is to store them through the same encrypted prompt:
+
+```sh
+npx wrangler secret put ACCESS_MANAGEMENT_ACCOUNT_ID
+npx wrangler secret put ACCESS_MANAGEMENT_APPLICATION_ID
+```
+
+Enter these values when prompted:
+
+- `ACCESS_MANAGEMENT_ACCOUNT_ID`: the account ID already pinned as `account_id` in `wrangler.jsonc`;
+- `ACCESS_MANAGEMENT_APPLICATION_ID`: the Access application's UUID. Open **Zero Trust → Access
+  controls → Applications → Family Wishlist** and copy the application ID from its details/address.
+
+The initial `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` variables remain required for JWT validation. The
+management values serve a different purpose and do not replace them. `--keep-vars` preserves all
+dashboard-managed variables and encrypted secrets during later deployments. If preferred, the two
+identifiers can instead be ordinary text variables in the Worker dashboard; the application reads
+either binding type identically.
+
+Return to `/family`. The first member should see the page and every later member should be returned
+to the wishlists if they enter its URL directly. Add a test address and confirm that:
+
+1. it appears as **Waiting to join**;
+2. **Copy invitation** produces the application address and exact sign-in email;
+3. an unrelated address still receives no OTP and cannot enter; and
+4. after the invited address completes OTP, it appears as **Joined** with one wishlist.
+
+The application does not send an invitation email. Adding someone creates a single exact-email
+application policy and records the waiting person in D1; the organiser shares the copied invitation
+through their preferred private channel.
+
+## 8. Remove family members
+
+Removal is not yet exposed in the application. To prevent future access, delete that person's
+exact-email policy from the Access application in Cloudflare. Policies created by the application are
+named `Family Wishlist member` followed by the first eight characters of the invitation ID. Removing
+Access does not delete the member's wishlist or historical data.

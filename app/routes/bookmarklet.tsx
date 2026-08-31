@@ -1,6 +1,8 @@
 import { Brand, GiftIcon } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
 import { createBookmarkletHref } from '../lib/bookmarklet';
+import { cloudflareContext, identityContext } from '../lib/context';
+import { ensureMemberForEmail } from '../lib/db/members';
 
 import type { Route } from './+types/bookmarklet';
 import bookmarkletStylesheet from '../styles/bookmarklet.css?url';
@@ -19,8 +21,12 @@ export function meta() {
   ];
 }
 
-export function loader({ request }: Route.LoaderArgs) {
-  return { bookmarkletHref: createBookmarkletHref(request.url) };
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { env } = context.get(cloudflareContext);
+  const identity = context.get(identityContext);
+  const member = await ensureMemberForEmail(env.DB, identity.email);
+
+  return { bookmarkletHref: createBookmarkletHref(request.url), member };
 }
 
 export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
@@ -33,6 +39,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
 
         <div className="account-links">
           <a href="/">Wishlists</a>
+          {loaderData.member.role === 'admin' ? <a href="/family">Your family</a> : null}
           <a href="/profile">Profile</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>

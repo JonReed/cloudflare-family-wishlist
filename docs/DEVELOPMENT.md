@@ -55,6 +55,8 @@ Run `npm run quality` and `npm run audit` before every commit or push. CI repeat
    form intents.
 4. `app/lib/product-metadata.ts` performs bounded public-page lookups for the optional link helper.
 5. `app/lib/db/members.ts` and `app/lib/db/wishlists.ts` own database rules and validation.
+   `app/routes/family.tsx`, `app/lib/db/family-members.ts` and
+   `app/lib/cloudflare/access-membership.ts` own the organiser-only admission flow.
 6. React Router renders the response through `app/root.tsx`; the current UI and forms are in
    `app/routes/home.tsx` with reusable brand/footer pieces in `app/components/`.
 
@@ -132,6 +134,12 @@ after reading the account-specific private handoff and verifying the active Wran
 - Fail closed when production configuration or the assertion is missing.
 - Keep the development identity restricted to a development build and a loopback hostname.
 - Never log assertions, tokens or full authentication payloads.
+- Keep family admission fail-closed: validate the admin role before calling Cloudflare, create only
+  an exact-email Allow policy, and record it as waiting only after Cloudflare succeeds.
+- Treat `ACCESS_MANAGEMENT_API_TOKEN` as a secret. Keep the account and application identifiers in
+  deployment configuration, not family-facing output.
+- Preserve the bounded response reader, timeout and compensating policy deletion around Access API
+  calls. Inject `fetch` in tests; never call the live API from the test suite.
 - Cloudflare Access policy/DNS changes are external mutations and require explicit maintainer authority.
 
 ### Visual or copy change
@@ -150,7 +158,9 @@ after reading the account-specific private handoff and verifying the active Wran
 | Test                               | Protects                                                           |
 | ---------------------------------- | ------------------------------------------------------------------ |
 | `test/access-auth.test.ts`         | JWT signature/issuer/audience/expiry and local identity boundaries |
+| `test/access-membership.test.ts`   | exact-email policy shape, bounded API handling and cleanup         |
 | `test/bookmarklet.test.ts`         | safe, deployment-specific bookmarklet construction                 |
+| `test/family-members.test.ts`      | roles, admin checks, invitation state and first-login conversion   |
 | `test/member-provisioning.test.ts` | email validation, idempotent first login and one-list constraint   |
 | `test/product-metadata.test.ts`    | bounded public fetches, metadata extraction and optional AI safety |
 | `test/product-url.test.ts`         | safe HTTP(S) links, credential rejection and size limits           |

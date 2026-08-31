@@ -1,7 +1,12 @@
+export const MEMBER_ROLES = ['admin', 'member'] as const;
+
+export type MemberRole = (typeof MEMBER_ROLES)[number];
+
 export type MemberWithWishlist = {
   id: string;
   email: string;
   displayName: string;
+  role: MemberRole;
   wishlistId: string;
 };
 
@@ -11,6 +16,7 @@ type MemberWithWishlistRow = {
   id: string;
   email: string;
   display_name: string;
+  role: MemberRole;
   wishlist_id: string;
 };
 
@@ -19,6 +25,7 @@ const FIND_MEMBER_WITH_WISHLIST = `
     members.id,
     members.email,
     members.display_name,
+    members.role,
     wishlists.id AS wishlist_id
   FROM members
   INNER JOIN wishlists ON wishlists.owner_member_id = members.id
@@ -69,6 +76,7 @@ function mapMember(row: MemberWithWishlistRow): MemberWithWishlist {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
+    role: row.role,
     wishlistId: row.wishlist_id
   };
 }
@@ -106,8 +114,24 @@ export async function ensureMemberForEmail(
   await db.batch([
     db
       .prepare(
-        `INSERT INTO members (id, email, display_name)
-         VALUES (?1, ?2, ?3)
+        `INSERT INTO members (id, email, display_name, role)
+         VALUES (
+           ?1,
+           ?2,
+           COALESCE(
+             (
+               SELECT family_invitations.display_name
+               FROM family_invitations
+               WHERE family_invitations.email = ?2 COLLATE NOCASE
+               LIMIT 1
+             ),
+             ?3
+           ),
+           CASE
+             WHEN EXISTS (SELECT 1 FROM members) THEN 'member'
+             ELSE 'admin'
+           END
+         )
          ON CONFLICT (email) DO NOTHING`
       )
       .bind(memberId, email, initialDisplayName(email)),

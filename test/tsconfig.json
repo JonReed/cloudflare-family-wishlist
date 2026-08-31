@@ -17,6 +17,8 @@
     "./**/*.ts",
     "../app/lib/auth/access.ts",
     "../app/lib/bookmarklet.ts",
+    "../app/lib/cloudflare/access-membership.ts",
+    "../app/lib/db/family-members.ts",
     "../app/lib/db/members.ts",
     "../app/lib/db/wishlists.ts",
     "../app/lib/product-metadata.ts",

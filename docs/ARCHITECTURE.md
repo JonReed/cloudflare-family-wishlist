@@ -29,9 +29,13 @@ JWT verification + security headers + React Router request handler
     |                  |
     |                  +--> optional cleaned-text fallback (Workers AI)
     |
+    +--> organiser-only family route (app/routes/family.tsx)
+            |
+            +--> exact-email policy creation (Cloudflare Access API)
+    |
     v
 Cloudflare D1
-members, wishlists, items and private claims
+members, pending family invitations, wishlists, items and private claims
 ```
 
 Cloudflare Access is the outer admission boundary. The Worker independently validates the Access JWT
@@ -43,8 +47,9 @@ email. Missing or invalid production configuration fails closed.
 1. Access rejects identities outside the deployment's exact email allow-list and handles the OTP UI.
 2. `workers/app.ts` verifies the Access assertion and builds an immutable request context containing
    the verified identity and D1 binding.
-3. The home loader calls `ensureMemberForEmail()`. Unique database constraints make concurrent first
-   requests converge on one member and one wishlist.
+3. A route calls `ensureMemberForEmail()`. Unique database constraints make concurrent first
+   requests converge on one member and one wishlist. The first member is assigned the admin role;
+   subsequent people are members.
 4. The loader requests all family wishlists for the viewer. Their own list sorts first; `?list=` chooses
    the active list rendered in the document.
 5. Forms post an explicit intent to an action. React Router verifies that the browser origin matches
@@ -54,6 +59,12 @@ email. Missing or invalid production configuration fails closed.
 6. `/add?url=` is the bookmarklet landing route. It loads an editable product draft and all family
    list choices; its action inserts one independent item per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
+
+The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
+validates the organiser role and proposed name/email, creates a single exact-email application
+policy through Cloudflare's API, then stores the invitation in D1. If the D1 insert fails, it attempts
+to delete the newly created policy before returning an error. The API token is a Worker secret and is
+never returned to loaders, HTML or logs.
 
 Authentication happens before provisioning. There is no application endpoint that accepts an email
 address and creates a member without a verified Access identity.
@@ -83,10 +94,13 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/routes/home.tsx`                             | HTTP-level loading, form intent dispatch and page composition                      |
 | `app/routes/add.tsx`                              | Bookmarklet landing page, multi-list chooser and save action                       |
 | `app/routes/bookmarklet.tsx`                      | Browser-button installation and visual drag guidance                               |
+| `app/routes/family.tsx`                           | Organiser-only joined/waiting member administration                                |
 | `app/routes/product-details.ts`                   | Same-origin progressive-enhancement endpoint for product-link metadata             |
 | `app/lib/bookmarklet.ts`, `public/bookmarklet.js` | Deployment-specific bookmarklet generation and safe browser installation           |
+| `app/lib/cloudflare/access-membership.ts`         | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
 | `app/lib/product-metadata.ts`                     | Bounded public-page fetching, redirect policy and metadata extraction              |
 | `app/lib/db/members.ts`                           | Identity normalisation and member/list provisioning                                |
+| `app/lib/db/family-members.ts`                    | Admin checks, waiting invitations and family roster reads                          |
 | `app/lib/db/wishlists.ts`                         | Domain validation, reads, mutations, claim ownership and privacy                   |
 | `migrations/`                                     | Append-only persistent schema history                                              |
 | `app/root.tsx`, `app/app.css`, `app/components/`  | Document shell, design system and shared presentation                              |
@@ -101,6 +115,7 @@ members
   id (UUID) PK
   email UNIQUE
   display_name
+  role: admin | member
        |
        | 1:1 (wishlists.owner_member_id is UNIQUE)
        v
@@ -122,6 +137,13 @@ claims
   item_id PK/FK
   claimed_by_member_id FK -> members
   state: claimed | purchased
+
+family_invitations
+  id (UUID) PK
+  email UNIQUE
+  display_name
+  access_policy_id UNIQUE
+  invited_by_member_id FK -> members
 ```
 
 Tables are SQLite `STRICT` tables with foreign keys, length/state checks and indexes for wishlist
@@ -227,6 +249,8 @@ environment variable.
 - **Workers:** application compute and server rendering.
 - **D1:** relational application data and migrations.
 - **Access:** invitation-only authentication using an exact email allow-list and one-time PINs.
+- **Access API:** organiser additions create one exact-email Allow policy using a narrowly scoped
+  Worker secret; it does not send invitation email.
 - **Workers AI:** optional fallback extraction for poorly marked-up public product pages.
 - **Workers Logs:** operational logs without assertions, private claims or sensitive query strings.
 
@@ -249,6 +273,8 @@ without becoming a new persistence or availability dependency.
 - AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and
   cannot override deterministic metadata or persist data;
 - every user-controlled database value uses a prepared statement with `.bind()`;
+- only an authenticated admin member can create a family invitation, and the Access API request can
+  create only the exact-email policy shape constructed by the server;
 - mutations validate type, length, UUID, ownership and allowed state at the server boundary;
 - errors shown to users do not reveal internals;
 - logs omit tokens, private claim surprises and query strings; and
@@ -257,8 +283,9 @@ without becoming a new persistence or availability dependency.
 ## Deployment boundary
 
 `main` is connected to Cloudflare Builds for the reference deployment. Application deployments are
-automatic after a push; Access membership, DNS and D1 migration changes are separate Cloudflare
-operations. They must not be inferred from an application code request.
+automatic after a push; the initial organiser policy, Access-management API token, DNS and D1
+migration changes remain separate Cloudflare operations. Later exact-email additions are deliberately
+performed by the organiser from `/family`.
 
 Public fork setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md). The maintainer checkout may also
 contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context; it must remain private.

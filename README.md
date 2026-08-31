@@ -12,6 +12,7 @@ Each family member has one wishlist. Everyone in the invited family group can vi
 Most wishlist applications are either public, advertising-supported, complicated to self-host, or built around permissions this use case does not need. This project deliberately has a smaller model:
 
 - invitation-only access;
+- a family-organiser page showing who has joined and who is still waiting;
 - one wishlist per family member;
 - shared editing across the family;
 - editable names, pictures and GBP prices filled from product links when shops publish them;
@@ -77,7 +78,10 @@ Cloudflare configuration.
 
 Do not expose a deployment containing family data until Cloudflare Access is configured with an **exact email allow-list**. Selecting “One-time PIN” as the only Access rule would allow any valid email address and is not sufficient.
 
-The Worker also verifies Access JWTs itself and fails closed if the team domain, application audience or assertion is absent or invalid.
+The Worker also verifies Access JWTs itself and fails closed if the team domain, application audience or assertion is absent or invalid. The first member becomes the family organiser; after one
+additional scoped Cloudflare API token is configured, they can add exact sign-in addresses from the
+**Your family** page without using the Cloudflare dashboard. The application prepares an invitation
+to copy but does not send email itself.
 
 ## Project status
 

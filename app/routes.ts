@@ -4,6 +4,7 @@ export default [
   index('routes/home.tsx'),
   route('add', 'routes/add.tsx'),
   route('bookmarklet', 'routes/bookmarklet.tsx'),
+  route('family', 'routes/family.tsx'),
   route('profile', 'routes/profile.tsx'),
   route('product-details', 'routes/product-details.ts')
 ] satisfies RouteConfig;
