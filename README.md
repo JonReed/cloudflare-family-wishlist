@@ -28,7 +28,9 @@ Most wishlist applications are either public, advertising-supported, complicated
 - TypeScript, React and Tailwind CSS
 - Vitest running in the Cloudflare Workers runtime
 
-The architectural reasoning is recorded in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The architectural reasoning is recorded in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The
+family-first information architecture, visual language and interface rules live in
+[docs/DESIGN.md](docs/DESIGN.md).
 
 ## Local development
 

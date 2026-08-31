@@ -1,5 +1,7 @@
 import { redirect } from 'react-router';
 
+import { Brand, GiftIcon } from '../components/brand';
+import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 import {
@@ -28,15 +30,16 @@ export function meta() {
   ];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
   const member = await ensureMemberForEmail(env.DB, identity.email);
+  const wishlists = await listFamilyWishlists(env.DB, member.id);
+  const requestedWishlistId = new URL(request.url).searchParams.get('list');
+  const activeWishlist =
+    wishlists.find((wishlist) => wishlist.id === requestedWishlistId) ?? wishlists[0] ?? null;
 
-  return {
-    member,
-    wishlists: await listFamilyWishlists(env.DB, member.id)
-  };
+  return { member, wishlists, activeWishlist };
 }
 
 function formString(formData: FormData, name: string): string {
@@ -91,7 +94,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         throw new WishlistInputError('That action is not supported.');
     }
 
-    return redirect(`/#wishlist-${encodeURIComponent(wishlistId)}`);
+    return redirect(`/?list=${encodeURIComponent(wishlistId)}#wishlist`);
   } catch (error) {
     if (error instanceof WishlistInputError) {
       return { error: error.message };
@@ -99,22 +102,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     throw error;
   }
-}
-
-function GiftIcon({ className = 'size-5' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-    >
-      <path d="M4 10h16v10H4zM2.8 6.5h18.4V10H2.8zM12 6.5V20" />
-      <path d="M11.8 6.3C9.8 6.3 7.2 5.5 7.2 3.7c0-1 .8-1.7 1.8-1.5 1.7.3 2.6 2.3 2.8 4.1ZM12.2 6.3c2 0 4.6-.8 4.6-2.6 0-1-.8-1.7-1.8-1.5-1.7.3-2.6 2.3-2.8 4.1Z" />
-    </svg>
-  );
 }
 
 function formatPrice(amountMinor: number, currency: string): string {
@@ -131,7 +118,7 @@ function priceInputValue(item: WishlistItem): string {
 
 function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
   return (
-    <div className="grid gap-4">
+    <div className="form-fields">
       <div>
         <label htmlFor={`${formId}-title`} className="form-label">
           What is it? <span aria-hidden="true">*</span>
@@ -162,7 +149,7 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="form-split">
         <div>
           <label htmlFor={`${formId}-url`} className="form-label">
             Product link
@@ -181,17 +168,15 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
           <label htmlFor={`${formId}-price`} className="form-label">
             Approximate price
           </label>
-          <div className="relative">
-            <span className="text-ink-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">
-              £
-            </span>
+          <div className="price-field">
+            <span aria-hidden="true">£</span>
             <input
               id={`${formId}-price`}
               name="price"
               inputMode="decimal"
               pattern="(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,2})?"
               defaultValue={item ? priceInputValue(item) : ''}
-              className="form-control pl-8"
+              className="form-control"
               placeholder="24.50"
             />
           </div>
@@ -200,7 +185,7 @@ function ItemFields({ item, formId }: { item?: WishlistItem; formId: string }) {
 
       <div>
         <label htmlFor={`${formId}-priority`} className="form-label">
-          Priority
+          How much is it wanted?
         </label>
         <select
           id={`${formId}-priority`}
@@ -243,13 +228,16 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
   const isPurchased = item.claim.state === 'purchased';
 
   return (
-    <div className="border-leaf/15 bg-mint/18 rounded-2xl border p-4">
-      <p className="text-leaf text-sm font-bold">
+    <div className="claim-note">
+      <p>
+        <span className="claim-tick" aria-hidden="true">
+          ✓
+        </span>
         {isPurchased ? 'Bought' : 'Claimed'} by{' '}
         {item.claim.isClaimedByViewer ? 'you' : item.claim.claimedByDisplayName}
       </p>
       {item.claim.isClaimedByViewer ? (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="claim-actions">
           {!isPurchased ? (
             <form method="post" action="?index">
               <ActionFields wishlistId={wishlist.id} itemId={item.id} />
@@ -270,131 +258,118 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
   );
 }
 
-function WishlistItemCard({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
+const priorityLabels = {
+  low: 'Nice to have',
+  normal: 'Would love',
+  high: 'Top wish'
+} as const;
+
+function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
   const formId = `edit-${item.id}`;
-  const priorityLabels = {
-    low: 'Nice to have',
-    normal: 'Would love',
-    high: 'Top wish'
-  } as const;
 
   return (
-    <li className="border-ink/10 bg-paper rounded-[1.5rem] border p-5 shadow-sm sm:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-ink text-2xl font-semibold tracking-tight">
-              {item.title}
-            </h3>
-            <span className={`priority priority-${item.priority}`}>
-              {priorityLabels[item.priority]}
-            </span>
-          </div>
-          {item.notes ? (
-            <p className="text-ink-muted mt-3 max-w-2xl leading-7 whitespace-pre-wrap">
-              {item.notes}
-            </p>
-          ) : null}
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm font-semibold">
-            {item.priceAmountMinor !== null && item.priceCurrency ? (
-              <span className="text-ink">
-                Around {formatPrice(item.priceAmountMinor, item.priceCurrency)}
-              </span>
-            ) : null}
-            {item.productUrl ? (
-              <a
-                href={item.productUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-leaf focus-visible:outline-leaf rounded-sm underline decoration-2 underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-4"
-              >
-                View product <span aria-hidden="true">↗</span>
-              </a>
-            ) : null}
-          </div>
+    <li className={`wish-row wish-row-${item.priority}`}>
+      <div className="wish-content">
+        <div className="wish-heading">
+          <h3>{item.title}</h3>
+          <span className={`priority priority-${item.priority}`}>
+            {priorityLabels[item.priority]}
+          </span>
         </div>
 
-        <div className="shrink-0">
-          <ClaimControls wishlist={wishlist} item={item} />
+        {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
+
+        <div className="wish-meta">
+          {item.priceAmountMinor !== null && item.priceCurrency ? (
+            <span>About {formatPrice(item.priceAmountMinor, item.priceCurrency)}</span>
+          ) : null}
+          {item.productUrl ? (
+            <a href={item.productUrl} target="_blank" rel="noreferrer">
+              View the idea <span aria-hidden="true">↗</span>
+            </a>
+          ) : null}
         </div>
+
+        <details className="edit-panel">
+          <summary>Edit this wish</summary>
+          <form method="post" action="?index" className="edit-form">
+            <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+            <ItemFields item={item} formId={formId} />
+            <div className="form-actions">
+              <button name="intent" value="edit-item" className="button-primary">
+                Save changes
+              </button>
+              <button name="intent" value="delete-item" className="button-danger">
+                Delete item
+              </button>
+            </div>
+          </form>
+        </details>
       </div>
 
-      <details className="border-ink/10 mt-5 border-t pt-4">
-        <summary className="text-ink-muted hover:text-leaf focus-visible:outline-leaf cursor-pointer rounded-sm text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-4">
-          Edit item
-        </summary>
-        <form method="post" action="?index" className="mt-5">
-          <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-          <ItemFields item={item} formId={formId} />
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button name="intent" value="edit-item" className="button-primary">
-              Save changes
-            </button>
-            <button name="intent" value="delete-item" className="button-danger">
-              Delete item
-            </button>
-          </div>
-        </form>
-      </details>
+      <div className="wish-claim">
+        <ClaimControls wishlist={wishlist} item={item} />
+      </div>
     </li>
   );
 }
 
-function WishlistCard({ wishlist }: { wishlist: FamilyWishlist }) {
+function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
   const addFormId = `add-${wishlist.id}`;
+  const possessiveName = wishlist.isOwn ? 'Your' : `${wishlist.owner.displayName}’s`;
 
   return (
-    <article
-      id={`wishlist-${wishlist.id}`}
-      className="border-ink/8 bg-canvas/75 scroll-mt-6 rounded-[2rem] border p-5 shadow-sm sm:p-8"
-    >
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <article id="wishlist" className="wishlist-sheet">
+      <span aria-hidden="true" className="paper-tape paper-tape-left" />
+      <span aria-hidden="true" className="paper-tape paper-tape-right" />
+
+      <header className="wishlist-heading">
         <div>
-          <p className="text-leaf text-xs font-bold tracking-[0.16em] uppercase">
-            {wishlist.isOwn ? 'Your wishlist' : 'Family wishlist'}
-          </p>
-          <h2 className="font-display text-ink mt-1 text-4xl font-semibold tracking-tight">
-            {wishlist.owner.displayName}
-          </h2>
+          <p className="section-kicker">{wishlist.isOwn ? 'Your one and only' : 'Their ideas'}</p>
+          <h2>{possessiveName} wishlist</h2>
         </div>
-        <p className="text-ink-muted text-sm font-semibold">
+        <p className="wish-count">
           {wishlist.items.length} {wishlist.items.length === 1 ? 'wish' : 'wishes'}
         </p>
       </header>
 
       {wishlist.isOwn ? (
-        <p className="border-peach bg-peach/35 text-rust mt-5 rounded-2xl border px-4 py-3 text-sm leading-6 font-semibold">
-          Claim information is deliberately absent from your view. Surprises remain intact.
+        <p className="surprise-note">
+          <span aria-hidden="true">Psst…</span> other people’s claims are hidden here, so your
+          surprises stay surprising.
         </p>
-      ) : null}
+      ) : (
+        <p className="giver-note">
+          Claim something when you plan to buy it. {wishlist.owner.displayName} won’t see a thing.
+        </p>
+      )}
 
       {wishlist.items.length ? (
-        <ul className="mt-6 grid list-none gap-4 p-0">
+        <ul className="wish-list">
           {wishlist.items.map((item) => (
-            <WishlistItemCard key={item.id} wishlist={wishlist} item={item} />
+            <WishlistItemRow key={item.id} wishlist={wishlist} item={item} />
           ))}
         </ul>
       ) : (
-        <div className="border-ink/10 bg-paper mt-6 rounded-[1.5rem] border border-dashed px-6 py-10 text-center">
-          <GiftIcon className="text-mint mx-auto size-10" />
-          <p className="font-display text-ink mt-4 text-2xl font-semibold">
-            Nothing wished for yet
-          </p>
-          <p className="text-ink-muted mx-auto mt-2 max-w-md leading-7">
-            Add the first idea below. Everyone in the family can help keep this list useful.
-          </p>
+        <div className="empty-list">
+          <GiftIcon className="size-10" />
+          <div>
+            <h3>A lovely blank page</h3>
+            <p>Add the first idea below. Anyone in the family can lend a hand.</p>
+          </div>
         </div>
       )}
 
-      <details className="border-leaf/15 bg-paper mt-6 rounded-[1.5rem] border p-5 sm:p-6">
-        <summary className="text-leaf focus-visible:outline-leaf cursor-pointer rounded-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-4">
+      <details className="add-wish">
+        <summary>
+          <span aria-hidden="true">＋</span>
           Add a wish for {wishlist.owner.displayName}
         </summary>
-        <form method="post" action="?index" className="mt-5">
+        <form method="post" action="?index" className="add-form">
           <ActionFields wishlistId={wishlist.id} />
           <ItemFields formId={addFormId} />
-          <button name="intent" value="add-item" className="button-primary mt-5">
-            Add to wishlist
+          <button name="intent" value="add-item" className="button-primary">
+            Add to the list
           </button>
         </form>
       </details>
@@ -403,74 +378,80 @@ function WishlistCard({ wishlist }: { wishlist: FamilyWishlist }) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { member, wishlists } = loaderData;
+  const { member, wishlists, activeWishlist } = loaderData;
 
   return (
-    <main className="min-h-screen overflow-hidden">
-      <div aria-hidden="true" className="page-glow page-glow-one" />
-      <div aria-hidden="true" className="page-glow page-glow-two" />
-
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
-        <a
-          href="/"
-          className="focus-visible:outline-leaf inline-flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4"
-        >
-          <span className="bg-leaf text-paper grid size-10 place-items-center rounded-2xl shadow-sm">
-            <GiftIcon />
-          </span>
-          <span className="font-display text-ink text-xl font-semibold tracking-tight">
-            Family Wishlist
-          </span>
+    <div className="site-shell">
+      <header className="site-header page-wrap">
+        <a href="/" className="brand-link" aria-label="Family Wishlist home">
+          <Brand />
         </a>
-        <span className="border-leaf/15 bg-paper/70 text-leaf inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold shadow-sm backdrop-blur sm:px-4">
-          <span className="bg-mint size-2 rounded-full" />
-          <span className="hidden sm:inline">Signed in as </span>
-          {member.displayName}
-        </span>
+
+        <div className="account-links">
+          <span>
+            Hello, <strong>{member.displayName}</strong>
+          </span>
+          <a href="/cdn-cgi/access/logout">Sign out</a>
+        </div>
       </header>
 
-      <section className="relative z-10 mx-auto max-w-6xl px-5 pt-10 pb-20 sm:px-8 sm:pt-16">
-        <div className="max-w-3xl">
-          <p className="bg-peach/65 text-rust mb-4 inline-flex items-center rounded-full px-4 py-2 text-sm font-bold tracking-wide">
-            One list each, shared with the family
-          </p>
-          <h1 className="font-display text-ink text-5xl leading-none font-semibold tracking-[-0.045em] text-balance sm:text-7xl">
-            What would make their day?
-          </h1>
-          <p className="text-ink-muted mt-6 max-w-2xl text-lg leading-8">
-            Add and tidy ideas together. Claims are visible to gift-givers and kept completely out
-            of sight on the recipient’s own list.
-          </p>
-        </div>
-
-        <nav aria-label="Family wishlists" className="mt-8 flex flex-wrap gap-2">
-          {wishlists.map((wishlist) => (
-            <a
-              key={wishlist.id}
-              href={`#wishlist-${wishlist.id}`}
-              className="border-ink/10 bg-paper text-ink hover:border-leaf/30 hover:text-leaf focus-visible:outline-leaf rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition focus-visible:outline-2 focus-visible:outline-offset-4"
-            >
-              {wishlist.owner.displayName}
-              {wishlist.isOwn ? ' (you)' : ''}
-            </a>
-          ))}
-        </nav>
-
-        {actionData?.error ? (
-          <div
-            role="alert"
-            className="border-rust/20 bg-peach/50 text-rust mt-6 rounded-2xl border p-4 font-semibold"
-          >
-            {actionData.error}
+      <main>
+        <section className="parcel-hero page-wrap" aria-labelledby="page-title">
+          <div className="hero-copy-block">
+            <p className="section-kicker hero-kicker">One list each, shared with the family</p>
+            <h1 id="page-title">What would make their day?</h1>
+            <p className="hero-intro">
+              Keep everyone’s gift ideas together. When you’re buying, quietly claim a wish so
+              nobody doubles up—and the recipient never gets a spoiler.
+            </p>
           </div>
-        ) : null}
+        </section>
 
-        <div className="mt-8 grid gap-8">
-          {wishlists.map((wishlist) => (
-            <WishlistCard key={wishlist.id} wishlist={wishlist} />
-          ))}
+        <div className="content-wrap page-wrap">
+          <section className="family-picker" aria-labelledby="family-picker-title">
+            <div className="picker-intro">
+              <p className="section-kicker">The family</p>
+              <h2 id="family-picker-title">Whose list?</h2>
+              <p>Pick a gift tag to see their ideas.</p>
+            </div>
+
+            <nav aria-label="Family wishlists" className="family-tags">
+              {wishlists.map((wishlist) => {
+                const isActive = activeWishlist?.id === wishlist.id;
+
+                return (
+                  <a
+                    key={wishlist.id}
+                    href={`/?list=${encodeURIComponent(wishlist.id)}#wishlist`}
+                    className="family-tag"
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <span>{wishlist.owner.displayName}</span>
+                    {wishlist.isOwn ? <small>Your list</small> : <small>View wishes</small>}
+                  </a>
+                );
+              })}
+            </nav>
+          </section>
+
+          {actionData?.error ? (
+            <div role="alert" className="form-alert">
+              <strong>That didn’t quite work.</strong> {actionData.error}
+            </div>
+          ) : null}
+
+          {activeWishlist ? (
+            <WishlistSheet wishlist={activeWishlist} />
+          ) : (
+            <section className="wishlist-sheet no-lists">
+              <h2>No family lists yet</h2>
+              <p>Your list will be created automatically when you next sign in.</p>
+            </section>
+          )}
         </div>
-      </section>
-    </main>
+      </main>
+
+      <SiteFooter />
+    </div>
   );
 }
