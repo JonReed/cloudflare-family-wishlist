@@ -80,7 +80,10 @@ The Worker deliberately returns `503 Authentication is not configured` until the
 
 Activate **Zero Trust Free**, then add **One-time PIN** under **Integrations → Identity providers**. Cloudflare may add its own account login method during onboarding; this is separate from OTP.
 
-Create a self-hosted Access application with a **Workers** destination and select the deployed Worker. Add an Allow policy containing the **exact email addresses** of the family members. In the application's Authentication settings:
+Create a self-hosted Access application with a **Workers** destination and select the deployed Worker.
+Add an Allow policy containing only the **exact email address of the person setting up the family
+wishlist**. Do not add the rest of the family yet: the first successfully provisioned member is
+reserved as the family organiser. In the application's Authentication settings:
 
 - turn off **Accept all available identity providers**;
 - select only **One-time PIN**;
@@ -105,10 +108,16 @@ Verify the boundary before logging in:
 curl -sSI https://wishlist.example.com/
 ```
 
-An unauthenticated request must redirect to the deployment's `cloudflareaccess.com` login page. Complete one OTP login with an allowed email and confirm that the application loads rather than returning its fail-closed `503` response.
+An unauthenticated request must redirect to the deployment's `cloudflareaccess.com` login page. The
+organiser must now complete one OTP login and confirm that their wishlist appears rather than the
+fail-closed `503` response. Treat this as a required setup step: do not admit anyone else until the
+organiser's first login has succeeded.
 
 ## 7. Invite or remove family members
 
-There is no application-managed invitation email or password. To invite someone, add their exact email address to the Access Allow policy and send them the application URL yourself. Their member record and single wishlist are created automatically after their first successful login.
+After the organiser's first login has been verified, invite someone by adding their exact email
+address to the Access Allow policy and sending them the application URL yourself. There is no
+application-managed invitation email or password. Their member record and single wishlist are created
+automatically after their first successful login.
 
 To prevent future access, remove the email address from the Access policy. Removing Access does not delete the member's wishlist or historical data.
