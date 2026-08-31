@@ -745,6 +745,24 @@
   margin-top: 1.2rem;
 }
 
+.product-fetch-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.product-fetch-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.product-fetch-error {
+  color: var(--rust);
+}
+
 .form-fields {
   display: grid;
   gap: 1.2rem;
@@ -1284,6 +1302,15 @@ button:disabled {
 
   .form-split {
     grid-template-columns: 1fr;
+  }
+
+  .product-fetch-row {
+    grid-template-columns: 1fr;
+  }
+
+  .product-fetch-row .button-quiet {
+    width: 100%;
+    min-height: 2.75rem;
   }
 
   .add-form {

@@ -18,6 +18,7 @@
     "../app/lib/auth/access.ts",
     "../app/lib/db/members.ts",
     "../app/lib/db/wishlists.ts",
+    "../app/lib/product-metadata.ts",
     "../app/lib/product-url.ts"
   ]
 }

@@ -86,6 +86,8 @@ Working today:
 - self-service display-name editing from a personal profile page;
 - switching between all family wishlists;
 - adding, editing and deleting items;
+- filling a new wish's name and GBP price from a public product link, with optional AI help when the
+  page does not publish reliable product metadata;
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased; and
 - server-enforced claim secrecy for the recipient.
@@ -107,6 +109,18 @@ Still planned:
 - a multi-family SaaS control plane;
 - advertising, affiliate tracking or analytics scripts; and
 - extra Cloudflare services without a demonstrated need.
+
+## AI is an enhancement, not a dependency
+
+The link helper reads ordinary product metadata first. If a page is poorly marked up and Workers AI
+is enabled, the application may use it to recover a missing product name or current GBP price from a
+small, cleaned excerpt of the public page. The result remains an editable draft: AI never adds a wish
+or changes saved family data by itself.
+
+Quota, capacity, model and extraction failures must be indistinguishable from an ordinary page that
+does not share enough information. The reliable metadata result is kept, and the family can always
+finish the form by hand. This graceful fallback is part of the product contract rather than an error
+case to expose as infrastructure jargon.
 
 Forks can choose different boundaries, but the reference project should stay small, private and easy
 for a family to operate.

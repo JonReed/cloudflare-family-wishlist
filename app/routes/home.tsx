@@ -5,6 +5,12 @@ import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 import {
+  createWorkersAiProductExtractor,
+  fetchProductMetadata,
+  ProductMetadataError,
+  type ProductMetadata
+} from '../lib/product-metadata';
+import {
   claimWishlistItem,
   createWishlistItem,
   deleteWishlistItem,
@@ -61,6 +67,39 @@ function itemInput(formData: FormData): ItemInput {
   };
 }
 
+type ProductFormDraft = ProductMetadata & {
+  notes: string;
+  priority: 'low' | 'normal' | 'high';
+};
+
+function boundedDraftValue(formData: FormData, name: string, maxLength: number): string {
+  const value = formData.get(name);
+  return typeof value === 'string' ? value.slice(0, maxLength) : '';
+}
+
+function isDraftPriority(value: string): value is ProductFormDraft['priority'] {
+  return value === 'low' || value === 'normal' || value === 'high';
+}
+
+function productFormDraft(
+  formData: FormData,
+  product: ProductMetadata,
+  productUrl = product.productUrl
+): ProductFormDraft {
+  const existingTitle = boundedDraftValue(formData, 'title', 160);
+  const existingPrice = boundedDraftValue(formData, 'price', 32);
+  const rawPriority = boundedDraftValue(formData, 'priority', 16);
+
+  return {
+    ...product,
+    productUrl,
+    title: existingTitle.trim() ? existingTitle : product.title,
+    price: existingPrice.trim() ? existingPrice : product.price,
+    notes: boundedDraftValue(formData, 'notes', 2000),
+    priority: isDraftPriority(rawPriority) ? rawPriority : 'normal'
+  };
+}
+
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
@@ -72,6 +111,31 @@ export async function action({ request, context }: Route.ActionArgs) {
     const wishlistId = formString(formData, 'wishlistId');
 
     switch (intent) {
+      case 'fetch-product': {
+        const productUrl = formData.get('productUrl');
+
+        try {
+          const product = await fetchProductMetadata(productUrl, new URL(request.url).hostname, {
+            extractWithAi:
+              String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
+                ? createWorkersAiProductExtractor(env.AI, env.PRODUCT_AI_MODEL)
+                : undefined
+          });
+          return { wishlistId, product: productFormDraft(formData, product), fetchError: null };
+        } catch (error) {
+          if (!(error instanceof ProductMetadataError)) throw error;
+
+          return {
+            wishlistId,
+            product: productFormDraft(
+              formData,
+              { productUrl: '', title: '', price: '', aiAssisted: false },
+              typeof productUrl === 'string' ? productUrl.slice(0, 2048) : ''
+            ),
+            fetchError: error.message
+          };
+        }
+      }
       case 'add-item':
         await createWishlistItem(env.DB, member.id, wishlistId, itemInput(formData));
         break;
@@ -122,12 +186,16 @@ function ItemFields({
   item,
   formId,
   recipientName,
-  urlFirst = false
+  urlFirst = false,
+  draft,
+  urlHelper
 }: {
   item?: WishlistItem;
   formId: string;
   recipientName: string;
   urlFirst?: boolean;
+  draft?: ProductFormDraft;
+  urlHelper?: React.ReactNode;
 }) {
   const urlField = (
     <div>
@@ -139,9 +207,10 @@ function ItemFields({
         name="productUrl"
         type="url"
         maxLength={2048}
-        defaultValue={item?.productUrl ?? ''}
+        defaultValue={item?.productUrl ?? draft?.productUrl ?? ''}
         className="form-control"
         placeholder={urlFirst ? 'Paste the shop or product link' : 'https://…'}
+        data-product-url={urlFirst ? '' : undefined}
       />
     </div>
   );
@@ -149,6 +218,7 @@ function ItemFields({
   return (
     <div className="form-fields">
       {urlFirst ? urlField : null}
+      {urlFirst ? urlHelper : null}
 
       <div>
         <label htmlFor={`${formId}-title`} className="form-label">
@@ -159,9 +229,10 @@ function ItemFields({
           name="title"
           required
           maxLength={160}
-          defaultValue={item?.title}
+          defaultValue={item?.title ?? draft?.title}
           className="form-control"
           placeholder="A book, cosy socks, the good chocolate…"
+          data-product-title={urlFirst ? '' : undefined}
         />
       </div>
 
@@ -174,7 +245,7 @@ function ItemFields({
           name="notes"
           rows={3}
           maxLength={2000}
-          defaultValue={item?.notes ?? ''}
+          defaultValue={item?.notes ?? draft?.notes ?? ''}
           className="form-control resize-y"
           placeholder="Colour, size, edition, or anything else worth knowing"
         />
@@ -193,9 +264,10 @@ function ItemFields({
               name="price"
               inputMode="decimal"
               pattern="(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,2})?"
-              defaultValue={item ? priceInputValue(item) : ''}
+              defaultValue={item ? priceInputValue(item) : (draft?.price ?? '')}
               className="form-control"
               placeholder="24.50"
+              data-product-price={urlFirst ? '' : undefined}
             />
           </div>
         </div>
@@ -208,7 +280,7 @@ function ItemFields({
         <select
           id={`${formId}-priority`}
           name="priority"
-          defaultValue={item?.priority ?? 'normal'}
+          defaultValue={item?.priority ?? draft?.priority ?? 'normal'}
           className="form-control"
         >
           <option value="low">Nice to have</option>
@@ -393,9 +465,49 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
   );
 }
 
-function AddWishPanel({ wishlist }: { wishlist: FamilyWishlist }) {
+function AddWishPanel({
+  wishlist,
+  actionData
+}: {
+  wishlist: FamilyWishlist;
+  actionData: Route.ComponentProps['actionData'];
+}) {
   const addFormId = `add-${wishlist.id}`;
   const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
+  const fetchedDraft =
+    actionData && 'product' in actionData && actionData.wishlistId === wishlist.id
+      ? actionData.product
+      : undefined;
+  const fetchError =
+    actionData && 'fetchError' in actionData && actionData.wishlistId === wishlist.id
+      ? actionData.fetchError
+      : null;
+  const urlHelper = (
+    <div className="product-fetch-row">
+      <button
+        name="intent"
+        value="fetch-product"
+        className="button-quiet"
+        formNoValidate
+        data-product-fetch
+      >
+        Fill from link
+      </button>
+      <p
+        className={fetchError ? 'product-fetch-status product-fetch-error' : 'product-fetch-status'}
+        role="status"
+        aria-live="polite"
+        data-product-status
+      >
+        {fetchError ??
+          (fetchedDraft
+            ? fetchedDraft.aiAssisted
+              ? 'We found some details with a little AI help. Check them before adding.'
+              : 'We found some details. Check them before adding.'
+            : '')}
+      </p>
+    </div>
+  );
 
   return (
     <aside className="add-wish-panel" aria-labelledby={`${addFormId}-title`}>
@@ -410,9 +522,20 @@ function AddWishPanel({ wishlist }: { wishlist: FamilyWishlist }) {
         Start with a link if you have one, then add the useful details.
       </p>
 
-      <form method="post" action="?index" className="add-form add-form-sidebar">
+      <form
+        method="post"
+        action="?index"
+        className="add-form add-form-sidebar"
+        data-product-import-form
+      >
         <ActionFields wishlistId={wishlist.id} />
-        <ItemFields formId={addFormId} recipientName={recipientName} urlFirst />
+        <ItemFields
+          formId={addFormId}
+          recipientName={recipientName}
+          urlFirst
+          draft={fetchedDraft}
+          urlHelper={urlHelper}
+        />
         <button name="intent" value="add-item" className="button-primary">
           Add to the list
         </button>
@@ -478,7 +601,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
         </section>
 
         <div className="content-wrap page-wrap">
-          {actionData?.error ? (
+          {actionData && 'error' in actionData ? (
             <div role="alert" className="form-alert">
               <strong>Sorry, that didn’t work.</strong> {actionData.error}
             </div>
@@ -487,7 +610,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           {activeWishlist ? (
             <div className="wishlist-workspace">
               <WishlistSheet wishlist={activeWishlist} />
-              <AddWishPanel wishlist={activeWishlist} />
+              <AddWishPanel wishlist={activeWishlist} actionData={actionData} />
             </div>
           ) : (
             <section className="wishlist-sheet no-lists">

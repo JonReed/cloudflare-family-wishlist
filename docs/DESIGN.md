@@ -37,9 +37,11 @@ feel like an admin console.
 Any admitted member can choose a person, add a wish or expand “Edit this wish”. The add form stays in
 reach beside the active list on laptop-sized screens and follows the list on small screens; edit
 forms are disclosed beside the item they change. A new wish asks for its optional product link first
-so a future link-preview feature can fill the remaining fields; adding a wish without a link remains
-supported. Titles, useful buying notes, an approximate price and a human description of priority are
-enough.
+so the page can fill the name and GBP price when a shop shares them; the person checks that draft and
+can change every value before adding it. A visible “Fill from link” control keeps this useful without
+JavaScript, while pasting or leaving the link field triggers the same lookup when enhancement is
+available. Adding a wish without a link remains supported. Titles, useful buying notes, an approximate
+price and a human description of priority are enough.
 
 ### Quietly buying a gift
 

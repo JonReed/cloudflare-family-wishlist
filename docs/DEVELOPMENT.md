@@ -9,7 +9,9 @@ This guide is the practical handoff for changing the application. Read [PRODUCT.
 - npm 11 or newer
 - a checkout of the repository
 
-Cloudflare credentials are not required for ordinary local development or tests.
+Cloudflare credentials are not required for ordinary local development or tests. Remote bindings are
+disabled in Vite and Vitest, so local product import exercises deterministic extraction and graceful
+AI fallback without consuming a deployment's allowance.
 
 ## First local run
 
@@ -51,8 +53,9 @@ Run `npm run quality` and `npm run audit` before every commit or push. CI repeat
 2. `app/lib/context.ts` makes the verified identity and D1 binding available to React Router.
 3. `app/routes/home.tsx` provisions the member, loads the selected family wishlist and dispatches
    form intents.
-4. `app/lib/db/members.ts` and `app/lib/db/wishlists.ts` own database rules and validation.
-5. React Router renders the response through `app/root.tsx`; the current UI and forms are in
+4. `app/lib/product-metadata.ts` performs bounded public-page lookups for the optional link helper.
+5. `app/lib/db/members.ts` and `app/lib/db/wishlists.ts` own database rules and validation.
+6. React Router renders the response through `app/root.tsx`; the current UI and forms are in
    `app/routes/home.tsx` with reusable brand/footer pieces in `app/components/`.
 
 The route is intentionally server-first. Prefer a loader/action and an ordinary form over adding a
@@ -71,6 +74,13 @@ the no-JavaScript path remains sound.
 
 The home route is currently large. When adding another substantial interaction, prefer extracting a
 cohesive component or server helper rather than growing one more unrelated block in the route.
+
+Product metadata lookup is progressive enhancement. Keep the ordinary `fetch-product` form intent
+working without JavaScript, and keep `public/product-import.js` limited to the same-origin convenience
+layer. Any outbound page fetch must preserve the timeout, response-byte cap, manual redirect checks,
+public-target checks and credential-free request in `app/lib/product-metadata.ts`. AI extraction must
+remain optional, receive only reduced public-page text, accept only source-supported values and never
+save a wish. Inject `ProductAiExtractor` in tests rather than connecting the test pool to Workers AI.
 
 ### Database query or mutation
 

@@ -7,8 +7,16 @@
   "name": "cloudflare-family-wishlist",
   "account_id": "fe36a5f853539765511b8639f28c4b6c",
   "compatibility_date": "2026-08-31",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "./workers/app.ts",
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "vars": {
+    "PRODUCT_AI_ENABLED": "true",
+    "PRODUCT_AI_MODEL": "@cf/google/gemma-4-26b-a4b-it"
+  },
   "d1_databases": [
     {
       "binding": "DB",

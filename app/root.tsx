@@ -1,11 +1,17 @@
 import { isRouteErrorResponse, Link, Links, Meta, Outlet } from 'react-router';
 
+import { cloudflareContext } from './lib/context';
 import type { Route } from './+types/root';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }
 ];
+
+export function loader({ context }: Route.LoaderArgs) {
+  const { cspNonce } = context.get(cloudflareContext);
+  return { cspNonce };
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,8 +29,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
-  return <Outlet />;
+export default function App({ loaderData }: Route.ComponentProps) {
+  return (
+    <>
+      <Outlet />
+      <script src="/product-import.js" nonce={loaderData.cspNonce} defer />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

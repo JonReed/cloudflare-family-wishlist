@@ -25,6 +25,9 @@ JWT verification + security headers + React Router request handler
     |       |
     |       +--> member provisioning (app/lib/db/members.ts)
     |       +--> wishlist service (app/lib/db/wishlists.ts)
+    |       +--> bounded public-page metadata fetch (app/lib/product-metadata.ts)
+    |                  |
+    |                  +--> optional cleaned-text fallback (Workers AI)
     |
     v
 Cloudflare D1
@@ -45,7 +48,8 @@ email. Missing or invalid production configuration fails closed.
 4. The loader requests all family wishlists for the viewer. Their own list sorts first; `?list=` chooses
    the active list rendered in the document.
 5. Forms post an explicit intent to the home action. The action validates the request shape, invokes a
-   service mutation and redirects back to the selected list.
+   service mutation and redirects back to the selected list. The add form can instead request an
+   editable draft from a product link without creating an item.
 6. The Worker adds private caching, CSP and other defensive response headers to every response.
 
 Authentication happens before provisioning. There is no application endpoint that accepts an email
@@ -74,6 +78,8 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/auth/access.ts`                         | Access JWT verification and tightly constrained local identity                     |
 | `app/lib/context.ts`                             | Typed identity and binding handoff to loaders/actions                              |
 | `app/routes/home.tsx`                            | HTTP-level loading, form intent dispatch and page composition                      |
+| `app/routes/product-details.ts`                  | Same-origin progressive-enhancement endpoint for product-link metadata             |
+| `app/lib/product-metadata.ts`                    | Bounded public-page fetching, redirect policy and metadata extraction              |
 | `app/lib/db/members.ts`                          | Identity normalisation and member/list provisioning                                |
 | `app/lib/db/wishlists.ts`                        | Domain validation, reads, mutations, claim ownership and privacy                   |
 | `migrations/`                                    | Append-only persistent schema history                                              |
@@ -140,9 +146,33 @@ The application uses progressively enhanced server-rendered pages and ordinary H
 wishlist and claim operations work without browser JavaScript. This keeps the payload small, gives a
 strong accessibility baseline and permits a strict Content Security Policy.
 
-JavaScript can be introduced for an interaction with a clear benefit, but the server remains
-authoritative. Inline scripts require a per-response CSP nonce; `unsafe-inline` and `unsafe-eval` are
-not acceptable shortcuts.
+The product-link helper is the one progressively enhanced interaction: a small nonce-authorised,
+self-hosted script starts the lookup after a link is pasted or changed. The ordinary “Fill from link”
+form action remains the fallback when JavaScript is unavailable, and creating a wish never depends on
+the script. The server remains authoritative. `unsafe-inline` and `unsafe-eval` are not acceptable
+shortcuts.
+
+## Product-page extraction
+
+Product import is deliberately staged:
+
+1. Fetch at most 512 KiB from a public HTTP(S) target, with manual redirect validation and an
+   eight-second timeout.
+2. Prefer JSON-LD, Open Graph and ordinary product metadata. Reliable structured values are never
+   replaced by AI.
+3. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
+   navigation, site headers and footers, forms, cookie controls, adverts, recommendations, reviews,
+   social controls and repeated text. Headings, price-adjacent lines and main product content are
+   prioritised, deduplicated and capped at 10,000 characters.
+4. Ask the configured Workers AI model only for the missing fields. Page text is explicitly treated
+   as untrusted data, not instructions, and model output is accepted only when the returned title or
+   price also appears in the reduced source text.
+5. Return an editable draft. AI timeouts, exhausted free allocation, capacity errors and invalid
+   output quietly leave the deterministic result in place.
+
+No Access assertion, cookie, family data or requesting-user identity is sent to the model. The model
+cannot fetch another URL, invoke a tool or persist anything. Only the ordinary add-wish action can
+save the checked draft.
 
 ## Local and production identity
 
@@ -163,10 +193,13 @@ environment variable.
 - **Workers:** application compute and server rendering.
 - **D1:** relational application data and migrations.
 - **Access:** invitation-only authentication using an exact email allow-list and one-time PINs.
+- **Workers AI:** optional fallback extraction for poorly marked-up public product pages.
 - **Workers Logs:** operational logs without assertions, private claims or sensitive query strings.
 
 R2, KV, Queues and application-managed email are intentionally absent. Introduce another service only
-for a concrete requirement, with free-tier and setup impact documented.
+for a concrete requirement, with free-tier and setup impact documented. Product import continues to
+work without Workers AI; the binding is included because it materially improves the existing helper
+without becoming a new persistence or availability dependency.
 
 ## Security and caching baseline
 
@@ -174,6 +207,10 @@ for a concrete requirement, with free-tier and setup impact documented.
 - CSP allows only the resources the application currently needs and no third-party scripts/fonts;
 - form actions are same-origin;
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
+- product metadata fetches accept only public HTTP(S) pages, validate each redirect, send no user
+  credentials, stop after 8 seconds and inspect at most 512 KiB of HTML;
+- AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and
+  cannot override deterministic metadata or persist data;
 - every user-controlled database value uses a prepared statement with `.bind()`;
 - mutations validate type, length, UUID, ownership and allowed state at the server boundary;
 - errors shown to users do not reveal internals;

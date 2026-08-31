@@ -9,6 +9,9 @@ export default defineConfig(async () => {
   return {
     plugins: [
       cloudflareTest({
+        // Workers AI has no local simulator. Product extraction injects a fake
+        // in unit tests, so the test pool must never open a remote AI session.
+        remoteBindings: false,
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
           bindings: { TEST_MIGRATIONS: migrations }

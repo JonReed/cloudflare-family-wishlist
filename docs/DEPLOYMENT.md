@@ -1,6 +1,7 @@
 # Deployment
 
-The application is designed for one family per Cloudflare deployment. The normal setup uses Workers, D1 and Access and should fit comfortably within the free allowances for family use.
+The application is designed for one family per Cloudflare deployment. The normal setup uses Workers,
+D1, Workers AI and Access and should fit comfortably within the free allowances for family use.
 
 ## 1. Use a dedicated Wrangler profile
 
@@ -30,7 +31,25 @@ npm run cf-typegen
 
 Migration files are append-only after release. Never edit a migration that another deployment may already have applied.
 
-## 3. Deploy once before configuring Access
+## 3. Workers AI is enabled with the deployment
+
+No API key, separate model deployment or additional account is required. The checked-in
+`wrangler.jsonc` creates the `AI` binding and enables AI-assisted product extraction during the normal
+Worker deployment. The default model is `@cf/google/gemma-4-26b-a4b-it`, which is available on the
+Workers Free plan.
+
+The two non-secret settings are kept with the deployment configuration:
+
+- `PRODUCT_AI_ENABLED`: `true` by default; set it to `false` to use deterministic page metadata only.
+- `PRODUCT_AI_MODEL`: the model used for the fallback. The application currently accepts the default
+  Gemma model or `@cf/zai-org/glm-4.7-flash`, falling back to Gemma for an unrecognised value.
+
+Workers AI is called only when reliable page metadata leaves a product title or GBP price missing.
+Reaching the daily free allocation, a model being unavailable, or a page producing unusable output
+does not stop product import: the application keeps anything it found deterministically and leaves the
+remaining fields for the person to complete.
+
+## 4. Deploy once before configuring Access
 
 Apply the remote migrations, build, and deploy with the directory-bound Wrangler profile:
 
@@ -42,7 +61,7 @@ npx wrangler deploy -c build/server/wrangler.json --domain wishlist.example.com 
 
 Replace `wishlist.example.com` with the hostname you want to use. Confirm that the Worker responds with `503 Authentication is not configured`. That response is intentional: it verifies Worker, D1 and hostname routing without leaving an unprotected application online.
 
-## 4. Connect GitHub `main`
+## 5. Connect GitHub `main`
 
 In **Workers & Pages → Create → Import a repository**, select this repository and use:
 
@@ -57,7 +76,7 @@ The repository CI runs formatting, lint, types, Workers-runtime tests, the produ
 
 The Worker deliberately returns `503 Authentication is not configured` until the Access settings below exist. This makes the first infrastructure deployment safe while Access is being connected.
 
-## 5. Configure Cloudflare Access
+## 6. Configure Cloudflare Access
 
 Activate **Zero Trust Free**, then add **One-time PIN** under **Integrations → Identity providers**. Cloudflare may add its own account login method during onboarding; this is separate from OTP.
 
@@ -88,7 +107,7 @@ curl -sSI https://wishlist.example.com/
 
 An unauthenticated request must redirect to the deployment's `cloudflareaccess.com` login page. Complete one OTP login with an allowed email and confirm that the application loads rather than returning its fail-closed `503` response.
 
-## 6. Invite or remove family members
+## 7. Invite or remove family members
 
 There is no application-managed invitation email or password. To invite someone, add their exact email address to the Access Allow policy and send them the application URL yourself. Their member record and single wishlist are created automatically after their first successful login.
 

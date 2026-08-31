@@ -24,6 +24,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - [React Router](https://reactrouter.com/) in full-stack framework mode
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) and the Cloudflare Vite plugin
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) for SQLite-compatible storage
+- [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) for an optional product-page extraction fallback
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/) with email one-time PINs and an exact email allow-list
 - TypeScript, React and Tailwind CSS
 - Vitest running in the Cloudflare Workers runtime

@@ -20,18 +20,6 @@ const requestHandler = createRequestHandler(
 
 const SECURITY_HEADERS = {
   'Cache-Control': 'private, no-store',
-  'Content-Security-Policy': [
-    "default-src 'self'",
-    "script-src 'none'",
-    "style-src 'self'",
-    "img-src 'self' https: data:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'"
-  ].join('; '),
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Resource-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
@@ -40,12 +28,35 @@ const SECURITY_HEADERS = {
   'X-Robots-Tag': 'noindex, nofollow, noarchive'
 } as const;
 
-function withSecurityHeaders(response: Response): Response {
+function createCspNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function withSecurityHeaders(response: Response, cspNonce: string): Response {
   const headers = new Headers(response.headers);
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
   }
+
+  headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      `script-src 'nonce-${cspNonce}'`,
+      "style-src 'self'",
+      "img-src 'self' https: data:",
+      "font-src 'self'",
+      "connect-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'"
+    ].join('; ')
+  );
 
   return new Response(response.body, {
     status: response.status,
@@ -57,6 +68,7 @@ function withSecurityHeaders(response: Response): Response {
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const context = new RouterContextProvider();
+    const cspNonce = createCspNonce();
 
     try {
       const runtimeEnv = env as RuntimeEnv;
@@ -64,11 +76,11 @@ export default {
         allowLocalDevelopmentIdentity: import.meta.env.DEV
       });
 
-      context.set(cloudflareContext, { env: runtimeEnv, ctx });
+      context.set(cloudflareContext, { env: runtimeEnv, ctx, cspNonce });
       context.set(identityContext, identity);
 
       const response = await requestHandler(request, context);
-      return withSecurityHeaders(response);
+      return withSecurityHeaders(response, cspNonce);
     } catch (error) {
       if (error instanceof AuthenticationError) {
         console.warn(
@@ -81,7 +93,7 @@ export default {
 
         const message =
           error.status === 503 ? 'Authentication is not configured.' : 'Authentication required.';
-        return withSecurityHeaders(new Response(message, { status: error.status }));
+        return withSecurityHeaders(new Response(message, { status: error.status }), cspNonce);
       }
 
       const url = new URL(request.url);
@@ -94,7 +106,7 @@ export default {
         })
       );
 
-      return withSecurityHeaders(new Response('Internal server error', { status: 500 }));
+      return withSecurityHeaders(new Response('Internal server error', { status: 500 }), cspNonce);
     }
   }
 } satisfies ExportedHandler<Env>;
