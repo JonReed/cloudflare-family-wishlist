@@ -516,15 +516,10 @@ function AddWishPanel({
   return (
     <aside className="add-wish-panel" aria-labelledby={`${addFormId}-title`}>
       <span aria-hidden="true" className="add-panel-tape" />
-      <p className="section-kicker">A new idea</p>
       <h2 id={`${addFormId}-title`}>
-        {wishlist.isOwn
-          ? 'Add to your wishlist'
-          : `Add something for ${wishlist.owner.displayName}`}
+        {wishlist.isOwn ? 'Add to wishlist' : `Add something for ${wishlist.owner.displayName}`}
       </h2>
-      <p className="add-panel-intro">
-        Start with a link if you have one, then add the useful details.
-      </p>
+      <p className="add-panel-intro">Start with a link if you have one, then add details.</p>
 
       <form
         method="post"
