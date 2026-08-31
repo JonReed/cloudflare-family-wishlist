@@ -39,6 +39,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] List family members and wishlists.
 - [x] View any family member's wishlist.
 - [x] Clearly identify the signed-in member and their own list.
+- [x] Let members edit their own display name from a profile page.
 - [x] Responsive, accessible navigation and useful empty states.
 
 ## Phase 5 — Wishlist items

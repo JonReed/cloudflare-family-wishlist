@@ -435,6 +435,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <span>
             Hello, <strong>{member.displayName}</strong>
           </span>
+          <a href="/profile">Profile</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>
       </header>

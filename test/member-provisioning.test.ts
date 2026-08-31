@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { ensureMemberForEmail } from '../app/lib/db/members';
+import { ensureMemberForEmail, updateMemberDisplayName } from '../app/lib/db/members';
 
 describe('ensureMemberForEmail', () => {
   beforeEach(async () => {
@@ -62,5 +62,62 @@ describe('ensureMemberForEmail', () => {
         .bind(crypto.randomUUID(), member.id)
         .run()
     ).rejects.toThrow();
+  });
+});
+
+describe('updateMemberDisplayName', () => {
+  beforeEach(async () => {
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM claims'),
+      env.DB.prepare('DELETE FROM items'),
+      env.DB.prepare('DELETE FROM wishlists'),
+      env.DB.prepare('DELETE FROM members')
+    ]);
+  });
+
+  it.each([null, '', '   ', 'a'.repeat(81)])(
+    'rejects an invalid display name: %s',
+    async (name) => {
+      const member = await ensureMemberForEmail(env.DB, 'alex@example.com');
+
+      await expect(updateMemberDisplayName(env.DB, member.id, name)).rejects.toThrow();
+    }
+  );
+
+  it('trims and saves a display name at the 80-character boundary', async () => {
+    const member = await ensureMemberForEmail(env.DB, 'alex@example.com');
+    const boundaryName = 'a'.repeat(80);
+
+    await expect(updateMemberDisplayName(env.DB, member.id, `  ${boundaryName}  `)).resolves.toBe(
+      boundaryName
+    );
+
+    const updated = await ensureMemberForEmail(env.DB, member.email);
+    expect(updated.displayName).toBe(boundaryName);
+  });
+
+  it('updates only the authenticated member represented by the supplied id', async () => {
+    const alex = await ensureMemberForEmail(env.DB, 'alex@example.com');
+    const sam = await ensureMemberForEmail(env.DB, 'sam@example.com');
+
+    await updateMemberDisplayName(env.DB, alex.id, 'Alex Reed');
+
+    await expect(ensureMemberForEmail(env.DB, alex.email)).resolves.toMatchObject({
+      displayName: 'Alex Reed'
+    });
+    await expect(ensureMemberForEmail(env.DB, sam.email)).resolves.toMatchObject({
+      displayName: 'sam'
+    });
+  });
+
+  it('does not create a profile when the member id is unknown', async () => {
+    await expect(
+      updateMemberDisplayName(env.DB, crypto.randomUUID(), 'Unexpected member')
+    ).rejects.toThrow('couldn’t find your profile');
+
+    const count = await env.DB.prepare('SELECT count(*) AS count FROM members').first<{
+      count: number;
+    }>();
+    expect(count?.count).toBe(0);
   });
 });

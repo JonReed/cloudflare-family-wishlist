@@ -83,6 +83,7 @@ Working today:
 
 - Access OTP authentication and exact-email admission;
 - first-login member and wishlist provisioning;
+- self-service display-name editing from a personal profile page;
 - switching between all family wishlists;
 - adding, editing and deleting items;
 - safe product links, notes, prices and priorities;

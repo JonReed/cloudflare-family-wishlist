@@ -5,6 +5,8 @@ export type MemberWithWishlist = {
   wishlistId: string;
 };
 
+export class MemberInputError extends Error {}
+
 type MemberWithWishlistRow = {
   id: string;
   email: string;
@@ -42,6 +44,24 @@ function initialDisplayName(email: string): string {
     .trim();
 
   return readable.slice(0, 80) || 'Family member';
+}
+
+function normaliseDisplayName(value: FormDataEntryValue | null): string {
+  if (typeof value !== 'string') {
+    throw new MemberInputError('Enter the name you would like your family to see.');
+  }
+
+  const displayName = value.replace(/\s+/g, ' ').trim();
+
+  if (!displayName) {
+    throw new MemberInputError('Enter the name you would like your family to see.');
+  }
+
+  if (displayName.length > 80) {
+    throw new MemberInputError('Keep your display name to 80 characters or fewer.');
+  }
+
+  return displayName;
 }
 
 function mapMember(row: MemberWithWishlistRow): MemberWithWishlist {
@@ -109,4 +129,29 @@ export async function ensureMemberForEmail(
   }
 
   return member;
+}
+
+/** Updates only the member already resolved from the authenticated Access identity. */
+export async function updateMemberDisplayName(
+  db: D1Database,
+  memberId: string,
+  value: FormDataEntryValue | null
+): Promise<string> {
+  const displayName = normaliseDisplayName(value);
+  const result = await db
+    .prepare(
+      `UPDATE members
+       SET
+         display_name = ?1,
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE id = ?2`
+    )
+    .bind(displayName, memberId)
+    .run();
+
+  if (!result.success || result.meta.changes !== 1) {
+    throw new MemberInputError('We couldn’t find your profile. Refresh the page and try again.');
+  }
+
+  return displayName;
 }
