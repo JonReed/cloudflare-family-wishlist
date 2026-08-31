@@ -108,6 +108,8 @@ describe('fetchProductMetadata', () => {
     'http://127.0.0.1/item',
     'http://10.0.0.4/item',
     'http://[::1]/item',
+    'http://[0:0:0:0:0:0:0:1]/item',
+    'http://[0:0:0:0:0:ffff:7f00:1]/item',
     'https://wishlist.example/item'
   ])('refuses a non-public or same-host target before fetching: %s', async (url) => {
     const fetchPage = vi.fn(() => Promise.resolve(htmlResponse('<title>Should not load</title>')));
@@ -174,6 +176,29 @@ describe('fetchProductMetadata', () => {
         fetchPage: () => Promise.resolve(htmlResponse(page))
       })
     ).resolves.toMatchObject({ title: 'Useful title' });
+  });
+
+  it('cancels a response stream that lands exactly on the byte limit', async () => {
+    const cancel = vi.fn();
+    const title = '<title>Boundary title</title>';
+    const firstChunk = new TextEncoder().encode(`${title}${'x'.repeat(512 * 1024 - title.length)}`);
+    const response = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(firstChunk);
+          controller.enqueue(new TextEncoder().encode('not read'));
+        },
+        cancel
+      }),
+      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/boundary', 'wishlist.example', {
+        fetchPage: () => Promise.resolve(response)
+      })
+    ).resolves.toMatchObject({ title: 'Boundary title' });
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   it('sends reduced product evidence to AI and accepts supported GBP details', async () => {

@@ -640,7 +640,7 @@ async function readBoundedHtml(response: Response): Promise<string> {
       bytesRead += chunk.byteLength;
       html += decoder.decode(chunk, { stream: true });
 
-      if (value.byteLength > remaining) {
+      if (value.byteLength >= remaining) {
         await reader.cancel();
         break;
       }

@@ -136,6 +136,8 @@
 
 .brand-link {
   display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
   text-decoration: none;
 }
 
@@ -233,6 +235,9 @@
 }
 
 .account-links a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
   border-left: 1px solid var(--line);
   padding-left: 1rem;
   color: var(--leaf);
@@ -647,8 +652,11 @@
 }
 
 .edit-panel summary {
+  display: flex;
   width: fit-content;
+  min-height: 2.75rem;
   cursor: pointer;
+  align-items: center;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
@@ -871,7 +879,7 @@
 
 .button-small,
 .button-quiet {
-  min-height: 2.2rem;
+  min-height: 2.75rem;
   padding: 0.45rem 0.7rem;
   font-size: 0.72rem;
 }

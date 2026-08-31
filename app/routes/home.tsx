@@ -301,12 +301,16 @@ function ActionFields({ wishlistId, itemId }: { wishlistId: string; itemId?: str
   );
 }
 
+function wishlistFormAction(wishlistId: string): string {
+  return `?index&list=${encodeURIComponent(wishlistId)}`;
+}
+
 function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
   if (wishlist.isOwn || item.claimVisibility === 'hidden') return null;
 
   if (!item.claim) {
     return (
-      <form method="post" action="?index">
+      <form method="post" action={wishlistFormAction(wishlist.id)}>
         <ActionFields wishlistId={wishlist.id} itemId={item.id} />
         <button name="intent" value="claim-item" className="button-secondary">
           I’ll get this
@@ -335,14 +339,14 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
       {item.claim.isClaimedByViewer ? (
         <div className="claim-actions">
           {!isPurchased ? (
-            <form method="post" action="?index">
+            <form method="post" action={wishlistFormAction(wishlist.id)}>
               <ActionFields wishlistId={wishlist.id} itemId={item.id} />
               <button name="intent" value="mark-purchased" className="button-small">
                 I’ve bought it
               </button>
             </form>
           ) : null}
-          <form method="post" action="?index">
+          <form method="post" action={wishlistFormAction(wishlist.id)}>
             <ActionFields wishlistId={wishlist.id} itemId={item.id} />
             <button name="intent" value="unclaim-item" className="button-quiet">
               I’m not getting this
@@ -389,7 +393,7 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
 
         <details className="edit-panel">
           <summary>Edit this wish</summary>
-          <form method="post" action="?index" className="edit-form">
+          <form method="post" action={wishlistFormAction(wishlist.id)} className="edit-form">
             <ActionFields wishlistId={wishlist.id} itemId={item.id} />
             <ItemFields item={item} formId={formId} recipientName={recipientName} />
             <div className="form-actions">
@@ -524,7 +528,7 @@ function AddWishPanel({
 
       <form
         method="post"
-        action="?index"
+        action={wishlistFormAction(wishlist.id)}
         className="add-form add-form-sidebar"
         data-product-import-form
       >

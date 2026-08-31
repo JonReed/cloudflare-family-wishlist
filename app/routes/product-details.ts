@@ -7,7 +7,20 @@ import {
 
 import type { Route } from './+types/product-details';
 
+function methodNotAllowed(): Response {
+  return Response.json(
+    { error: 'This product helper only accepts form submissions.' },
+    { status: 405, headers: { Allow: 'POST' } }
+  );
+}
+
+export function loader() {
+  return methodNotAllowed();
+}
+
 export async function action({ request, context }: Route.ActionArgs) {
+  if (request.method !== 'POST') return methodNotAllowed();
+
   try {
     const { env } = context.get(cloudflareContext);
     const formData = await request.formData();

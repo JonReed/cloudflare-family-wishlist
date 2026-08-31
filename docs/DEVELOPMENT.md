@@ -138,6 +138,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | ---------------------------------- | ------------------------------------------------------------------ |
 | `test/access-auth.test.ts`         | JWT signature/issuer/audience/expiry and local identity boundaries |
 | `test/member-provisioning.test.ts` | email validation, idempotent first login and one-list constraint   |
+| `test/product-metadata.test.ts`    | bounded public fetches, metadata extraction and optional AI safety |
 | `test/product-url.test.ts`         | safe HTTP(S) links, credential rejection and size limits           |
 | `test/wishlist-service.test.ts`    | CRUD validation, ordering, claims, concurrency and owner privacy   |
 
