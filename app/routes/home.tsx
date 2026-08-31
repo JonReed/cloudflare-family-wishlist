@@ -1,6 +1,6 @@
 import { redirect } from 'react-router';
 
-import { Brand, GiftIcon } from '../components/brand';
+import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
@@ -446,16 +446,7 @@ function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
           ))}
         </ul>
       ) : (
-        <div className="empty-list">
-          <GiftIcon className="size-10" />
-          <div>
-            <h3>A lovely blank page</h3>
-            <p>
-              Add something {wishlist.isOwn ? 'you’d' : `${wishlist.owner.displayName} would`} love
-              to get things started. Anyone in the family can lend a hand.
-            </p>
-          </div>
-        </div>
+        <p className="empty-list">Nothing added to this wishlist</p>
       )}
     </article>
   );
@@ -511,7 +502,6 @@ function AddWishPanel({
       <h2 id={`${addFormId}-title`}>
         {wishlist.isOwn ? 'Add to wishlist' : `Add something for ${wishlist.owner.displayName}`}
       </h2>
-      <p className="add-panel-intro">Start with a link if you have one, then add details.</p>
 
       <form
         method="post"
