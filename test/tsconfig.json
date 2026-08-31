@@ -15,6 +15,7 @@
   },
   "include": [
     "./**/*.ts",
+    "../app/lib/action-origins.ts",
     "../app/lib/auth/access.ts",
     "../app/lib/db/members.ts",
     "../app/lib/db/wishlists.ts",

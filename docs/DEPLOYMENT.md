@@ -59,7 +59,12 @@ npm run build
 npx wrangler deploy -c build/server/wrangler.json --domain wishlist.example.com --keep-vars
 ```
 
-Replace `wishlist.example.com` with the hostname you want to use. Confirm that the Worker responds with `503 Authentication is not configured`. That response is intentional: it verifies Worker, D1 and hostname routing without leaving an unprotected application online.
+Replace `wishlist.example.com` with the hostname you want to use, and set `PUBLIC_HOSTNAME` in
+`wrangler.jsonc` to the same bare hostname (without `https://`, a port or a path). React Router uses
+this deployment-specific value to accept form posts when Cloudflare's proxy-facing request URL differs
+from the public custom domain; missing or malformed values fail closed. Confirm that the Worker
+responds with `503 Authentication is not configured`. That response is intentional: it verifies
+Worker, D1 and hostname routing without leaving an unprotected application online.
 
 ## 5. Connect GitHub `main`
 

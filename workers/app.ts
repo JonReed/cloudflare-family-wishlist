@@ -1,22 +1,22 @@
 import { RouterContextProvider, createRequestHandler } from 'react-router';
 
+import { allowedActionOriginsForEnvironment } from '../app/lib/action-origins';
 import { AuthenticationError, authenticateAccessRequest } from '../app/lib/auth/access';
 import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/context';
 
-const requestHandler = createRequestHandler(
-  async () => {
-    const build = await import('virtual:react-router/server-build');
+function createRouterRequestHandler(allowedActionOrigins: string[]) {
+  return createRequestHandler(
+    async () => {
+      const build = await import('virtual:react-router/server-build');
 
-    return {
-      ...build,
-      // The Cloudflare Vite proxy uses an internal request origin in local
-      // development. The fixed local identity and loopback dev server make a
-      // broad development exception safe; production remains same-origin only.
-      allowedActionOrigins: import.meta.env.DEV ? ['**'] : []
-    };
-  },
-  import.meta.env.MODE
-);
+      return {
+        ...build,
+        allowedActionOrigins
+      };
+    },
+    import.meta.env.MODE
+  );
+}
 
 const SECURITY_HEADERS = {
   'Cache-Control': 'private, no-store',
@@ -79,6 +79,15 @@ export default {
       context.set(cloudflareContext, { env: runtimeEnv, ctx, cspNonce });
       context.set(identityContext, identity);
 
+      // Cloudflare may expose an internal request URL to the Worker while the
+      // browser posts from the public custom hostname. React Router compares
+      // those origins before invoking an action, so explicitly allow only this
+      // deployment's configured public hostname in production.
+      const allowedActionOrigins = allowedActionOriginsForEnvironment(
+        runtimeEnv.PUBLIC_HOSTNAME,
+        import.meta.env.DEV
+      );
+      const requestHandler = createRouterRequestHandler(allowedActionOrigins);
       const response = await requestHandler(request, context);
       return withSecurityHeaders(response, cspNonce);
     } catch (error) {

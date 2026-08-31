@@ -107,6 +107,8 @@ after reading the account-specific private handoff and verifying the active Wran
 
 - Edit `wrangler.jsonc`, then run `npm run cf-typegen`.
 - Use the generated binding types; do not hand-maintain an `Env` interface.
+- Keep `PUBLIC_HOSTNAME` equal to the deployment's bare public hostname. It is the narrow production
+  allow-list for form action origins behind Cloudflare's proxy.
 - Retrieve current Cloudflare documentation before trusting remembered Wrangler flags or config fields.
 - Do not use another Wrangler profile merely because it is already logged in.
 - Do not manually deploy the reference application unless the maintainer requests it; pushes to
