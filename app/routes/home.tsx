@@ -577,10 +577,10 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       <small>See their wishlist</small>
                     )}
                     <img
-                      src="/images/tag-string-loop.png"
+                      src="/images/tag-string-hanging.png"
                       alt=""
-                      width="256"
-                      height="146"
+                      width="384"
+                      height="256"
                       className="tag-string"
                       draggable="false"
                     />

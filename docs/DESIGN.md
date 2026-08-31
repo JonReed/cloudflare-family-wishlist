@@ -57,13 +57,16 @@ from this list, we’ll keep it secret so the surprise isn’t spoiled.”
 ### Finding the right person
 
 Member navigation uses paper gift tags with a visible cotton-string loop through each tag hole and a
-clear active state. A single tag stays tag-sized and centred rather than stretching across the page.
-Tags may wrap into additional rows and must work with long display names. They are navigation, not
-filter chips.
+clear active state. The grid always begins at the left edge of the family board, including when it
+contains a single tag, and a single tag stays tag-sized rather than stretching across the page. Tags
+may wrap into additional rows and must work with long display names. They are navigation, not filter
+chips.
 
 The tag body, layout and states remain responsive HTML and CSS. The reinforced hole and fibrous cord
-use the small transparent [`public/images/tag-string-loop.png`](../public/images/tag-string-loop.png)
-cut-out so the material detail does not depend on fragile CSS drawing.
+use the small transparent
+[`public/images/tag-string-hanging.png`](../public/images/tag-string-hanging.png) cut-out. Its eyelet
+is anchored at the tag hole and its loose loop falls down and left under gravity, so the material
+detail and physical direction do not depend on fragile CSS drawing.
 
 ## Visual language
 

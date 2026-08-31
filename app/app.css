@@ -274,7 +274,7 @@
 }
 
 .family-board {
-  padding: 0.55rem clamp(1rem, 4vw, 4.5rem) 0.75rem;
+  padding: 0.55rem 1rem 0.75rem;
 }
 
 .section-kicker {
@@ -316,12 +316,6 @@
   min-width: 0;
 }
 
-.family-tag-wrap:only-child {
-  width: min(100%, 16rem);
-  grid-column: 1 / -1;
-  justify-self: center;
-}
-
 .family-tag {
   position: relative;
   display: grid;
@@ -342,13 +336,13 @@
 .tag-string {
   position: absolute;
   z-index: 0;
-  top: calc(50% - 1.1rem);
-  right: 0.55rem;
-  width: 4.2rem;
+  top: 50%;
+  left: calc(100% - 1rem);
+  width: 4.3rem;
   height: auto;
   filter: drop-shadow(0 1px 1px rgb(58 43 29 / 0.2));
   pointer-events: none;
-  transform: rotate(-8deg) scaleX(-1);
+  transform: translate(-78%, -11%);
 }
 
 .family-tag-wrap:nth-child(even) .family-tag:not([aria-current='page']) {
