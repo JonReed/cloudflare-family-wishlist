@@ -14,7 +14,7 @@ novelty.
 The signed-in home has four stable regions:
 
 1. **Identity:** the Family Wishlist mark, the current member and sign out.
-2. **Family selector:** one string-tied gift tag per member over a quiet parcel-table image.
+2. **Family selector:** one looped-string gift tag per member over a quiet parcel-table image.
 3. **Active wishlist:** one person's complete list, with an always-open add form alongside it on
    wider screens.
 4. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
@@ -52,9 +52,14 @@ the server response. The small “Psst…” note explains the result without te
 
 ### Finding the right person
 
-Member navigation uses paper gift tags tied to a shared cotton string, with a clear active state.
+Member navigation uses paper gift tags with a visible cotton-string loop through each tag hole and a
+clear active state. A single tag stays tag-sized and centred rather than stretching across the page.
 Tags may wrap into additional rows and must work with long display names. They are navigation, not
 filter chips.
+
+The tag body, layout and states remain responsive HTML and CSS. The reinforced hole and fibrous cord
+use the small transparent [`public/images/tag-string-loop.png`](../public/images/tag-string-loop.png)
+cut-out so the material detail does not depend on fragile CSS drawing.
 
 ## Visual language
 

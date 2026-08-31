@@ -450,7 +450,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
               return (
                 <div key={wishlist.id} className="family-tag-wrap">
-                  <span aria-hidden="true" className="tag-string" />
                   <a
                     href={`/?list=${encodeURIComponent(wishlist.id)}#wishlist`}
                     className="family-tag"
@@ -462,6 +461,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                     ) : (
                       <small>See their wishlist</small>
                     )}
+                    <img
+                      src="/images/tag-string-loop.png"
+                      alt=""
+                      width="256"
+                      height="146"
+                      className="tag-string"
+                      draggable="false"
+                    />
                   </a>
                 </div>
               );
