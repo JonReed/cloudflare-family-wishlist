@@ -291,12 +291,15 @@ Find these values in Cloudflare:
 
 - `ACCESS_TEAM_DOMAIN`: the complete team domain from Zero Trust settings, for example
   `your-team.cloudflareaccess.com`;
-- `ACCESS_AUD`: the **Application Audience (AUD) Tag** shown in the Access application's details.
+- `ACCESS_AUD`: the **Application Audience (AUD) Tag** shown in the Access application's details;
 - `INITIAL_ORGANISER_EMAIL`: the exact email address in the organiser-only Allow policy.
 
 Add all three as ordinary text variables under **Workers & Pages → your Worker → Settings → Variables and
 Secrets**. They are deployment identifiers rather than passwords. Keep them out of reusable upstream
 source so forks cannot accidentally trust the wrong Access application.
+
+Set `INITIAL_ORGANISER_EMAIL` before attempting the first OTP login. It may instead be stored as an
+encrypted Worker secret, but it must still contain the same complete email address.
 
 The Worker creates the first member only when the authenticated email exactly matches
 `INITIAL_ORGANISER_EMAIL`. Log in now using that address and confirm that an empty wishlist appears.
@@ -407,12 +410,15 @@ current request. Because Access protects the Worker itself, the custom domain is
 Before relying on the installation, verify all of these:
 
 - a signed-out browser is redirected to Access;
+- an Access-authenticated email other than `INITIAL_ORGANISER_EMAIL` cannot bootstrap an empty
+  deployment;
 - only exact email addresses added by the organiser receive a usable OTP;
 - the organiser and invited member each receive exactly one wishlist;
 - an ordinary wish can be added, edited and deleted;
 - **Fill from link** only prefills an editable draft and manual entry still works;
 - an optional product picture is served from the application's `/product-image` address;
 - one family member can claim an item and the wishlist owner cannot see that claim or purchase state;
+- removing an ordinary member denies their next request and signs existing application sessions out;
 - `/family` is available only to the organiser; and
 - a push to `main` completes one Cloudflare build and deployment.
 

@@ -15,6 +15,8 @@ Each installation is operated by its deployer. Before storing family data, deplo
 - place the application behind Cloudflare Access;
 - use an exact allow-list of trusted email addresses;
 - avoid an Access policy that includes every user of the One-time PIN login method;
+- set `INITIAL_ORGANISER_EMAIL` to the exact email in the first organiser's Allow rule before the
+  first login;
 - set the Access application authorization cookie to `SameSite=Lax` and keep `HttpOnly` enabled;
 - keep Cloudflare credentials and Wrangler secrets out of the repository;
 - apply database migrations and dependency/security updates.
