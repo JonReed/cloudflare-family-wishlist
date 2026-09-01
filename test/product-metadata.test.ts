@@ -398,7 +398,7 @@ describe('fetchProductMetadata', () => {
   });
 
   it('reads far enough into large Amazon pages to find the primary product image', async () => {
-    const amazonPreamble = `<title>Eaten Alive Smoked Sriracha : Amazon.co.uk</title>${'x'.repeat(600_000)}`;
+    const amazonPreamble = `<title>Eaten Alive Smoked Sriracha : Amazon.co.uk</title>${'x'.repeat(600_000)}<meta itemtype="https://schema.org/Product"><meta itemprop="price" content="6.99">`;
 
     await expect(
       fetchProductMetadata('https://www.amazon.co.uk/dp/B07YDTCJTP', 'wishlist.example', {
@@ -414,6 +414,7 @@ describe('fetchProductMetadata', () => {
       })
     ).resolves.toMatchObject({
       title: 'Eaten Alive Smoked Sriracha',
+      price: '6.99',
       imageUrl: 'https://m.media-amazon.com/images/I/61BbuuVhXuL._AC_SL1500_.jpg'
     });
   });

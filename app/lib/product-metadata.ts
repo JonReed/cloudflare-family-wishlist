@@ -215,6 +215,27 @@ function firstEvidence(evidence: PageEvidence, keys: string[]): string {
   return '';
 }
 
+const VOID_HTML_ELEMENTS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr'
+]);
+
+function isVoidHtmlElement(element: Element): boolean {
+  return VOID_HTML_ELEMENTS.has(element.tagName.toLowerCase());
+}
+
 function textCaptureHandler(
   evidence: PageEvidence,
   keyForElement: string | (() => string)
@@ -223,6 +244,11 @@ function textCaptureHandler(
 
   return {
     element(element) {
+      // HTMLRewriter throws when onEndTag() is registered on a void element.
+      // Attribute evidence for these elements is collected by the handlers below;
+      // they cannot contain text for this handler to capture.
+      if (isVoidHtmlElement(element)) return;
+
       const capture = {
         chunks: [] as string[],
         key: typeof keyForElement === 'string' ? keyForElement : keyForElement()
@@ -273,6 +299,7 @@ async function extractPageEvidence(html: string): Promise<PageEvidence> {
   rewriter = rewriter
     .on('[itemtype*="Product"]', {
       element(element) {
+        if (isVoidHtmlElement(element)) return;
         productMicrodataDepth += 1;
         element.onEndTag(() => {
           productMicrodataDepth -= 1;
@@ -1390,6 +1417,12 @@ export async function fetchProductMetadata(
     }
   } catch (error) {
     if (error instanceof ProductMetadataError) throw error;
+    console.error(
+      JSON.stringify({
+        event: 'product_metadata_fetch_failed',
+        errorName: error instanceof Error ? error.name : 'UnknownError'
+      })
+    );
     throw new ProductMetadataError('We couldn’t fetch that page. Check the link and try again.');
   }
 }
