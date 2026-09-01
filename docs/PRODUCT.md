@@ -8,7 +8,8 @@ without revealing surprises to the recipient.
 
 The intended unit is **one household or trusted family group per deployment**. It is not a hosted
 multi-tenant service and does not need organisations, billing or a public directory. It has one
-narrow household role: the first member is the family organiser and can admit other people.
+narrow household role: one explicitly configured member is the family organiser and can admit other
+people.
 
 ## People and trust
 
@@ -17,8 +18,8 @@ application's **Your family** page. The Worker creates an exact-email Allow poli
 Cloudflare API; only then can that person request an emailed one-time PIN from Cloudflare. The
 application sees only a verified email identity after Access has admitted it.
 
-The first successfully provisioned member becomes the family organiser. On every person's first
-successful request, the application creates:
+The deployment names the initial organiser's exact email address before anybody can be provisioned.
+On every admitted person's first successful request, the application creates:
 
 - one member record for that email; and
 - one wishlist owned by that member.
@@ -100,7 +101,7 @@ applies to rendered HTML, loader data, future APIs, logs and error details.
 6. An item can have at most one active claim.
 7. Core wishlist and claim actions work without browser JavaScript.
 8. A normal family deployment should fit within Cloudflare's free tier.
-9. The first member is an admin; later members default to the member role.
+9. The configured initial organiser is an admin; invited members default to the member role.
 
 If a proposed feature breaks one of these rules, treat it as a product decision requiring maintainer
 agreement rather than an ordinary implementation detail.
@@ -113,6 +114,7 @@ Working today:
 - first-login member and wishlist provisioning;
 - self-service display-name editing from a personal profile page;
 - organiser-only family admission with joined and waiting-to-join states;
+- organiser-controlled member removal, including immediate application-level disablement;
 - switching between all family wishlists;
 - adding, editing and deleting items;
 - filling a new wish's name, image and GBP price from a public product link, with optional AI help

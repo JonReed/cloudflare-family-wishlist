@@ -20,7 +20,7 @@ describe('product lookup budget', () => {
   });
 
   it('allows the family-sized burst and rejects the next lookup', async () => {
-    const member = await ensureMemberForEmail(env.DB, 'admin@example.com');
+    const member = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
     const now = 1_800_000_000;
 
     for (let index = 0; index < 12; index += 1) {
@@ -33,7 +33,7 @@ describe('product lookup budget', () => {
   });
 
   it('starts a fresh budget in the next minute window', async () => {
-    const member = await ensureMemberForEmail(env.DB, 'admin@example.com');
+    const member = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
     const now = 1_800_000_000;
 
     for (let index = 0; index < 12; index += 1) {
@@ -44,7 +44,7 @@ describe('product lookup budget', () => {
   });
 
   it('keeps concurrent updates within the database constraint', async () => {
-    const member = await ensureMemberForEmail(env.DB, 'admin@example.com');
+    const member = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
     const outcomes = await Promise.allSettled(
       Array.from({ length: 16 }, () => consumeProductLookupBudget(env.DB, member.id, 1_800_000_000))
     );

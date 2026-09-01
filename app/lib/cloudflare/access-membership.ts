@@ -51,6 +51,10 @@ function policyUrl(configuration: AccessManagementConfiguration, policyId?: stri
   return policyId ? `${base}/${policyId}` : base;
 }
 
+function applicationTokenRevocationUrl(configuration: AccessManagementConfiguration): string {
+  return `${CLOUDFLARE_API_ORIGIN}/client/v4/accounts/${configuration.accountId}/access/apps/${configuration.applicationId}/revoke_tokens`;
+}
+
 async function readBoundedJson(response: Response): Promise<unknown> {
   if (!response.body) return null;
 
@@ -110,6 +114,46 @@ function successfulEnvelope(value: unknown): boolean {
   );
 }
 
+function policyName(invitationId: string): string {
+  return `Family Wishlist member ${invitationId.slice(0, 8)}`;
+}
+
+function policyIdsFromList(value: unknown, invitationId: string, email: string): string[] | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const envelope = value as { success?: unknown; result?: unknown };
+  if (envelope.success !== true || !Array.isArray(envelope.result)) return null;
+
+  const expectedName = policyName(invitationId);
+  return envelope.result.flatMap((candidate) => {
+    if (typeof candidate !== 'object' || candidate === null) return [];
+    const policy = candidate as {
+      id?: unknown;
+      name?: unknown;
+      decision?: unknown;
+      include?: unknown;
+    };
+    if (
+      typeof policy.id !== 'string' ||
+      !UUID_PATTERN.test(policy.id) ||
+      policy.name !== expectedName ||
+      policy.decision !== 'allow' ||
+      !Array.isArray(policy.include) ||
+      policy.include.length !== 1
+    ) {
+      return [];
+    }
+
+    const include: unknown = policy.include[0] as unknown;
+    if (typeof include !== 'object' || include === null) return [];
+    const emailRule = (include as { email?: unknown }).email;
+    if (typeof emailRule !== 'object' || emailRule === null) return [];
+    const policyEmail = (emailRule as { email?: unknown }).email;
+    return typeof policyEmail === 'string' && policyEmail.toLowerCase() === email.toLowerCase()
+      ? [policy.id]
+      : [];
+  });
+}
+
 async function cloudflareRequest(
   configuration: AccessManagementConfiguration,
   url: string,
@@ -163,7 +207,7 @@ export async function grantFamilyMemberAccess(
     {
       method: 'POST',
       body: JSON.stringify({
-        name: `Family Wishlist member ${invitationId.slice(0, 8)}`,
+        name: policyName(invitationId),
         decision: 'allow',
         include: [{ email: { email } }]
       })
@@ -202,16 +246,83 @@ export async function revokeFamilyMemberAccess(
     fetcher
   );
 
-  if (!response.ok) {
+  if (!response.ok && response.status !== 404) {
     throw new AccessManagementError(
       'Cloudflare could not tidy up an incomplete invitation.',
       'request_failed'
     );
   }
 
-  if (response.body && !successfulEnvelope(await readBoundedJson(response))) {
+  if (
+    response.status !== 404 &&
+    response.body &&
+    !successfulEnvelope(await readBoundedJson(response))
+  ) {
     throw new AccessManagementError(
       'Cloudflare could not confirm cleanup of an incomplete invitation.',
+      'request_failed'
+    );
+  }
+}
+
+export async function ensureFamilyMemberAccess(
+  env: AccessManagementEnv,
+  invitationId: string,
+  email: string,
+  existingPolicyId: string | null,
+  fetcher: typeof fetch = fetch
+): Promise<string> {
+  if (
+    !UUID_PATTERN.test(invitationId) ||
+    email.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
+    throw new AccessManagementError(
+      'The family invitation details were invalid. Refresh the page and try again.',
+      'request_failed'
+    );
+  }
+
+  const configuration = readConfiguration(env);
+  const response = await cloudflareRequest(
+    configuration,
+    `${policyUrl(configuration)}?per_page=50`,
+    { method: 'GET' },
+    fetcher
+  );
+  const policyIds = policyIdsFromList(await readBoundedJson(response), invitationId, email);
+
+  if (!response.ok || !policyIds || policyIds.length > 1) {
+    throw new AccessManagementError(
+      'Cloudflare could not safely repair this invitation. Check its Access policies before trying again.',
+      'request_failed'
+    );
+  }
+
+  if (policyIds[0]) return policyIds[0];
+
+  if (existingPolicyId) {
+    await revokeFamilyMemberAccess(env, existingPolicyId, fetcher);
+  }
+
+  return grantFamilyMemberAccess(env, invitationId, email, fetcher);
+}
+
+export async function revokeFamilyAccessSessions(
+  env: AccessManagementEnv,
+  fetcher: typeof fetch = fetch
+): Promise<void> {
+  const configuration = readConfiguration(env);
+  const response = await cloudflareRequest(
+    configuration,
+    applicationTokenRevocationUrl(configuration),
+    { method: 'POST' },
+    fetcher
+  );
+
+  if (!response.ok || (response.body && !successfulEnvelope(await readBoundedJson(response)))) {
+    throw new AccessManagementError(
+      'Their app access is paused, but Cloudflare could not finish signing everyone out. Try again.',
       'request_failed'
     );
   }

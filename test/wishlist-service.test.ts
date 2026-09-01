@@ -32,7 +32,7 @@ async function createMember(email: string): Promise<MemberWithWishlist> {
     `SELECT email FROM members WHERE role = 'admin' LIMIT 1`
   ).first<{ email: string }>();
 
-  if (!existingAdmin) return ensureMemberForEmail(env.DB, email);
+  if (!existingAdmin) return ensureMemberForEmail(env.DB, email, email);
   const admin = await ensureMemberForEmail(env.DB, existingAdmin.email);
   if (admin.email === email.trim().toLowerCase()) return admin;
   return inviteAndProvisionMember(env.DB, admin, email);

@@ -1,4 +1,4 @@
-import { cloudflareContext, identityContext } from '../lib/context';
+import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import { ensureMemberForEmail } from '../lib/db/members';
 import {
@@ -26,7 +26,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   try {
     const { env } = context.get(cloudflareContext);
     const identity = context.get(identityContext);
-    const member = await ensureMemberForEmail(env.DB, identity.email);
+    const member = await ensureMemberForEmail(
+      env.DB,
+      identity.email,
+      organiserEmailForRequest(env, identity.email)
+    );
     const formData = await request.formData();
     await consumeProductLookupBudget(env.DB, member.id);
     const metadata = await fetchProductMetadata(

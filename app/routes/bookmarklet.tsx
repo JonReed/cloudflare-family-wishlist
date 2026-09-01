@@ -1,7 +1,7 @@
 import { Brand, GiftIcon } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
 import { createAddPageHref, createBookmarkletHref } from '../lib/bookmarklet';
-import { cloudflareContext, identityContext } from '../lib/context';
+import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 
 import type { Route } from './+types/bookmarklet';
@@ -24,7 +24,11 @@ export function meta() {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
 
   return {
     addPageHref: createAddPageHref(request.url),

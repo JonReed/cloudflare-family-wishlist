@@ -69,6 +69,8 @@ than a guaranteed request count, but it leaves ample room for ordinary family us
 
 If the AI allocation is exhausted or inference fails, the deterministic draft is kept and the person
 can finish it by hand. The application also limits each member to 12 product lookups per minute.
+The same-origin picture proxy separately allows 60 image fetches per member per minute and 500 per
+UTC day, which is ample for ordinary family browsing while bounding free-tier abuse.
 
 Free-plan limits are hard service limits, not automatic paid overages: Workers, D1 or AI operations
 fail when their allowance is exhausted and resume after the relevant reset. Workers, D1 and Workers
@@ -290,14 +292,15 @@ Find these values in Cloudflare:
 - `ACCESS_TEAM_DOMAIN`: the complete team domain from Zero Trust settings, for example
   `your-team.cloudflareaccess.com`;
 - `ACCESS_AUD`: the **Application Audience (AUD) Tag** shown in the Access application's details.
+- `INITIAL_ORGANISER_EMAIL`: the exact email address in the organiser-only Allow policy.
 
-Add both as ordinary text variables under **Workers & Pages → your Worker → Settings → Variables and
+Add all three as ordinary text variables under **Workers & Pages → your Worker → Settings → Variables and
 Secrets**. They are deployment identifiers rather than passwords. Keep them out of reusable upstream
 source so forks cannot accidentally trust the wrong Access application.
 
-The first person to complete a successful OTP login is provisioned as the family organiser. Log in
-now using the exact address from the initial Access policy and confirm that an empty wishlist appears.
-Do this before admitting any other address.
+The Worker creates the first member only when the authenticated email exactly matches
+`INITIAL_ORGANISER_EMAIL`. Log in now using that address and confirm that an empty wishlist appears.
+A mistaken broader Access policy therefore cannot decide who becomes organiser.
 
 Every request is checked twice: Access validates its policy at the edge, then the Worker validates the
 JWT signature, issuer, audience, expiry, subject and email before touching D1.
@@ -384,8 +387,8 @@ npm run db:migrate:remote
 ```
 
 Apply all pending migrations before the matching application code reaches production. Existing
-migrations include family roles, invitation admission state, item images and the product-lookup
-budget.
+migrations include family roles, invitation admission and revocation state, item images, product
+lookup limits and product-image budgets.
 
 ## 12. Add a custom domain (optional)
 
@@ -441,7 +444,11 @@ migration.
 
 ## Removing a family member
 
-Removal is not yet exposed in the application. To prevent future access, delete that person's
-exact-email policy from the Access application in Cloudflare. Policies created by the application are
-named `Family Wishlist member` followed by the first eight characters of the invitation ID. Removing
-Access does not delete the member's wishlist or historical data.
+The organiser can choose **Remove access** beside an ordinary member on **Your family**. The
+application immediately disables that identity in D1, deletes its exact-email Access policy and
+revokes every session for this Access application. Everyone is signed out once so no previously
+issued token can outlive the change. The removed person's wishlist and historical data remain in D1.
+
+If Cloudflare is temporarily unavailable, the disabled member still cannot enter the application and
+the row changes to **Removal needs attention**. Choose **Finish removal** when Cloudflare is available.
+Interrupted additions similarly appear as **Invitation needs attention** with a safe repair action.

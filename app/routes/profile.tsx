@@ -2,7 +2,7 @@ import { data, Form, useNavigation } from 'react-router';
 
 import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
-import { cloudflareContext, identityContext } from '../lib/context';
+import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail, MemberInputError, updateMemberDisplayName } from '../lib/db/members';
 
 import type { Route } from './+types/profile';
@@ -20,7 +20,11 @@ export function meta() {
 export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
 
   return { member };
 }
@@ -28,7 +32,11 @@ export async function loader({ context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
   const formData = await request.formData();
 
   try {

@@ -4,18 +4,23 @@ import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
 import {
   AccessManagementError,
+  ensureFamilyMemberAccess,
   grantFamilyMemberAccess,
+  revokeFamilyAccessSessions,
   revokeFamilyMemberAccess
 } from '../lib/cloudflare/access-membership';
-import { cloudflareContext, identityContext } from '../lib/context';
+import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import {
   FamilyAdminRequiredError,
   FamilyMemberInputError,
   activateFamilyInvitation,
   beginFamilyInvitation,
   cancelPendingFamilyInvitation,
+  completeFamilyMemberRemoval,
+  getFamilyInvitationForRepair,
   listFamilyPeople,
   markFamilyInvitationForCleanup,
+  prepareFamilyMemberRemoval,
   type FamilyPerson
 } from '../lib/db/family-members';
 import { ensureMemberForEmail } from '../lib/db/members';
@@ -35,27 +40,66 @@ export function meta() {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
   if (member.role !== 'admin') return redirect('/');
 
   return {
     member,
     people: await listFamilyPeople(env.DB),
     invitationUrl: new URL('/', request.url).toString(),
-    added: new URL(request.url).searchParams.get('added') === '1'
+    added: new URL(request.url).searchParams.get('added') === '1',
+    repaired: new URL(request.url).searchParams.get('repaired') === '1',
+    removed: new URL(request.url).searchParams.get('removed') === '1'
   };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
   if (member.role !== 'admin') return redirect('/');
   const formData = await request.formData();
   const displayNameValue = formData.get('displayName');
   const emailValue = formData.get('email');
+  const intent = formData.get('intent');
 
   try {
+    if (intent === 'repair-invitation') {
+      const invitationId = formData.get('invitationId');
+      if (typeof invitationId !== 'string') {
+        throw new FamilyMemberInputError('Choose an invitation to repair.');
+      }
+      const invitation = await getFamilyInvitationForRepair(env.DB, member.id, invitationId);
+      const accessPolicyId = await ensureFamilyMemberAccess(
+        env,
+        invitation.id,
+        invitation.email,
+        invitation.accessPolicyId
+      );
+      await activateFamilyInvitation(env.DB, invitation.id, accessPolicyId);
+      return redirect('/family?repaired=1');
+    }
+
+    if (intent === 'remove-member') {
+      const memberId = formData.get('memberId');
+      if (typeof memberId !== 'string') {
+        throw new FamilyMemberInputError('Choose a family member to remove.');
+      }
+      const removal = await prepareFamilyMemberRemoval(env.DB, member.id, memberId);
+      await revokeFamilyMemberAccess(env, removal.accessPolicyId);
+      await revokeFamilyAccessSessions(env);
+      await completeFamilyMemberRemoval(env.DB, removal.memberId);
+      return redirect('/family?removed=1');
+    }
+
     const invitation = await beginFamilyInvitation(env.DB, member.id, {
       displayName: displayNameValue,
       email: emailValue
@@ -167,7 +211,9 @@ function FamilyPersonRow({
   person: FamilyPerson;
   invitationUrl: string;
 }) {
-  const date = formatFamilyDate(person.status === 'joined' ? person.joinedAt : person.invitedAt);
+  const date = formatFamilyDate(
+    person.status === 'joined' || person.status === 'removing' ? person.joinedAt : person.invitedAt
+  );
 
   return (
     <li className="family-person">
@@ -183,13 +229,17 @@ function FamilyPersonRow({
               ? person.role === 'admin'
                 ? 'Family organiser'
                 : 'Joined'
-              : 'Waiting to join'}
+              : person.status === 'waiting'
+                ? 'Waiting to join'
+                : person.status === 'attention'
+                  ? 'Invitation needs attention'
+                  : 'Removal needs attention'}
           </span>
         </div>
         <p>{person.email}</p>
         {date ? (
           <small>
-            {person.status === 'joined' ? 'Joined' : 'Added'} {date}
+            {person.status === 'joined' || person.status === 'removing' ? 'Joined' : 'Added'} {date}
           </small>
         ) : null}
       </div>
@@ -207,6 +257,36 @@ function FamilyPersonRow({
           </button>
           <span className="family-copy-status" role="status" aria-live="polite" />
         </div>
+      ) : null}
+
+      {person.status === 'attention' ? (
+        <Form method="post">
+          <input type="hidden" name="intent" value="repair-invitation" />
+          <input type="hidden" name="invitationId" value={person.id} />
+          <button type="submit" className="button-quiet">
+            Repair invitation
+          </button>
+        </Form>
+      ) : null}
+
+      {person.status === 'joined' && person.role === 'member' ? (
+        <Form method="post">
+          <input type="hidden" name="intent" value="remove-member" />
+          <input type="hidden" name="memberId" value={person.id} />
+          <button type="submit" className="button-quiet">
+            Remove access
+          </button>
+        </Form>
+      ) : null}
+
+      {person.status === 'removing' ? (
+        <Form method="post">
+          <input type="hidden" name="intent" value="remove-member" />
+          <input type="hidden" name="memberId" value={person.id} />
+          <button type="submit" className="button-quiet">
+            Finish removal
+          </button>
+        </Form>
       ) : null}
     </li>
   );
@@ -247,6 +327,18 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
             </div>
           ) : null}
 
+          {loaderData.repaired ? (
+            <div role="status" className="profile-saved family-page-message">
+              Their invitation is ready again.
+            </div>
+          ) : null}
+
+          {loaderData.removed ? (
+            <div role="status" className="profile-saved family-page-message">
+              Their access has been removed. Everyone was signed out so the change takes effect.
+            </div>
+          ) : null}
+
           <div className="family-admin-grid">
             <section aria-labelledby="family-members-title">
               <div className="family-section-heading">
@@ -276,6 +368,7 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
               </p>
 
               <Form method="post" className="profile-form family-add-form">
+                <input type="hidden" name="intent" value="add-member" />
                 {actionData?.error ? (
                   <div role="alert" className="form-alert profile-alert">
                     <strong>Sorry, that didn’t work.</strong> {actionData.error}

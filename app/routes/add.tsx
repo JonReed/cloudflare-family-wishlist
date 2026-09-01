@@ -3,7 +3,7 @@ import { data, Form, redirect, useNavigation } from 'react-router';
 import { Brand } from '../components/brand';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
-import { cloudflareContext, identityContext } from '../lib/context';
+import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
@@ -92,7 +92,11 @@ function selectedWishlistIds(formData: FormData): string[] {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
   const wishlists = await listFamilyWishlists(env.DB, member.id);
   const productUrl = new URL(request.url).searchParams.get('url')?.slice(0, 2048) ?? '';
 
@@ -132,7 +136,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
   const formData = await request.formData();
   const wishlistIds = selectedWishlistIds(formData);
   const intent = formValue(formData, 'intent', 32);

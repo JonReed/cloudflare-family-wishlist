@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  ensureFamilyMemberAccess,
   grantFamilyMemberAccess,
+  revokeFamilyAccessSessions,
   revokeFamilyMemberAccess,
   type AccessManagementEnv
 } from '../app/lib/cloudflare/access-membership';
@@ -114,5 +116,104 @@ describe('Cloudflare Access family membership', () => {
     await expect(
       revokeFamilyMemberAccess(configuration, crypto.randomUUID(), fetcher)
     ).rejects.toMatchObject({ code: 'request_failed' });
+  });
+
+  it('reuses the exact matching policy when repairing an interrupted invitation', async () => {
+    const invitationId = crypto.randomUUID();
+    const policyId = crypto.randomUUID();
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        success: true,
+        result: [
+          {
+            id: policyId,
+            name: `Family Wishlist member ${invitationId.slice(0, 8)}`,
+            decision: 'allow',
+            include: [{ email: { email: 'person@example.com' } }]
+          }
+        ]
+      })
+    );
+
+    await expect(
+      ensureFamilyMemberAccess(configuration, invitationId, 'person@example.com', null, fetcher)
+    ).resolves.toBe(policyId);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0]?.[1]?.method).toBe('GET');
+  });
+
+  it('creates a policy only when reconciliation finds no exact match', async () => {
+    const invitationId = crypto.randomUUID();
+    const policyId = crypto.randomUUID();
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ success: true, result: [] }))
+      .mockResolvedValueOnce(Response.json({ success: true, result: { id: policyId } }));
+
+    await expect(
+      ensureFamilyMemberAccess(configuration, invitationId, 'person@example.com', null, fetcher)
+    ).resolves.toBe(policyId);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('removes a recorded stale policy before replacing it during repair', async () => {
+    const invitationId = crypto.randomUUID();
+    const stalePolicyId = crypto.randomUUID();
+    const replacementPolicyId = crypto.randomUUID();
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ success: true, result: [] }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(Response.json({ success: true, result: { id: replacementPolicyId } }));
+
+    await expect(
+      ensureFamilyMemberAccess(
+        configuration,
+        invitationId,
+        'person@example.com',
+        stalePolicyId,
+        fetcher
+      )
+    ).resolves.toBe(replacementPolicyId);
+    expect(fetcher.mock.calls.map((call) => call[1]?.method)).toEqual(['GET', 'DELETE', 'POST']);
+  });
+
+  it('fails closed when reconciliation finds duplicate exact policies', async () => {
+    const invitationId = crypto.randomUUID();
+    const candidate = (id: string) => ({
+      id,
+      name: `Family Wishlist member ${invitationId.slice(0, 8)}`,
+      decision: 'allow',
+      include: [{ email: { email: 'person@example.com' } }]
+    });
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        success: true,
+        result: [candidate(crypto.randomUUID()), candidate(crypto.randomUUID())]
+      })
+    );
+
+    await expect(
+      ensureFamilyMemberAccess(configuration, invitationId, 'person@example.com', null, fetcher)
+    ).rejects.toMatchObject({ code: 'request_failed' });
+  });
+
+  it('treats an already deleted policy as successfully revoked', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 404 }));
+    await expect(
+      revokeFamilyMemberAccess(configuration, crypto.randomUUID(), fetcher)
+    ).resolves.toBeUndefined();
+  });
+
+  it('revokes every application session after member removal', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ success: true, result: null }));
+
+    await expect(revokeFamilyAccessSessions(configuration, fetcher)).resolves.toBeUndefined();
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/access/apps/870fa30d-1350-4d8c-92e6-7f005f6f878f/revoke_tokens',
+      expect.objectContaining({ method: 'POST' })
+    );
   });
 });

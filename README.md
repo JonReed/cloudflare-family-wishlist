@@ -118,7 +118,7 @@ reached.
 
 Do not expose a deployment containing family data until Cloudflare Access is configured with an **exact email allow-list**. Selecting “One-time PIN” as the only Access rule would allow any valid email address and is not sufficient.
 
-The Worker also verifies Access JWTs itself and fails closed if the team domain, application audience or assertion is absent or invalid. The first member becomes the family organiser; after one
+The Worker also verifies Access JWTs itself and fails closed if the team domain, application audience or assertion is absent or invalid. Only the explicitly configured initial organiser can create the first member; after one
 additional scoped Cloudflare API token is configured, they can add exact sign-in addresses from the
 **Your family** page without using the Cloudflare dashboard. The application prepares an invitation
 to copy but does not send email itself.

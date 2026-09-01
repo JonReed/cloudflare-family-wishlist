@@ -24,7 +24,11 @@ describe('ensureMemberForEmail', () => {
   );
 
   it('creates exactly one member and one wishlist', async () => {
-    const member = await ensureMemberForEmail(env.DB, 'Jamie.Example@example.com');
+    const member = await ensureMemberForEmail(
+      env.DB,
+      'Jamie.Example@example.com',
+      'jamie.example@example.com'
+    );
 
     expect(member).toMatchObject({
       email: 'jamie.example@example.com',
@@ -44,7 +48,7 @@ describe('ensureMemberForEmail', () => {
   });
 
   it('returns the existing pair for repeated and case-insensitive logins', async () => {
-    const first = await ensureMemberForEmail(env.DB, 'Alex@example.com');
+    const first = await ensureMemberForEmail(env.DB, 'Alex@example.com', 'alex@example.com');
     const second = await ensureMemberForEmail(env.DB, '  ALEX@EXAMPLE.COM  ');
 
     expect(second).toEqual(first);
@@ -59,7 +63,11 @@ describe('ensureMemberForEmail', () => {
   });
 
   it('makes only the first member an admin and defaults later members to member', async () => {
-    const organiser = await ensureMemberForEmail(env.DB, 'organiser@example.com');
+    const organiser = await ensureMemberForEmail(
+      env.DB,
+      'organiser@example.com',
+      'organiser@example.com'
+    );
     const relative = await inviteAndProvisionMember(env.DB, organiser, 'relative@example.com');
 
     expect(organiser.role).toBe('admin');
@@ -67,20 +75,47 @@ describe('ensureMemberForEmail', () => {
   });
 
   it('rejects an Access-admitted email without a completed invitation', async () => {
-    await ensureMemberForEmail(env.DB, 'first@example.com');
+    await ensureMemberForEmail(env.DB, 'first@example.com', 'first@example.com');
     await expect(ensureMemberForEmail(env.DB, 'second@example.com')).rejects.toThrow(
       'completed family invitation'
     );
   });
 
   it('enforces one wishlist per member at the database boundary', async () => {
-    const member = await ensureMemberForEmail(env.DB, 'river@example.com');
+    const member = await ensureMemberForEmail(env.DB, 'river@example.com', 'river@example.com');
 
     await expect(
       env.DB.prepare('INSERT INTO wishlists (id, owner_member_id) VALUES (?1, ?2)')
         .bind(crypto.randomUUID(), member.id)
         .run()
     ).rejects.toThrow();
+  });
+
+  it('fails closed until the configured organiser is the first person to sign in', async () => {
+    await expect(ensureMemberForEmail(env.DB, 'other@example.com')).rejects.toThrow(
+      'organiser has not been configured'
+    );
+    await expect(
+      ensureMemberForEmail(env.DB, 'other@example.com', 'organiser@example.com')
+    ).rejects.toThrow('completed family invitation');
+    await expect(
+      ensureMemberForEmail(env.DB, 'organiser@example.com', 'organiser@example.com')
+    ).resolves.toMatchObject({ role: 'admin' });
+  });
+
+  it('rejects a disabled member even when Access still presents a valid identity', async () => {
+    const member = await ensureMemberForEmail(
+      env.DB,
+      'organiser@example.com',
+      'organiser@example.com'
+    );
+    await env.DB.prepare('UPDATE members SET disabled_at = ?1 WHERE id = ?2')
+      .bind('2026-09-01T12:00:00.000Z', member.id)
+      .run();
+
+    await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+      'no longer has access'
+    );
   });
 });
 
@@ -99,14 +134,14 @@ describe('updateMemberDisplayName', () => {
   it.each([null, '', '   ', 'a'.repeat(81)])(
     'rejects an invalid display name: %s',
     async (name) => {
-      const member = await ensureMemberForEmail(env.DB, 'alex@example.com');
+      const member = await ensureMemberForEmail(env.DB, 'alex@example.com', 'alex@example.com');
 
       await expect(updateMemberDisplayName(env.DB, member.id, name)).rejects.toThrow();
     }
   );
 
   it('trims and saves a display name at the 80-character boundary', async () => {
-    const member = await ensureMemberForEmail(env.DB, 'alex@example.com');
+    const member = await ensureMemberForEmail(env.DB, 'alex@example.com', 'alex@example.com');
     const boundaryName = 'a'.repeat(80);
 
     await expect(updateMemberDisplayName(env.DB, member.id, `  ${boundaryName}  `)).resolves.toBe(
@@ -118,7 +153,7 @@ describe('updateMemberDisplayName', () => {
   });
 
   it('updates only the authenticated member represented by the supplied id', async () => {
-    const alex = await ensureMemberForEmail(env.DB, 'alex@example.com');
+    const alex = await ensureMemberForEmail(env.DB, 'alex@example.com', 'alex@example.com');
     const sam = await inviteAndProvisionMember(env.DB, alex, 'sam@example.com');
 
     await updateMemberDisplayName(env.DB, alex.id, 'Alex Reed');

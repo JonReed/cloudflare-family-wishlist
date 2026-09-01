@@ -3,7 +3,7 @@ import { redirect } from 'react-router';
 import { Brand } from '../components/brand';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
-import { cloudflareContext, identityContext } from '../lib/context';
+import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
@@ -42,7 +42,11 @@ export function meta() {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
   const wishlists = await listFamilyWishlists(env.DB, member.id);
   const requestedWishlistId = new URL(request.url).searchParams.get('list');
   const activeWishlist =
@@ -109,7 +113,11 @@ function productFormDraft(
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
-  const member = await ensureMemberForEmail(env.DB, identity.email);
+  const member = await ensureMemberForEmail(
+    env.DB,
+    identity.email,
+    organiserEmailForRequest(env, identity.email)
+  );
 
   try {
     const formData = await request.formData();

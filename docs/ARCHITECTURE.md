@@ -48,8 +48,8 @@ email. Missing or invalid production configuration fails closed.
 2. `workers/app.ts` verifies the Access assertion and builds an immutable request context containing
    the verified identity and D1 binding.
 3. A route calls `ensureMemberForEmail()`. Unique database constraints make concurrent first
-   requests converge on one member and one wishlist. The first member is assigned the admin role;
-   subsequent people are members.
+   requests converge on one member and one wishlist. Only the email in `INITIAL_ORGANISER_EMAIL` can
+   create the first admin; subsequent people require a completed exact-email invitation.
 4. The loader requests all family wishlists for the viewer. Their own list sorts first; `?list=` chooses
    the active list rendered in the document.
 5. Forms post an explicit intent to an action. Before authentication or routing, the Worker requires
@@ -70,6 +70,15 @@ before creating a single exact-email application policy through Cloudflare's API
 failed rollback is retained as `cleanup_required` with the policy ID. Neither `pending` nor
 `cleanup_required` can provision a member, so Access and D1 failures remain fail-closed. The API token
 is a Worker secret and is never returned to loaders, HTML or logs.
+
+The family page exposes interrupted `pending` and `cleanup_required` invitations to the organiser.
+Repair first lists the application's Access policies and reuses only one exact policy-name and
+exact-email match; otherwise it creates a fresh exact-email policy. Duplicate matches fail closed.
+Removing an ordinary member first sets `members.disabled_at`, so a still-valid Access session cannot
+reach application data, then deletes the exact-email policy and revokes every session for this Access
+application. The final D1 state retains the member, wishlist and history while removing admission.
+An interrupted removal remains visible and can be finished safely; deleting an already absent policy
+is idempotent.
 
 Authentication happens before provisioning. There is no application endpoint that accepts an email
 address and creates a member without a verified Access identity.
@@ -122,6 +131,7 @@ members
   email UNIQUE
   display_name
   role: admin | member
+  disabled_at, nullable
        |
        | 1:1 (wishlists.owner_member_id is UNIQUE)
        v
@@ -149,7 +159,7 @@ family_invitations
   email UNIQUE
   display_name
   access_policy_id UNIQUE, nullable while pending
-  status: pending | active | cleanup_required
+  status: pending | active | cleanup_required | revocation_required | revoked
   invited_by_member_id FK -> members
 ```
 
@@ -250,6 +260,10 @@ ambiguous response types are rejected. This
 prevents family browsers from exposing
 their address or cookies to an arbitrary picture host and keeps CSP `img-src` same-origin. No R2
 bucket or image-processing service is required.
+
+Before any outbound image request, the route consumes a member-scoped D1 budget of 60 fetches per
+minute and 500 per UTC day. One atomic upsert checks both limits, so parallel requests cannot step
+past either cap.
 
 No Access assertion, cookie, family data or requesting-user identity is sent to the model. The model
 cannot fetch another URL, invoke a tool or persist anything. Only the ordinary add-wish action can

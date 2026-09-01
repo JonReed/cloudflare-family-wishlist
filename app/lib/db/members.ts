@@ -20,6 +20,7 @@ type MemberWithWishlistRow = {
   display_name: string;
   role: MemberRole;
   wishlist_id: string;
+  disabled_at: string | null;
 };
 
 const FIND_MEMBER_WITH_WISHLIST = `
@@ -28,7 +29,8 @@ const FIND_MEMBER_WITH_WISHLIST = `
     members.email,
     members.display_name,
     members.role,
-    wishlists.id AS wishlist_id
+    wishlists.id AS wishlist_id,
+    members.disabled_at
   FROM members
   INNER JOIN wishlists ON wishlists.owner_member_id = members.id
   WHERE members.email = ?1 COLLATE NOCASE
@@ -86,13 +88,13 @@ function mapMember(row: MemberWithWishlistRow): MemberWithWishlist {
 async function findMemberWithWishlist(
   db: D1Database,
   email: string
-): Promise<MemberWithWishlist | null> {
+): Promise<{ member: MemberWithWishlist; disabled: boolean } | null> {
   const row = await db
     .prepare(FIND_MEMBER_WITH_WISHLIST)
     .bind(email)
     .first<MemberWithWishlistRow>();
 
-  return row ? mapMember(row) : null;
+  return row ? { member: mapMember(row), disabled: row.disabled_at !== null } : null;
 }
 
 /**
@@ -101,13 +103,26 @@ async function findMemberWithWishlist(
  */
 export async function ensureMemberForEmail(
   db: D1Database,
-  identityEmail: string
+  identityEmail: string,
+  initialOrganiserEmail?: string
 ): Promise<MemberWithWishlist> {
   const email = normaliseEmail(identityEmail);
   const existing = await findMemberWithWishlist(db, email);
 
   if (existing) {
-    return existing;
+    if (existing.disabled) {
+      throw new MemberAdmissionError('This person no longer has access to this family wishlist.');
+    }
+    return existing.member;
+  }
+
+  const organiserEmail = initialOrganiserEmail ? normaliseEmail(initialOrganiserEmail) : undefined;
+
+  if (!organiserEmail) {
+    const familyExists = await db.prepare('SELECT 1 AS present FROM members LIMIT 1').first();
+    if (!familyExists) {
+      throw new MemberAdmissionError('The initial family organiser has not been configured.');
+    }
   }
 
   const memberId = crypto.randomUUID();
@@ -134,7 +149,10 @@ export async function ensureMemberForEmail(
              WHEN EXISTS (SELECT 1 FROM members) THEN 'member'
              ELSE 'admin'
            END
-         WHERE NOT EXISTS (SELECT 1 FROM members)
+         WHERE (
+              NOT EXISTS (SELECT 1 FROM members)
+              AND ?4 = ?2 COLLATE NOCASE
+            )
             OR EXISTS (
               SELECT 1
               FROM family_invitations
@@ -144,7 +162,7 @@ export async function ensureMemberForEmail(
             )
          ON CONFLICT (email) DO NOTHING`
       )
-      .bind(memberId, email, initialDisplayName(email)),
+      .bind(memberId, email, initialDisplayName(email), organiserEmail ?? ''),
     db
       .prepare(
         `INSERT INTO wishlists (id, owner_member_id)
@@ -162,7 +180,11 @@ export async function ensureMemberForEmail(
     throw new MemberAdmissionError('This identity does not have a completed family invitation.');
   }
 
-  return member;
+  if (member.disabled) {
+    throw new MemberAdmissionError('This person no longer has access to this family wishlist.');
+  }
+
+  return member.member;
 }
 
 /** Updates only the member already resolved from the authenticated Access identity. */

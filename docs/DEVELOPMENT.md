@@ -95,6 +95,10 @@ proxy. Preserve its redirect validation, public-network enforcement, raster allo
 `public/product-import.js` owns the optional live preview, change and remove conveniences across both
 ordinary and multi-list forms.
 
+The image proxy also consumes the member's atomic minute and UTC-day D1 budget before fetching. Keep
+the limits in `app/lib/db/product-images.ts`, cover both reset boundaries and do not replace the
+database guard with an in-memory counter.
+
 The **Add from anywhere** page is presented by `app/routes/bookmarklet.tsx` at the existing
 `/bookmarklet` URL. `app/lib/bookmarklet.ts` derives both the add-page address used by Apple Shortcuts
 and the desktop bookmarklet from the current deployment origin. `public/pwa-install.js` registers the
@@ -147,6 +151,10 @@ after reading the account-specific private handoff and verifying the active Wran
 - Keep family admission fail-closed: write a pending invitation before calling Cloudflare, create only
   an exact-email Allow policy, activate it only after Cloudflare succeeds, and never provision a later
   member from a pending or cleanup-required row.
+- Never infer the organiser from request order. Production bootstrap requires
+  `INITIAL_ORGANISER_EMAIL`; local development may use its fixed loopback-only identity.
+- Disable a removed member in D1 before deleting their Access policy, revoke application sessions,
+  and preserve their wishlist and history. Keep interrupted invitations and removals repairable.
 - Treat `ACCESS_MANAGEMENT_API_TOKEN` as a secret. Keep the account and application identifiers in
   deployment configuration, not family-facing output.
 - Preserve the bounded response reader, timeout and compensating policy deletion around Access API
@@ -175,6 +183,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/family-members.test.ts`      | roles, admin checks, invitation state and first-login conversion   |
 | `test/member-provisioning.test.ts` | email validation, idempotent first login and one-list constraint   |
 | `test/product-image.test.ts`       | same-origin proxy types, redirects and response-byte boundary      |
+| `test/product-images.test.ts`      | member-scoped image burst/day budgets and reset boundaries         |
 | `test/product-lookups.test.ts`     | member lookup budget, reset and concurrent enforcement             |
 | `test/product-metadata.test.ts`    | bounded public fetches, metadata extraction and optional AI safety |
 | `test/product-url.test.ts`         | safe HTTP(S) links, credential rejection and size limits           |
