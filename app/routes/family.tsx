@@ -1,7 +1,7 @@
 import { data, Form, redirect, useNavigation } from 'react-router';
 
-import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
+import { SiteHeader } from '../components/site-header';
 import {
   AccessManagementError,
   ensureFamilyMemberAccess,
@@ -300,18 +300,7 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
 
   return (
     <div className="site-shell">
-      <header className="site-header page-wrap">
-        <a href="/" className="brand-link" aria-label="Family Wishlist home">
-          <Brand />
-        </a>
-
-        <div className="account-links">
-          <a href="/">Wishlists</a>
-          <a href="/bookmarklet">Add from anywhere</a>
-          <a href="/profile">Profile</a>
-          <a href="/cdn-cgi/access/logout">Sign out</a>
-        </div>
-      </header>
+      <SiteHeader member={loaderData.member} current="family" />
 
       <main className="profile-main page-wrap">
         <section className="profile-sheet family-sheet" aria-labelledby="family-title">

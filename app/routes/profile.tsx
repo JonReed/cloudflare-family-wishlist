@@ -1,7 +1,7 @@
 import { data, Form, useNavigation } from 'react-router';
 
-import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
+import { SiteHeader } from '../components/site-header';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail, MemberInputError, updateMemberDisplayName } from '../lib/db/members';
 
@@ -59,18 +59,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
 
   return (
     <div className="site-shell">
-      <header className="site-header page-wrap">
-        <a href="/" className="brand-link" aria-label="Family Wishlist home">
-          <Brand />
-        </a>
-
-        <div className="account-links">
-          <a href="/">Wishlists</a>
-          <a href="/bookmarklet">Add from anywhere</a>
-          {member.role === 'admin' ? <a href="/family">Your family</a> : null}
-          <a href="/cdn-cgi/access/logout">Sign out</a>
-        </div>
-      </header>
+      <SiteHeader member={member} current="profile" />
 
       <main className="profile-main page-wrap">
         <section className="profile-sheet" aria-labelledby="profile-title">

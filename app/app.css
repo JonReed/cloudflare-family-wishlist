@@ -230,11 +230,21 @@
   font-size: 0.9rem;
 }
 
+.account-greeting {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .account-links strong {
   color: var(--ink);
 }
 
 .account-links a {
+  --nav-link-start: 1rem;
+
+  position: relative;
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
@@ -242,7 +252,27 @@
   padding-left: 1rem;
   color: var(--leaf);
   font-weight: 700;
+  isolation: isolate;
   text-underline-offset: 0.25rem;
+}
+
+.account-links a[aria-current='page'] {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.account-links a[aria-current='page']::after {
+  position: absolute;
+  z-index: -1;
+  right: -0.12rem;
+  bottom: 0.45rem;
+  left: var(--nav-link-start);
+  height: 0.62rem;
+  content: '';
+  background-color: var(--tape);
+  background-image: var(--tape-texture);
+  clip-path: var(--tape-edge-b);
+  transform: rotate(-1.2deg);
 }
 
 .parcel-hero {
@@ -1500,8 +1530,7 @@ button:disabled {
     gap: 0.65rem;
   }
 
-  .brand-byline,
-  .account-links > span {
+  .brand-byline {
     display: none;
   }
 
@@ -1522,7 +1551,16 @@ button:disabled {
     font-size: 0.82rem;
   }
 
+  .account-greeting {
+    width: 100%;
+    max-width: none;
+    text-align: center;
+    white-space: normal;
+  }
+
   .account-links a {
+    --nav-link-start: 0;
+
     border: 0;
     padding-left: 0;
   }

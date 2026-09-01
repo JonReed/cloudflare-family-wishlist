@@ -1,8 +1,8 @@
 import { redirect } from 'react-router';
 
-import { Brand } from '../components/brand';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
+import { SiteHeader } from '../components/site-header';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
@@ -577,21 +577,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
   return (
     <div className="site-shell">
-      <header className="site-header page-wrap">
-        <a href="/" className="brand-link" aria-label="Family Wishlist home">
-          <Brand />
-        </a>
-
-        <div className="account-links">
-          <span>
-            Hello, <strong>{member.displayName}</strong>
-          </span>
-          <a href="/bookmarklet">Add from anywhere</a>
-          {member.role === 'admin' ? <a href="/family">Your family</a> : null}
-          <a href="/profile">Profile</a>
-          <a href="/cdn-cgi/access/logout">Sign out</a>
-        </div>
-      </header>
+      <SiteHeader member={member} current="wishlists" />
 
       <main>
         <section className="parcel-hero family-board page-wrap" aria-labelledby="page-title">

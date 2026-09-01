@@ -25,6 +25,11 @@ The signed-in home has four stable regions:
    wider screens.
 4. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
 
+The signed-in header is identical on every route for the same member. It always includes “Hello” and
+their display name, Wishlists, Add from anywhere, Profile and Sign out; the family organiser also sees
+Your family in the same position. Keep the current destination in place and mark it with a quiet strip
+of parcel tape rather than removing its link or changing the navigation order.
+
 Only one wishlist is rendered as the active working area. This prevents a family with many members
 or long lists from becoming one enormous dashboard. The selected list is represented by a `list`
 query parameter so it remains linkable and survives form actions.

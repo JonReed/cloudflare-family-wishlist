@@ -1,5 +1,6 @@
-import { Brand, GiftIcon } from '../components/brand';
+import { GiftIcon } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
+import { SiteHeader } from '../components/site-header';
 import { createAddPageHref, createBookmarkletHref } from '../lib/bookmarklet';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
@@ -40,21 +41,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
   return (
     <div className="site-shell">
-      <header className="site-header page-wrap">
-        <a href="/" className="brand-link" aria-label="Family Wishlist home">
-          <Brand />
-        </a>
-
-        <div className="account-links">
-          <a href="/">Wishlists</a>
-          <a href="/bookmarklet" aria-current="page">
-            Add from anywhere
-          </a>
-          {loaderData.member.role === 'admin' ? <a href="/family">Your family</a> : null}
-          <a href="/profile">Profile</a>
-          <a href="/cdn-cgi/access/logout">Sign out</a>
-        </div>
-      </header>
+      <SiteHeader member={loaderData.member} current="add-from-anywhere" />
 
       <main className="bookmarklet-main page-wrap">
         <article className="bookmarklet-sheet" aria-labelledby="bookmarklet-title">
