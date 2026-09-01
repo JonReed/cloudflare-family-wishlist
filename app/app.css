@@ -1229,13 +1229,6 @@ button:disabled {
   font-weight: 800;
 }
 
-.profile-identity > p:last-child {
-  margin: 0.9rem 0 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.65;
-}
-
 .family-sheet {
   width: min(100%, 82rem);
 }

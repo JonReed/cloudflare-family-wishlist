@@ -119,13 +119,6 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                   </>
                 ) : null}
               </p>
-              <p>
-                Cloudflare Access manages this address. Your display name only changes what your
-                family sees here.
-              </p>
-              <a href="/bookmarklet" className="button-quiet mt-5">
-                Set up adding from anywhere
-              </a>
             </aside>
           </div>
         </section>
