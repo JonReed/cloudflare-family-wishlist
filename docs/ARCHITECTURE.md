@@ -72,8 +72,9 @@ failed rollback is retained as `cleanup_required` with the policy ID. Neither `p
 is a Worker secret and is never returned to loaders, HTML or logs.
 
 The family page exposes interrupted `pending` and `cleanup_required` invitations to the organiser.
-Repair first lists the application's Access policies and reuses only one exact policy-name and
-exact-email match; otherwise it creates a fresh exact-email policy. Duplicate matches fail closed.
+Repair first obtains a pagination-verified complete list of the application's Access policies and
+reuses only one exact policy-name and exact-email match; otherwise it creates a fresh exact-email
+policy. Duplicate or incomplete results fail closed.
 Removing an ordinary member first sets `members.disabled_at`, so a still-valid Access session cannot
 reach application data, then deletes the exact-email policy and revokes every session for this Access
 application. The final D1 state retains the member, wishlist and history while removing admission.

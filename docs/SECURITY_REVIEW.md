@@ -7,19 +7,18 @@ reviewed source. Claim secrecy is enforced in the database query, mutations have
 same-origin and body-size boundary, outbound product fetches are bounded, and the browser receives a
 strict nonce-based Content Security Policy.
 
-Five findings remain: one high-severity, deployment-dependent bootstrap weakness; two medium
-availability and revocation weaknesses; and two low-severity recovery and supply-chain gaps. The
-highest-priority change is to bind first-member provisioning to an explicitly configured organiser
-identity instead of granting the first valid Access identity the organiser role. Operators should
-also update the removal procedure immediately: deleting an Allow policy is not a substitute for
-revoking the removed person's active Access sessions.
+The original review found five actionable issues: one high-severity, deployment-dependent bootstrap
+weakness; two medium availability and revocation weaknesses; and two low-severity recovery and
+supply-chain gaps. Those findings were fixed and re-reviewed. A final Daybreak Blue review of commit
+`ad9571c91bc7b5eb4cf50bb63a7ba64292d99584` found no remaining actionable security findings in the
+reviewed source.
 
-| Severity | Count |
-| -------- | ----: |
-| Critical |     0 |
-| High     |     1 |
-| Medium   |     2 |
-| Low      |     2 |
+| Severity | Original | Remaining |
+| -------- | -------: | --------: |
+| Critical |        0 |         0 |
+| High     |        1 |         0 |
+| Medium   |        2 |         0 |
+| Low      |        2 |         0 |
 
 ## Scope and method
 
@@ -64,7 +63,53 @@ The live Cloudflare account, Access application and policies, Worker routes, dep
 headers, active sessions, production D1 data, GitHub branch protection, and Cloudflare Builds settings
 were not inspected or mutated. Findings that depend on those controls are marked accordingly.
 
-## Findings
+## Remediation and verification
+
+### Remediation record
+
+- **Primary remediation commit:** `4273d44c2206f6809eac464b2201554436c9df0d`
+- **Follow-up reconciliation commit:** `ad9571c91bc7b5eb4cf50bb63a7ba64292d99584`
+- **Remediation date:** 1 September 2026
+- **Repository verification:** `npm run quality` passed with 204 tests in 16 files and a production
+  build; `npm run audit` reported zero vulnerabilities at the configured moderate threshold.
+
+The primary remediation bound first-member creation to `INITIAL_ORGANISER_EMAIL`, added immediate
+D1 disablement and application-session revocation for removals, added atomic minute/day image-fetch
+budgets, made interrupted invitations and removals recoverable, audited development dependencies and
+pinned CI actions to immutable commits.
+
+The first Daybreak Blue re-review found one remaining low-severity issue: invitation repair examined
+only the first 50 Access policies. The follow-up commit requests the endpoint's complete 1,000-policy
+page and accepts it only when the pagination metadata proves the returned list is complete. Tests
+cover a match beyond position 50 and fail closed on inconsistent pagination metadata.
+
+### Final verification review
+
+- **Reviewed commit:** `ad9571c91bc7b5eb4cf50bb63a7ba64292d99584`
+- **Review date:** 1 September 2026
+- **Review performed with:** OpenAI Daybreak Blue
+- **Verdict:** Pass — no actionable security findings remained in the reviewed source.
+
+| Finding       | Final status |
+| ------------- | ------------ |
+| `FWL-SEC-001` | Closed       |
+| `FWL-SEC-002` | Closed       |
+| `FWL-SEC-003` | Closed       |
+| `FWL-SEC-004` | Closed       |
+| `FWL-SEC-005` | Closed       |
+
+The final pass re-examined organiser bootstrap, Access JWT validation and policy/session management,
+D1 state transitions, claim secrecy and authorization, mutation-origin enforcement, SSRF and
+credential forwarding, product resource budgets, AI boundaries, browser injection, CSP, service
+worker caching, secret handling, Worker request hygiene and CI supply-chain controls.
+
+The review remained source-led. It did not inspect the effective live Access policies, deployed
+headers, active sessions, production D1 contents, GitHub settings or Cloudflare Builds configuration.
+Operators must still complete the deployment acceptance checks in [DEPLOYMENT.md](DEPLOYMENT.md).
+The disclaimer above continues to apply: a pass is not a penetration test, certification or guarantee
+that a deployment is vulnerability-free.
+
+## Original findings (closed)
 
 ### FWL-SEC-001 — First valid Access identity becomes organiser
 

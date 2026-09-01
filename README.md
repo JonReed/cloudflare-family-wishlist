@@ -133,9 +133,10 @@ This project is MIT licensed and intentionally fork-friendly. It is also maintai
 
 ## Security
 
-An [AI-assisted adversarial security review](docs/SECURITY_REVIEW.md) was performed with
-OpenAI Daybreak Blue against commit `6bda0e6` on 1 September 2026. It identified five open findings
-which are being remediated. The report records its evidence, scope and limitations; it is not an
-independent audit, certification or penetration test.
+An [AI-assisted adversarial security review](docs/SECURITY_REVIEW.md) was performed with OpenAI
+Daybreak Blue on 1 September 2026. The original review found five actionable issues; all were fixed,
+and a final review of commit `ad9571c` found no remaining actionable findings in the reviewed source.
+The report preserves the original evidence, remediation record, exact commits, scope and limitations.
+It is not an independent audit, certification or penetration test.
 
 Please do not open a public issue for a suspected vulnerability. Follow [SECURITY.md](SECURITY.md) instead.
