@@ -191,6 +191,7 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
 
         <div className="account-links">
           <a href="/">Wishlists</a>
+          <a href="/bookmarklet">Add from anywhere</a>
           <a href="/profile">Profile</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>

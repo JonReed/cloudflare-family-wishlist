@@ -8,6 +8,24 @@ const MAX_AI_PAGE_CHARACTERS = 10_000;
 const MAX_AI_IMAGE_CANDIDATES = 8;
 const MAX_AI_IMAGE_URL_CHARACTERS = 500;
 
+function productPageRequestHeaders(): Headers {
+  // Use one coherent browser-navigation profile for every initial request,
+  // redirect and retailer retry. Firefox ESR does not rely on Chromium client
+  // hints, so the profile stays internally consistent without forwarding any
+  // headers, cookies or identity from the signed-in family member.
+  return new Headers({
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-GB,en;q=0.5',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:140.0) Gecko/20100101 Firefox/140.0'
+  });
+}
+
 export const DEFAULT_PRODUCT_AI_MODEL = '@cf/google/gemma-4-26b-a4b-it';
 
 const PRODUCT_AI_MODELS = [DEFAULT_PRODUCT_AI_MODEL, '@cf/zai-org/glm-4.7-flash'] as const;
@@ -1306,11 +1324,7 @@ export async function fetchProductMetadata(
         redirect: 'manual',
         cache: 'no-store',
         signal,
-        headers: {
-          Accept: 'text/html,application/xhtml+xml;q=0.9',
-          'Accept-Language': 'en-GB,en;q=0.8',
-          'User-Agent': 'Family-Wishlist/0.1 product-metadata-fetcher'
-        }
+        headers: productPageRequestHeaders()
       });
 
       if ([301, 302, 303, 307, 308].includes(response.status)) {

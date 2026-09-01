@@ -26,10 +26,13 @@ query parameter so it remains linkable and survives form actions.
 The product model remains deliberately small: one member, one list. Birthdays, Christmas and other
 occasions do not create separate list types. A wish can stay useful throughout the year.
 
-The browser bookmarklet is an exception to the otherwise familiar form interactions. Give it a
-dedicated setup page, call it the “browser button” in family-facing copy, and visually demonstrate the
-drag from the real button towards a labelled bookmarks bar. Do not assume that a conventional button
-label alone explains how bookmarklet installation works.
+**Add from anywhere** is a stable top-level destination rather than a profile-only setting. Its setup
+page puts the iPhone and iPad Share Sheet journey first, with a short numbered Apple Shortcut recipe
+and the deployment-specific address ready to copy. The desktop bookmarklet follows, called the
+“browser button” in family-facing copy, with a visual demonstration of the drag from the real button
+towards a labelled bookmarks bar. Do not assume that a conventional button label alone explains
+either unfamiliar setup interaction. Both must explicitly end at an editable draft, not imply that a
+wish is saved automatically.
 
 Household administration lives on the separate, infrequently visited **Your family** page. It shows
 joined people and those waiting for their first login, with an add form kept apart from the everyday
@@ -56,8 +59,10 @@ price and a human description of priority are enough.
 
 When a shop publishes a product image, show it as a modest square preview rather than turning the
 wishlist into a catalogue grid. The picture is an editable convenience: it may be removed or replaced
-before saving. Saved images support recognition beside the wish's written details; they do not replace
-the wish name, and repeated adjacent alt text should be avoided.
+before saving. Lead with the preview or a friendly “No picture yet” state; keep the direct picture
+address behind explicit **Add picture** or **Change picture** controls so implementation language does
+not dominate the form. Saved images support recognition beside the wish's written details; they do
+not replace the wish name, and repeated adjacent alt text should be avoided.
 
 ### Quietly buying a gift
 

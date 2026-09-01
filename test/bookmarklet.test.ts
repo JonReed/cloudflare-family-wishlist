@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { createBookmarkletHref } from '../app/lib/bookmarklet';
+import { createAddPageHref, createBookmarkletHref } from '../app/lib/bookmarklet';
 
 describe('wishlist bookmarklet', () => {
+  it('builds a deployment-specific add-page address for Shortcuts and clipboard links', () => {
+    expect(createAddPageHref('https://wishes.teamreed.net/profile?from=nav')).toBe(
+      'https://wishes.teamreed.net/add'
+    );
+  });
+
   it('opens this deployment add page with the current browser URL', () => {
     const href = createBookmarkletHref('https://wishes.teamreed.net/profile');
 
@@ -17,6 +23,7 @@ describe('wishlist bookmarklet', () => {
     'rejects an unsafe deployment URL: %s',
     (origin) => {
       expect(() => createBookmarkletHref(origin)).toThrow('web address');
+      expect(() => createAddPageHref(origin)).toThrow('web address');
     }
   );
 });

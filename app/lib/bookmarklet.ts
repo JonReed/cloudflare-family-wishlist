@@ -1,4 +1,4 @@
-export function createBookmarkletHref(deploymentUrl: string): string {
+export function createAddPageHref(deploymentUrl: string): string {
   let deployment: URL;
 
   try {
@@ -11,7 +11,11 @@ export function createBookmarkletHref(deploymentUrl: string): string {
     throw new TypeError('The deployment needs a valid web address.');
   }
 
-  const addUrl = new URL('/add', deployment.origin).toString();
+  return new URL('/add', deployment.origin).toString();
+}
+
+export function createBookmarkletHref(deploymentUrl: string): string {
+  const addUrl = createAddPageHref(deploymentUrl);
 
   return `javascript:(()=>{const destination=new URL(${JSON.stringify(addUrl)});destination.searchParams.set('url',location.href);window.open(destination.toString(),'_blank','noopener')})()`;
 }

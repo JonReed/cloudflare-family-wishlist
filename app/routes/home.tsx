@@ -240,11 +240,7 @@ function ItemFields({
         />
       </div>
 
-      <ProductImageField
-        formId={formId}
-        defaultValue={item?.imageUrl ?? draft?.imageUrl}
-        enhanced={urlFirst}
-      />
+      <ProductImageField formId={formId} defaultValue={item?.imageUrl ?? draft?.imageUrl} />
 
       <div>
         <label htmlFor={`${formId}-notes`} className="form-label">
@@ -564,6 +560,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <span>
             Hello, <strong>{member.displayName}</strong>
           </span>
+          <a href="/bookmarklet">Add from anywhere</a>
           {member.role === 'admin' ? <a href="/family">Your family</a> : null}
           <a href="/profile">Profile</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>

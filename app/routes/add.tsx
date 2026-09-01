@@ -162,6 +162,7 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
 
         <div className="account-links">
           <a href="/">Wishlists</a>
+          <a href="/bookmarklet">Add from anywhere</a>
           {member.role === 'admin' ? <a href="/family">Your family</a> : null}
           <a href="/profile">Profile</a>
         </div>

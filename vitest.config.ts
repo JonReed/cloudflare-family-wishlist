@@ -19,7 +19,7 @@ export default defineConfig(async () => {
       })
     ],
     test: {
-      include: ['test/**/*.test.ts'],
+      include: ['test/**/*.test.{ts,tsx}'],
       setupFiles: ['./test/apply-migrations.ts'],
       coverage: {
         reporter: ['text', 'html'],

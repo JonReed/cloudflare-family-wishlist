@@ -63,6 +63,153 @@
   line-height: 1.75;
 }
 
+.shortcut-setup,
+.browser-button-setup {
+  margin-top: clamp(2.5rem, 6vw, 5rem);
+}
+
+.shortcut-setup {
+  border-block: 1px solid var(--line);
+  background: rgb(135 168 143 / 0.1);
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+}
+
+.setup-section-heading {
+  max-width: 45rem;
+}
+
+.setup-section-heading h2 {
+  margin: 0.45rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.setup-section-heading > p:last-child {
+  max-width: 42rem;
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.shortcut-actions,
+.clipboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.shortcut-actions {
+  margin-top: 1.5rem;
+}
+
+.shortcut-copy-status {
+  color: var(--leaf-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.shortcut-address-wrap {
+  display: grid;
+  max-width: 46rem;
+  margin-top: 1rem;
+  gap: 0.35rem;
+}
+
+.shortcut-address-wrap > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.shortcut-address {
+  overflow-x: auto;
+  border: 1px solid rgb(48 51 41 / 0.18);
+  background: var(--paper);
+  padding: 0.8rem 0.9rem;
+  color: var(--ink);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.shortcut-address strong {
+  color: var(--rust);
+}
+
+.shortcut-steps {
+  display: grid;
+  margin: 2rem 0 0;
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
+  list-style: none;
+}
+
+.shortcut-steps li {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.shortcut-steps h3,
+.clipboard-fallback h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.shortcut-steps p,
+.clipboard-fallback p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.shortcut-use-note {
+  margin-top: 2rem;
+  border-left: 3px solid var(--leaf);
+  background: rgb(255 250 240 / 0.68);
+  padding: 1rem 1.15rem;
+  line-height: 1.65;
+}
+
+.clipboard-fallback {
+  display: grid;
+  margin-top: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem 1.5rem;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+}
+
+.clipboard-status {
+  grid-column: 1 / -1;
+  color: var(--rust) !important;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.clipboard-form {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.browser-button-setup {
+  padding-top: 0.5rem;
+}
+
 .bookmarklet-steps {
   display: grid;
   margin-top: clamp(2.5rem, 5vw, 4.5rem);
@@ -304,6 +451,17 @@
     grid-template-columns: 1fr;
   }
 
+  .shortcut-steps,
+  .clipboard-fallback,
+  .clipboard-form {
+    grid-template-columns: 1fr;
+  }
+
+  .clipboard-actions,
+  .clipboard-status {
+    grid-column: 1;
+  }
+
   .bookmarklet-target-bar {
     align-items: flex-start;
     flex-direction: column;
@@ -323,6 +481,20 @@
   .bookmarklet-drag-label {
     top: 7rem;
     left: 56%;
+  }
+}
+
+@media (max-width: 30rem) {
+  .shortcut-setup {
+    margin-inline: -0.35rem;
+    padding-inline: 1rem;
+  }
+
+  .shortcut-actions > *,
+  .clipboard-actions > *,
+  .clipboard-form > * {
+    width: 100%;
+    justify-content: center;
   }
 }
 

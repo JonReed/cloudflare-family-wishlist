@@ -58,6 +58,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
 
         <div className="account-links">
           <a href="/">Wishlists</a>
+          <a href="/bookmarklet">Add from anywhere</a>
           {member.role === 'admin' ? <a href="/family">Your family</a> : null}
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>
@@ -126,7 +127,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                 family sees here.
               </p>
               <a href="/bookmarklet" className="button-quiet mt-5">
-                Set up the browser button
+                Set up adding from anywhere
               </a>
             </aside>
           </div>

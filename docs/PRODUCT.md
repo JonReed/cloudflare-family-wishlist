@@ -64,12 +64,16 @@ model terms such as “one list per member”.
 
 ### Save something while browsing
 
-The dedicated browser-button setup page provides a deployment-specific “Add to Family Wishlist”
-bookmarklet, with a visual explanation of the unfamiliar drag-to-bookmarks interaction. A member
-drags it to their browser's bookmarks bar, then clicks it on a product page. Family Wishlist opens in
-a new tab with the product link and any details the shop makes available. The member can edit the
-draft and choose one or more family lists before anything is saved. Their own list is selected by
-default.
+The top-level **Add from anywhere** setup page provides two deployment-specific routes back to Family
+Wishlist. On iPhone and iPad, a member creates an Apple Shortcut that accepts product links from the
+Share Sheet and opens the protected add page. On a laptop or desktop, they drag the “Add to Family
+Wishlist” browser button into their bookmarks bar and click it on a product page. A clipboard helper
+also opens a copied HTTP(S) link when the browser permits clipboard access.
+
+Every route opens an editable draft with the product link and any details the shop makes available.
+The member can change the draft and choose one or more family lists before anything is saved. Their
+own list is selected by default. Setup addresses are derived from the current deployment, so a fork
+does not need a hard-coded hostname.
 
 Adding to several lists creates an independent wish on each list. The operation is all-or-nothing: a
 stale or missing list must not leave only some of the selected lists updated.
@@ -109,7 +113,8 @@ Working today:
 - adding, editing and deleting items;
 - filling a new wish's name, image and GBP price from a public product link, with optional AI help
   when the page does not publish a reliable name or price;
-- adding a product to one or more family lists from a browser bookmarklet;
+- adding a product to one or more family lists from the iPhone/iPad Share Sheet or a desktop browser
+  button;
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased; and
 - server-enforced claim secrecy for the recipient.

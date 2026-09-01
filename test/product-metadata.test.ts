@@ -47,11 +47,22 @@ describe('fetchProductMetadata', () => {
     expect(requestedUrl).toBe('https://shop.example/scarf');
     expect(requestInit).toMatchObject({ method: 'GET', redirect: 'manual', cache: 'no-store' });
     const requestHeaders = new Headers(requestInit?.headers);
-    expect(requestHeaders.get('User-Agent')).toBe('Family-Wishlist/0.1 product-metadata-fetcher');
-    expect(requestHeaders.get('Accept-Language')).toBe('en-GB,en;q=0.8');
+    expect(requestHeaders.get('User-Agent')).toBe(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:140.0) Gecko/20100101 Firefox/140.0'
+    );
+    expect(requestHeaders.get('Accept')).toBe(
+      'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    );
+    expect(requestHeaders.get('Accept-Language')).toBe('en-GB,en;q=0.5');
+    expect(requestHeaders.get('Sec-Fetch-Dest')).toBe('document');
+    expect(requestHeaders.get('Sec-Fetch-Mode')).toBe('navigate');
+    expect(requestHeaders.get('Sec-Fetch-Site')).toBe('none');
+    expect(requestHeaders.get('Sec-Fetch-User')).toBe('?1');
+    expect(requestHeaders.get('Upgrade-Insecure-Requests')).toBe('1');
     expect(requestHeaders.has('Authorization')).toBe(false);
     expect(requestHeaders.has('Cookie')).toBe(false);
     expect(requestHeaders.has('Referer')).toBe(false);
+    expect(requestHeaders.has('Accept-Encoding')).toBe(false);
   });
 
   it('falls back to JSON-LD and ignores a non-GBP price', async () => {
@@ -493,6 +504,11 @@ describe('fetchProductMetadata', () => {
       'https://www.amazon.co.uk/gp/product/B085Y25JJ7?ref=tracking',
       'https://www.amazon.co.uk/dp/B085Y25JJ7'
     ]);
+    for (const [, init] of fetchPage.mock.calls) {
+      const headers = new Headers(init.headers);
+      expect(headers.get('User-Agent')).toContain('Firefox/140.0');
+      expect(headers.get('Sec-Fetch-Mode')).toBe('navigate');
+    }
     expect(extractWithAi).not.toHaveBeenCalled();
   });
 

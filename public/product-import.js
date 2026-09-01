@@ -1,5 +1,66 @@
 /* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, document, fetch, setTimeout */
 
+const imagePreviewUpdates = new Map();
+
+for (const field of document.querySelectorAll('[data-product-image-field]')) {
+  const imageInput = field.querySelector('[data-product-image]');
+  const imagePreview = field.querySelector('[data-product-image-preview]');
+  const imagePreviewImage = field.querySelector('[data-product-image-preview-image]');
+  const imageEmpty = field.querySelector('[data-product-image-empty]');
+  const removeButton = field.querySelector('[data-product-image-remove]');
+  const presentCopy = field.querySelectorAll('[data-product-image-present]');
+  const missingCopy = field.querySelectorAll('[data-product-image-missing]');
+
+  if (
+    !(imageInput instanceof HTMLInputElement) ||
+    !(imagePreview instanceof HTMLElement) ||
+    !(imagePreviewImage instanceof HTMLImageElement) ||
+    !(imageEmpty instanceof HTMLElement) ||
+    !(removeButton instanceof HTMLButtonElement)
+  ) {
+    continue;
+  }
+
+  const showPreview = (hasPreview) => {
+    imagePreview.hidden = !hasPreview;
+    imageEmpty.hidden = hasPreview;
+    for (const element of presentCopy) element.hidden = !hasPreview;
+    for (const element of missingCopy) element.hidden = hasPreview;
+  };
+
+  const updateImagePreview = () => {
+    const imageUrl = imageInput.value.trim();
+    removeButton.hidden = !imageUrl;
+
+    if (!/^https:\/\//i.test(imageUrl)) {
+      imagePreviewImage.removeAttribute('src');
+      showPreview(false);
+      return;
+    }
+
+    if (imagePreviewImage.src !== imageUrl) {
+      showPreview(true);
+      imagePreviewImage.src = imageUrl;
+    } else if (imagePreviewImage.complete && imagePreviewImage.naturalWidth > 0) {
+      showPreview(true);
+    }
+  };
+
+  imagePreviewImage.addEventListener('load', () => showPreview(true));
+  imagePreviewImage.addEventListener('error', () => {
+    imagePreviewImage.removeAttribute('src');
+    showPreview(false);
+  });
+  imageInput.addEventListener('input', updateImagePreview);
+  removeButton.addEventListener('click', () => {
+    imageInput.value = '';
+    updateImagePreview();
+  });
+
+  imagePreviewUpdates.set(imageInput, updateImagePreview);
+  updateImagePreview();
+}
+
 const forms = document.querySelectorAll('[data-product-import-form]');
 
 for (const form of forms) {
@@ -7,8 +68,6 @@ for (const form of forms) {
   const titleInput = form.querySelector('[data-product-title]');
   const priceInput = form.querySelector('[data-product-price]');
   const imageInput = form.querySelector('[data-product-image]');
-  const imagePreview = form.querySelector('[data-product-image-preview]');
-  const imagePreviewImage = form.querySelector('[data-product-image-preview-image]');
   const fetchButton = form.querySelector('[data-product-fetch]');
   const status = form.querySelector('[data-product-status]');
 
@@ -18,8 +77,6 @@ for (const form of forms) {
     !(titleInput instanceof HTMLInputElement) ||
     !(priceInput instanceof HTMLInputElement) ||
     !(imageInput instanceof HTMLInputElement) ||
-    !(imagePreview instanceof HTMLElement) ||
-    !(imagePreviewImage instanceof HTMLImageElement) ||
     !(fetchButton instanceof HTMLButtonElement) ||
     !(status instanceof HTMLElement)
   ) {
@@ -42,26 +99,6 @@ for (const form of forms) {
     if (!input.value || input.value === previousValue) input.value = value;
     return value;
   };
-
-  const updateImagePreview = () => {
-    const imageUrl = imageInput.value.trim();
-    if (!/^https:\/\//i.test(imageUrl)) {
-      imagePreview.hidden = true;
-      imagePreviewImage.removeAttribute('src');
-      return;
-    }
-
-    imagePreviewImage.src = imageUrl;
-    imagePreview.hidden = false;
-  };
-
-  imagePreviewImage.addEventListener('load', () => {
-    imagePreview.hidden = false;
-  });
-  imagePreviewImage.addEventListener('error', () => {
-    imagePreview.hidden = true;
-  });
-  imageInput.addEventListener('input', updateImagePreview);
 
   const fetchDetails = async (candidate, force = false) => {
     const productUrl = candidate.trim();
@@ -114,7 +151,7 @@ for (const form of forms) {
       generatedTitle = fillGeneratedField(titleInput, result.title, generatedTitle);
       generatedPrice = fillGeneratedField(priceInput, result.price, generatedPrice);
       generatedImageUrl = fillGeneratedField(imageInput, result.imageUrl, generatedImageUrl);
-      updateImagePreview();
+      imagePreviewUpdates.get(imageInput)?.();
       setStatus(
         result.aiAssisted
           ? 'We filled what we could find, with a little AI help. Check the details before adding.'

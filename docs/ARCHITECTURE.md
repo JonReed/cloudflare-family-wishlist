@@ -56,8 +56,9 @@ email. Missing or invalid production configuration fails closed.
    the request origin before the action validates the request shape, invokes a service mutation and
    redirects. The add form can instead request an editable draft from a product link without creating
    an item.
-6. `/add?url=` is the bookmarklet landing route. It loads an editable product draft and all family
-   list choices; its action inserts one independent item per selected list with a guarded D1 statement.
+6. `/add?url=` is the landing route for the iPhone/iPad Share Sheet Shortcut, copied links and the
+   desktop bookmarklet. It loads an editable product draft and all family list choices; its action
+   inserts one independent item per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
 
 The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
@@ -92,11 +93,11 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/auth/access.ts`                          | Access JWT verification and tightly constrained local identity                     |
 | `app/lib/context.ts`                              | Typed identity and binding handoff to loaders/actions                              |
 | `app/routes/home.tsx`                             | HTTP-level loading, form intent dispatch and page composition                      |
-| `app/routes/add.tsx`                              | Bookmarklet landing page, multi-list chooser and save action                       |
-| `app/routes/bookmarklet.tsx`                      | Browser-button installation and visual drag guidance                               |
+| `app/routes/add.tsx`                              | Product-link draft landing page, multi-list chooser and save action                |
+| `app/routes/bookmarklet.tsx`                      | Share Sheet Shortcut, clipboard and browser-button setup                           |
 | `app/routes/family.tsx`                           | Organiser-only joined/waiting member administration                                |
 | `app/routes/product-details.ts`                   | Same-origin progressive-enhancement endpoint for product-link metadata             |
-| `app/lib/bookmarklet.ts`, `public/bookmarklet.js` | Deployment-specific bookmarklet generation and safe browser installation           |
+| `app/lib/bookmarklet.ts`, `public/bookmarklet.js` | Deployment-specific add links and progressively enhanced setup tools               |
 | `app/lib/cloudflare/access-membership.ts`         | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
 | `app/lib/product-metadata.ts`                     | Bounded public-page fetching, redirect policy and metadata extraction              |
 | `app/lib/db/members.ts`                           | Identity normalisation and member/list provisioning                                |
@@ -180,11 +181,12 @@ form action remains the fallback when JavaScript is unavailable, and creating a 
 the script. The server remains authoritative. `unsafe-inline` and `unsafe-eval` are not acceptable
 shortcuts.
 
-The browser-button setup page exposes the bookmarklet and profile links to that page. React does not
-server-render a `javascript:` link; a small nonce-authorised, self-hosted script copies a
-server-generated, deployment-specific value from a data attribute into the draggable link. The
-bookmarklet carries only the current page URL to `/add`; authentication, metadata lookup, validation
-and saving all remain inside the protected Worker.
+The top navigation exposes the **Add from anywhere** setup page. Its Apple Shortcut recipe copies a
+server-generated `/add?url=` prefix, while the optional clipboard helper validates a credential-free
+HTTP(S) link before navigating. React does not server-render the desktop `javascript:` link; a small
+nonce-authorised, self-hosted script copies a server-generated, deployment-specific value from a data
+attribute into the draggable link. These entry points carry only the product URL to `/add`;
+authentication, metadata lookup, validation and saving all remain inside the protected Worker.
 
 Multi-list adds use one parameter-bound `INSERT … SELECT` statement. A completeness check inside the
 statement suppresses every insert when any selected wishlist no longer exists, avoiding partial saves.
@@ -268,8 +270,10 @@ without becoming a new persistence or availability dependency.
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
 - automatically loaded product images accept only HTTPS, reject embedded credentials and obvious
   local/private-network targets, and send no cross-site referrer;
-- product metadata fetches accept only public HTTP(S) pages, validate each redirect, send no user
-  credentials, stop after 8 seconds, inspect at most 512 KiB of HTML and reject verification pages;
+- product metadata fetches accept only public HTTP(S) pages, validate each redirect and use the same
+  restrained desktop-browser navigation profile for initial requests and retries. They never forward
+  user headers, credentials, cookies or referrers, stop after 8 seconds, inspect at most 512 KiB of
+  HTML and reject verification pages;
 - AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and
   cannot override deterministic metadata or persist data;
 - every user-controlled database value uses a prepared statement with `.bind()`;
