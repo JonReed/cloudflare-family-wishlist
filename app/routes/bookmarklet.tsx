@@ -192,7 +192,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               >
                 Copy your wishlist address
               </button>
-              <a href="/add-to-family-wishlist.shortcut" className="button-secondary">
+              <a href="/add-to-family-wishlist.shortcut?v=a6a6bfde" className="button-secondary">
                 Download the Apple Shortcut
               </a>
               <span

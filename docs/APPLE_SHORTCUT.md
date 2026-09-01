@@ -33,7 +33,8 @@ The source of truth for behaviour is the workflow above and the matching manual 
 4. export it **For: Anyone**, allowing Apple to validate the copy;
 5. replace `public/add-to-family-wishlist.shortcut` and test a fresh import on a current iPhone or
    iPad; and
-6. update the checksum below.
+6. update the checksum below and the short checksum in the download link's `?v=` query string so
+   existing members cannot receive a browser-cached copy.
 
 Current SHA-256:
 
