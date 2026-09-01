@@ -170,6 +170,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | ---------------------------------- | ------------------------------------------------------------------ |
 | `test/access-auth.test.ts`         | JWT signature/issuer/audience/expiry and local identity boundaries |
 | `test/access-membership.test.ts`   | exact-email policy shape, bounded API handling and cleanup         |
+| `test/add-route.test.ts`           | multi-list product drafts preserve edits and fill missing pictures |
 | `test/bookmarklet.test.ts`         | safe, deployment-specific add-page and bookmarklet construction    |
 | `test/family-members.test.ts`      | roles, admin checks, invitation state and first-login conversion   |
 | `test/member-provisioning.test.ts` | email validation, idempotent first login and one-list constraint   |

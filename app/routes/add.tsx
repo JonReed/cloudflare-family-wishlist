@@ -12,6 +12,7 @@ import {
   WishlistInputError,
   type ItemInput
 } from '../lib/db/wishlists';
+import { fillMissingProductDraft } from '../lib/product-draft';
 import {
   createWorkersAiProductExtractor,
   fetchProductMetadata,
@@ -78,6 +79,16 @@ function formDraft(formData: FormData): ProductDraft {
   };
 }
 
+function productFormDraft(formData: FormData, product: ProductMetadata): ProductDraft {
+  return fillMissingProductDraft(formDraft(formData), product);
+}
+
+function selectedWishlistIds(formData: FormData): string[] {
+  return formData
+    .getAll('wishlistIds')
+    .filter((wishlistId): wishlistId is string => typeof wishlistId === 'string');
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   const identity = context.get(identityContext);
@@ -123,7 +134,42 @@ export async function action({ request, context }: Route.ActionArgs) {
   const identity = context.get(identityContext);
   const member = await ensureMemberForEmail(env.DB, identity.email);
   const formData = await request.formData();
-  const wishlistIds = formData.getAll('wishlistIds');
+  const wishlistIds = selectedWishlistIds(formData);
+  const intent = formValue(formData, 'intent', 32);
+
+  if (intent === 'fetch-product') {
+    try {
+      await consumeProductLookupBudget(env.DB, member.id);
+      const product = await fetchProductMetadata(
+        formData.get('productUrl'),
+        new URL(request.url).hostname,
+        {
+          extractWithAi:
+            String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
+              ? createWorkersAiProductExtractor(env.AI, env.PRODUCT_AI_MODEL)
+              : undefined
+        }
+      );
+
+      return {
+        draft: productFormDraft(formData, product),
+        selectedWishlistIds: wishlistIds,
+        fetchError: null
+      };
+    } catch (error) {
+      if (!(
+        error instanceof ProductMetadataError || error instanceof ProductLookupRateLimitError
+      )) {
+        throw error;
+      }
+
+      return {
+        draft: formDraft(formData),
+        selectedWishlistIds: wishlistIds,
+        fetchError: error.message
+      };
+    }
+  }
 
   try {
     await createWishlistItems(env.DB, member.id, wishlistIds, itemInput(formData));
@@ -138,9 +184,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         {
           error: error.message,
           draft: formDraft(formData),
-          selectedWishlistIds: wishlistIds.filter(
-            (wishlistId): wishlistId is string => typeof wishlistId === 'string'
-          )
+          selectedWishlistIds: wishlistIds
         },
         { status: 400 }
       );
@@ -154,6 +198,16 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
   const { member, wishlists, product, fetchError } = loaderData;
   const draft = actionData?.draft ?? product;
   const selectedWishlistIds = new Set(actionData?.selectedWishlistIds ?? []);
+  const actionError = actionData && 'error' in actionData ? actionData.error : null;
+  const actionFetchError =
+    actionData && 'fetchError' in actionData ? actionData.fetchError : undefined;
+  const productFetchError = actionFetchError === undefined ? fetchError : actionFetchError;
+  const productFetchStatus =
+    actionData && 'fetchError' in actionData && !actionData.fetchError
+      ? draft.aiAssisted
+        ? 'We found some details with a little AI help. Check them before adding.'
+        : 'We found some details. Check them before adding.'
+      : '';
   const navigation = useNavigation();
   const isSaving = navigation.state === 'submitting';
 
@@ -180,17 +234,10 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
             <p>Check one or more family lists, tidy up the details, then save it for later.</p>
           </div>
 
-          <Form method="post" className="profile-form mt-10">
-            {actionData?.error ? (
+          <Form method="post" className="profile-form mt-10" data-product-import-form>
+            {actionError ? (
               <div role="alert" className="form-alert profile-alert">
-                <strong>Sorry, that didn’t work.</strong> {actionData.error}
-              </div>
-            ) : null}
-
-            {fetchError ? (
-              <div role="status" className="form-alert profile-alert">
-                <strong>We couldn’t fill everything in.</strong> {fetchError} You can still add the
-                details below.
+                <strong>Sorry, that didn’t work.</strong> {actionError}
               </div>
             ) : null}
 
@@ -198,15 +245,39 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
               <label htmlFor="bookmarklet-product-url" className="form-label">
                 Product link
               </label>
-              <input
-                id="bookmarklet-product-url"
-                name="productUrl"
-                type="url"
-                maxLength={2048}
-                defaultValue={draft.productUrl}
-                className="form-control"
-                placeholder="https://…"
-              />
+              <div className="product-link-field">
+                <input
+                  id="bookmarklet-product-url"
+                  name="productUrl"
+                  type="url"
+                  maxLength={2048}
+                  defaultValue={draft.productUrl}
+                  className="form-control"
+                  placeholder="Paste the shop or product link"
+                  data-product-url=""
+                />
+                <button
+                  name="intent"
+                  value="fetch-product"
+                  className="button-secondary product-fetch-button"
+                  formNoValidate
+                  data-product-fetch
+                >
+                  Fill from link
+                </button>
+              </div>
+              <p
+                className={
+                  productFetchError
+                    ? 'product-fetch-status product-fetch-error'
+                    : 'product-fetch-status'
+                }
+                role="status"
+                aria-live="polite"
+                data-product-status
+              >
+                {productFetchError ?? productFetchStatus}
+              </p>
             </div>
 
             <div>
@@ -221,6 +292,7 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
                 defaultValue={draft.title}
                 className="form-control"
                 placeholder="A book, cosy socks, the good chocolate…"
+                data-product-title=""
               />
             </div>
 
@@ -256,6 +328,7 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
                     defaultValue={draft.price}
                     className="form-control"
                     placeholder="24.50"
+                    data-product-price=""
                   />
                 </div>
               </div>
@@ -306,7 +379,13 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
             </fieldset>
 
             <div className="flex flex-wrap gap-3">
-              <button type="submit" className="button-primary" disabled={isSaving}>
+              <button
+                type="submit"
+                name="intent"
+                value="add-item"
+                className="button-primary"
+                disabled={isSaving}
+              >
                 {isSaving ? 'Adding…' : 'Add to selected lists'}
               </button>
               <a href="/" className="button-quiet">
