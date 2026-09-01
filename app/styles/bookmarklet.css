@@ -267,6 +267,46 @@
   line-height: 1.65;
 }
 
+.shortcut-manual-setup {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+}
+
+.shortcut-manual-setup summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--leaf-dark);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--kraft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3rem;
+}
+
+.shortcut-manual-setup summary:hover {
+  color: var(--rust);
+  text-decoration-color: var(--rust);
+}
+
+.shortcut-manual-setup summary:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 4px;
+}
+
+.shortcut-manual-setup > p {
+  max-width: 42rem;
+  margin: 0.8rem 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.shortcut-manual-setup .shortcut-steps {
+  margin-top: 1.5rem;
+}
+
 .clipboard-fallback {
   display: grid;
   margin-top: 1.25rem;

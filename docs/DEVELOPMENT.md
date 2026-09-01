@@ -111,6 +111,11 @@ Clipboard and shared input must remain limited to credential-free HTTP(S) links.
 drag guidance, no-JavaScript add-form fallback, editable metadata fallbacks and the guarded,
 all-or-nothing multi-list service mutation.
 
+`public/add-to-family-wishlist.shortcut` is the Apple-validated, hostname-neutral Share Sheet
+shortcut. Its import question stores the deployment-specific add-page prefix locally on the member's
+device. Keep the manual current-UI recipe as a recovery route and follow
+`docs/APPLE_SHORTCUT.md` whenever the signed file changes.
+
 ### Database query or mutation
 
 - Read `migrations/0001_initial.sql` and the existing service tests first.

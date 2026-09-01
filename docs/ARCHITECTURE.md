@@ -206,12 +206,14 @@ shortcuts.
 
 The top navigation exposes the **Add from anywhere** setup page. The web app manifest registers an
 installed Android PWA as a GET-only share target; `/share-target` validates a dedicated URL or finds
-one in Android’s shared text before redirecting to `/add`. Its Apple Shortcut recipe copies a
-server-generated `/add?url=` prefix, while the optional clipboard helper validates a credential-free
-HTTP(S) link before navigating. React does not server-render the desktop `javascript:` link; a small
-nonce-authorised, self-hosted script copies a server-generated, deployment-specific value from a data
-attribute into the draggable link. These entry points carry only the product URL to `/add`;
-authentication, metadata lookup, validation and saving all remain inside the protected Worker.
+one in Android’s shared text before redirecting to `/add`. The Apple-validated shortcut in
+`public/add-to-family-wishlist.shortcut` uses a one-time import question to store the server-generated
+`/add?url=` prefix locally; the matching manual recipe remains a recovery path. The optional clipboard
+helper validates a credential-free HTTP(S) link before navigating. React does not server-render the
+desktop `javascript:` link; a small nonce-authorised, self-hosted script copies a server-generated,
+deployment-specific value from a data attribute into the draggable link. These entry points carry
+only the product URL to `/add`; authentication, metadata lookup, validation and saving all remain
+inside the protected Worker.
 
 A minimal service worker enables installation but has no fetch handler and creates no caches. The
 manifest link uses `crossorigin="use-credentials"` because Cloudflare Access protects that resource

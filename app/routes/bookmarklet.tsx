@@ -128,8 +128,9 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   <p>
                     Tap <strong>Install Family Wishlist</strong> above if the button appears, then
                     confirm <strong>Install</strong>. If it does not appear, tap Chrome’s{' '}
-                    <strong>⋮</strong> menu, choose <strong>Add to Home screen</strong> or{' '}
-                    <strong>Install app</strong>, then confirm.
+                    <strong>⋮</strong> menu, choose <strong>Install and create shortcut</strong>,
+                    then <strong>Install</strong>. Some Chrome versions call the menu item{' '}
+                    <strong>Install app</strong>.
                   </p>
                 </div>
               </li>
@@ -176,8 +177,8 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               <p className="bookmarklet-kicker">iPhone &amp; iPad</p>
               <h2 id="shortcut-title">Put it in your Share Sheet</h2>
               <p>
-                Make a small Apple Shortcut once. Afterwards, share a product from Safari or a
-                shopping app and tap <strong>Add to Family Wishlist</strong>.
+                Install the ready-made Apple Shortcut once. It asks which private Family Wishlist
+                belongs to you, then appears whenever you share a product link.
               </p>
             </div>
 
@@ -191,8 +192,8 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               >
                 Copy your wishlist address
               </button>
-              <a href="shortcuts://create-shortcut" className="button-secondary">
-                Open a new Shortcut
+              <a href="/add-to-family-wishlist.shortcut" className="button-secondary">
+                Download the Apple Shortcut
               </a>
               <span
                 className="shortcut-copy-status"
@@ -213,13 +214,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   1
                 </span>
                 <div>
-                  <h3>Copy the address and open Shortcuts</h3>
+                  <h3>Copy this family’s address</h3>
                   <p>
                     Tap <strong>Copy your wishlist address</strong> above. If that button is not
-                    shown, press and hold the address in the box and tap <strong>Copy</strong>. Then
-                    tap <strong>Open a new Shortcut</strong>. Tap <strong>New Shortcut</strong> at
-                    the top, choose <strong>Rename</strong>, and call it{' '}
-                    <strong>Add to Family Wishlist</strong>.
+                    shown, press and hold the address in the box and tap <strong>Copy</strong>. Keep
+                    the final <strong>=</strong>; the shortcut needs the whole address.
                   </p>
                 </div>
               </li>
@@ -228,12 +227,12 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   2
                 </span>
                 <div>
-                  <h3>Add the first action</h3>
+                  <h3>Install the ready-made shortcut</h3>
                   <p>
-                    Tap <strong>Add Action</strong>, then <strong>Search Actions</strong>. Search
-                    for and choose <strong>Get URLs from Input</strong>. Do not choose{' '}
-                    <strong>Get Contents of URL</strong>. In the shortcut, the action will read{' '}
-                    <strong>Get URLs from Shortcut Input</strong>.
+                    Tap <strong>Download the Apple Shortcut</strong>. Open the downloaded{' '}
+                    <strong>Add to Family Wishlist</strong> file if Safari does not open it
+                    automatically, then tap <strong>Add Shortcut</strong> in Shortcuts. Apple
+                    validates the shortcut before it can be imported.
                   </p>
                 </div>
               </li>
@@ -242,54 +241,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   3
                 </span>
                 <div>
-                  <h3>Encode the product link</h3>
+                  <h3>Paste the address once</h3>
                   <p>
-                    Tap the <strong>Search Actions</strong> field at the bottom (swipe it upwards if
-                    it is tucked away), search for <strong>URL Encode</strong>, and choose that
-                    action. It should automatically use the URLs from the first action.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span className="bookmarklet-step-number" aria-hidden="true">
-                  4
-                </span>
-                <div>
-                  <h3>Build the Family Wishlist address</h3>
-                  <p>
-                    Search Actions again, search for <strong>URL</strong>, and choose the action
-                    named exactly <strong>URL</strong>. Paste the wishlist address copied above into
-                    its box. Tap immediately after the final <strong>=</strong>, choose{' '}
-                    <strong>Select Variable</strong>, and select <strong>URL Encoded</strong>.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span className="bookmarklet-step-number" aria-hidden="true">
-                  5
-                </span>
-                <div>
-                  <h3>Open the address</h3>
-                  <p>
-                    Search Actions once more, search for <strong>Open URLs</strong>, and choose that
-                    action. Your shortcut should now contain, in order:{' '}
-                    <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>,{' '}
-                    <strong>URL</strong>, then <strong>Open URLs</strong>.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span className="bookmarklet-step-number" aria-hidden="true">
-                  6
-                </span>
-                <div>
-                  <h3>Put it in the Share Sheet</h3>
-                  <p>
-                    Tap <strong>Add to Family Wishlist</strong> at the top, choose{' '}
-                    <strong>Details</strong>, and turn on <strong>Show in Share Sheet</strong>. A{' '}
-                    <strong>Receive</strong> row appears. Tap its input types, turn off everything
-                    except <strong>URLs</strong> and <strong>Safari Web Pages</strong>, then tap{' '}
-                    <strong>Done</strong> twice to save the shortcut.
+                    When Shortcuts asks for your wishlist address, tap the answer box and choose{' '}
+                    <strong>Paste</strong>, then finish adding the shortcut. You only do this once;
+                    the address stays on your device and contains no password or family data.
                   </p>
                 </div>
               </li>
@@ -300,6 +256,73 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               Wishlist. If it is hidden, scroll to the bottom of the Share Sheet and tap Edit
               Actions.
             </div>
+
+            <details className="shortcut-manual-setup">
+              <summary>Build it yourself instead</summary>
+              <p>
+                Use this if the shortcut file will not open. These steps match the current Shortcuts
+                editor on iPhone and iPad.
+              </p>
+              <ol className="shortcut-steps">
+                <li>
+                  <span className="bookmarklet-step-number" aria-hidden="true">
+                    1
+                  </span>
+                  <div>
+                    <h3>Make and name the shortcut</h3>
+                    <p>
+                      Open <strong>Shortcuts</strong>, tap <strong>+</strong> in the top-right
+                      corner, tap <strong>New Shortcut</strong> at the top, choose{' '}
+                      <strong>Rename</strong>, and enter <strong>Add to Family Wishlist</strong>.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span className="bookmarklet-step-number" aria-hidden="true">
+                    2
+                  </span>
+                  <div>
+                    <h3>Turn on the Share Sheet</h3>
+                    <p>
+                      Open the shortcut’s <strong>Details</strong>, turn on{' '}
+                      <strong>Show in Share Sheet</strong>, then return to the editor. A new{' '}
+                      <strong>Receive Any Input from Share Sheet</strong> action appears at the top.
+                      Tap <strong>Any</strong>, tap <strong>Clear</strong>, turn on only{' '}
+                      <strong>URLs</strong> and <strong>Safari Web Pages</strong>, then tap{' '}
+                      <strong>Done</strong>.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span className="bookmarklet-step-number" aria-hidden="true">
+                    3
+                  </span>
+                  <div>
+                    <h3>Add the four actions</h3>
+                    <p>
+                      Use <strong>Search Actions</strong> at the bottom to add, in order:{' '}
+                      <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>, the action
+                      named exactly <strong>URL</strong>, and <strong>Open URLs</strong>. Do not
+                      choose <strong>Get Contents of URL</strong>.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span className="bookmarklet-step-number" aria-hidden="true">
+                    4
+                  </span>
+                  <div>
+                    <h3>Fill the URL action</h3>
+                    <p>
+                      Paste the copied wishlist address into the <strong>URL</strong> action. Tap
+                      immediately after its final <strong>=</strong>, choose{' '}
+                      <strong>Select Variable</strong>, then choose{' '}
+                      <strong>URL Encoded Text</strong>. Tap <strong>Done</strong> to save.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </details>
 
             <div className="clipboard-fallback">
               <div>

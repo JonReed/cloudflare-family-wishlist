@@ -28,7 +28,7 @@ for (const button of document.querySelectorAll('[data-copy-shortcut-prefix]')) {
 
     try {
       await navigator.clipboard.writeText(prefix);
-      status.textContent = 'Copied — paste it at the start of the URL action.';
+      status.textContent = 'Copied — paste it when the Apple Shortcut asks.';
     } catch {
       status.textContent =
         'Your browser would not copy it. Press and hold the address below instead.';
