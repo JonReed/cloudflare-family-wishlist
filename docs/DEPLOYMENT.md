@@ -41,6 +41,7 @@ guide.
 | [Workers](https://developers.cloudflare.com/workers/platform/limits/)                        | React Router server rendering, validation and product-page fetch | 100,000 requests per day, 10 ms CPU per request and 50 external subrequests per request                                                                                       |
 | [D1](https://developers.cloudflare.com/d1/platform/pricing/)                                 | Members, wishlists, items, claims and lookup budgets             | 5 million rows read and 100,000 rows written per day; [500 MB per database, 5 GB total and 10 databases](https://developers.cloudflare.com/d1/platform/limits/)               |
 | [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)                 | AI-assisted product-detail enrichment                            | 10,000 Neurons per day; the default [Gemma model remains available on Workers Free](https://developers.cloudflare.com/changelog/post/2026-07-28-models-require-workers-paid/) |
+| [Browser Run](https://developers.cloudflare.com/browser-run/pricing/)                        | Rendered-page fallback for otherwise failed product imports      | 10 browser minutes per day; [one Quick Action every 10 seconds](https://developers.cloudflare.com/browser-run/limits/) on Workers Free                                        |
 | [Cloudflare Access](https://www.cloudflare.com/plans/zero-trust-services/)                   | Exact-email admission and email one-time PIN login               | $0 for up to 50 users                                                                                                                                                         |
 | [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/) | Build and deploy each push to `main`                             | 3,000 build minutes per month, one concurrent build and a 20-minute limit per build                                                                                           |
 
@@ -61,9 +62,14 @@ The Workers and D1 allowances are several orders of magnitude above normal traff
 household. D1 scales to zero and has no data-transfer fee. Claims and wishlist items are small rows,
 and the application's indexed queries avoid large table scans.
 
-Workers AI is not called for every page. Deterministic retailer rules, JSON-LD, Open Graph and visible
-product fields run first; AI receives a reduced excerpt only when a title or GBP price is still
-missing. The default model currently costs 9,091 Neurons per million input tokens and 27,273 per
+Browser Run and Workers AI are not called for every page. Ordinary bounded fetching and retailer
+fallbacks run first. Browser Run is attempted once only when the result is blocked or unusable; its
+Quick Action blocks heavy image, media and font downloads and reuses Cloudflare's short content cache.
+It may still be identified and blocked as automation, in which case the form remains available.
+
+Deterministic retailer rules, JSON-LD, Open Graph and visible product fields then run before AI. AI
+receives a reduced excerpt only when a title or GBP price is still missing. The default model
+currently costs 9,091 Neurons per million input tokens and 27,273 per
 million output tokens. An illustrative upper-sized English prompt with 4,000 input tokens plus the
 application's maximum 180-token output is about 41 Neurons, or roughly 240 such AI-assisted lookups inside the
 daily free allocation. URLs and languages tokenise differently, so that is a scale estimate rather
@@ -85,8 +91,8 @@ The effect depends on which allowance is reached:
 - a Workers request or CPU limit can make an application request fail;
 - a D1 daily or storage limit prevents database operations until the allowance resets or space is
   freed;
-- a Workers AI limit only removes the optional AI prefill—the deterministic scraper and manual form
-  remain;
+- a Browser Run or Workers AI limit only removes that optional fallback—the deterministic scraper and
+  manual form remain;
 - a Workers Builds limit stops new builds, but the last successful deployment keeps running; and
 - the Access Free plan is intended for at most 50 users, far beyond one household.
 
@@ -199,9 +205,15 @@ npm run dev
 ```
 
 The localhost build uses a fixed local-only identity. It does not use production family data or
-consume Workers AI.
+consume Browser Run or Workers AI.
 
-## 5. Understand the included AI binding
+## 5. Understand the included browser and AI bindings
+
+The checked-in `BROWSER` binding uses Browser Run's `content` Quick Action only after ordinary
+product-page fetching fails. It needs no API token or separate resource creation. Local development
+does not consume the remote allowance; production deployments attach the binding automatically.
+The browser receives only the public product URL and never the signed-in person's cookies or Access
+assertion.
 
 There is no AI API key or separate model deployment. The checked-in `AI` binding is attached during
 the ordinary Worker deployment. These non-secret settings live in `wrangler.jsonc`:
@@ -503,6 +515,8 @@ Before relying on the installation, verify all of these:
 - the organiser and invited member each receive exactly one wishlist;
 - an ordinary wish can be added, edited and deleted;
 - **Fill from link** only prefills an editable draft and manual entry still works;
+- a blocked or JavaScript-only test product either receives a Browser Run draft or returns to manual
+  entry without exposing infrastructure details;
 - an optional product picture is served from the application's `/product-image` address;
 - one family member can claim an item and the wishlist owner cannot see that claim or purchase state;
 - the invalid-token `curl` in step 10 returns `404`, not an Access redirect;
@@ -522,8 +536,9 @@ Check D1 migrations at any time with:
 npx wrangler d1 migrations list DB --remote
 ```
 
-Usage is visible in **Workers & Pages → your Worker**, **D1 → your database**, **Workers AI**, and
-**Workers Builds**. These dashboards are the source of truth for the account's remaining allowances.
+Usage is visible in **Workers & Pages → your Worker**, **D1 → your database**, **Browser Run**,
+**Workers AI**, and **Workers Builds**. These dashboards are the source of truth for the account's
+remaining allowances.
 
 ## Updating an installation
 

@@ -27,6 +27,8 @@ JWT verification + security headers + React Router request handler
     |       +--> wishlist service (app/lib/db/wishlists.ts)
     |       +--> bounded public-page metadata fetch (app/lib/product-metadata.ts)
     |                  |
+    |                  +--> fallback rendered page (Browser Run)
+    |                  |
     |                  +--> cleaned product-detail enrichment (Workers AI)
     |
     +--> organiser-only family route (app/routes/family.tsx)
@@ -303,26 +305,33 @@ Product import is deliberately staged:
 1. Fetch at most 512 KiB from a public HTTP(S) target, with manual redirect validation and an
    eight-second timeout.
 2. Detect verification and CAPTCHA pages before accepting any details or invoking AI. Retry once,
-   using a clean canonical product URL where a retailer adapter can derive one, then leave the form
-   available for manual entry if the product is still blocked.
-3. Run the bounded HTML through one native `HTMLRewriter` evidence pass. Ordered rules prefer a
+   using a retailer-specific alternate public product route where an adapter can derive one. Amazon
+   UK challenges Cloudflare egress on some desktop product pages, so its retry fetches the equivalent
+   lightweight mobile page while the editable draft retains a clean canonical `/dp/` product link.
+3. When a blocked response, verification page or empty application shell would otherwise end the
+   lookup, ask the Browser Run `content` Quick Action to render that already-validated public URL.
+   It receives no family headers, cookies or identity, blocks image/media/font downloads, has a
+   ten-second navigation/action timeout and is attempted at most once. Its response and navigation
+   URLs are validated and bounded before the same deterministic extraction runs again. Browser Run
+   is identifiable automation and may still be challenged; failure quietly preserves manual entry.
+4. Run the bounded HTML through one native `HTMLRewriter` evidence pass. Ordered rules prefer a
    retailer's explicit current/base price and primary product image, then JSON-LD, Open Graph,
    schema.org microdata and known visible product fields. Retailer adapters contain narrowly scoped
    rules such as Amazon UK title cleanup, price selection and high-resolution image selection;
    standard metadata remains the default for every other site.
-4. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
+5. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
    navigation, site headers and footers, forms, cookie controls, adverts, recommendations, reviews,
    social controls and repeated text. Headings, price-adjacent lines and main product content are
    prioritised, deduplicated and capped at 10,000 characters. If deterministic rules found no image,
    collect at most eight public HTTPS image candidates from that same reduced page, rejecting obvious
    logos, icons, tracking pixels and small assets.
-5. Ask the configured Workers AI model only for the missing fields and, when candidates exist, the
+6. Ask the configured Workers AI model only for the missing fields and, when candidates exist, the
    index of the most likely primary product image. Page evidence is explicitly treated as untrusted
    data, not instructions. A returned title or price is accepted only when it appears in the reduced
    source text; an image selection is accepted only when its integer index resolves to the original
    validated candidate. The model cannot provide or invent an image URL.
-6. Return an editable draft. AI timeouts, exhausted free allocation, capacity errors and invalid
-   output quietly leave the deterministic result in place.
+7. Return an editable draft. Browser and AI timeouts, exhausted free allocations, capacity errors
+   and invalid output quietly leave the best deterministic result or manual form in place.
 
 Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the
 first choice; AI image selection happens only as part of an already-needed enrichment pass and only
@@ -366,12 +375,14 @@ environment variable.
 - **Access API:** organiser additions create one exact-email Allow policy using a narrowly scoped
   Worker secret; it does not send invitation email.
 - **Workers AI:** product-detail enrichment for incomplete public page metadata.
+- **Browser Run:** one-shot rendered HTML fallback after an ordinary product-page fetch cannot
+  provide usable content.
 - **Workers Logs:** operational logs without assertions, private claims or sensitive query strings.
 
 R2, KV, Queues and application-managed email are intentionally absent. Introduce another service only
 for a concrete requirement, with free-tier and setup impact documented. Product import continues to
-work without Workers AI; the binding is included because it materially improves the existing helper
-without becoming a new persistence or availability dependency.
+work without Browser Run or Workers AI; their bindings are included because they materially improve
+the existing helper without becoming persistence or availability dependencies.
 
 ## Security and caching baseline
 
@@ -387,6 +398,9 @@ without becoming a new persistence or availability dependency.
   restrained desktop-browser navigation profile for initial requests and retries. They never forward
   user headers, credentials, cookies or referrers, stop after 8 seconds, inspect at most 512 KiB of
   HTML and reject verification pages;
+- Browser Run is called at most once and only after an ordinary metadata request fails, receives only
+  the validated public product URL, returns bounded HTML, and must pass the same public-navigation and
+  challenge checks before extraction;
 - AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and
   cannot override deterministic metadata or persist data;
 - every metadata/AI entry point shares a D1-backed budget of 12 lookups per member per minute;

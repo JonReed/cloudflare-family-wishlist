@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   fetchProductMetadata,
   ProductMetadataError,
-  type ProductAiExtractor
+  type ProductAiExtractor,
+  type ProductPageRenderer
 } from '../app/lib/product-metadata';
 
 function htmlResponse(html: string, init?: ResponseInit): Response {
@@ -500,7 +501,7 @@ describe('fetchProductMetadata', () => {
     ).resolves.toMatchObject({ title: 'Cards Against Humanity, UK Edition' });
   });
 
-  it('retries an Amazon challenge at its clean product URL and never sends it to AI', async () => {
+  it('retries an Amazon challenge through its lightweight product route and never sends it to AI', async () => {
     const fetchPage = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(() =>
       Promise.resolve(
         htmlResponse(`
@@ -524,7 +525,7 @@ describe('fetchProductMetadata', () => {
     expect(fetchPage).toHaveBeenCalledTimes(2);
     expect(fetchPage.mock.calls.map(([url]) => url)).toEqual([
       'https://www.amazon.co.uk/gp/product/B085Y25JJ7?ref=tracking',
-      'https://www.amazon.co.uk/dp/B085Y25JJ7'
+      'https://www.amazon.co.uk/gp/aw/d/B085Y25JJ7'
     ]);
     for (const [, init] of fetchPage.mock.calls) {
       const headers = new Headers(init.headers);
@@ -534,7 +535,7 @@ describe('fetchProductMetadata', () => {
     expect(extractWithAi).not.toHaveBeenCalled();
   });
 
-  it('uses product details when a clean-URL retry gets past a shop challenge', async () => {
+  it('uses a canonical product link and details when the Amazon fallback gets past a challenge', async () => {
     const fetchPage = vi
       .fn<(url: string, init: RequestInit) => Promise<Response>>()
       .mockResolvedValueOnce(htmlResponse('<title>Robot Check</title>'))
@@ -542,12 +543,14 @@ describe('fetchProductMetadata', () => {
         htmlResponse(`
           <span id="productTitle">Montezuma's Black Forest, Dark Chocolate</span>
           <span class="a-price"><span class="a-offscreen">£3.00</span></span>
+          <img id="landingImage"
+            data-old-hires="https://m.media-amazon.com/images/I/chocolate._AC_SL1000_.jpg">
         `)
       );
 
     await expect(
       fetchProductMetadata(
-        'https://www.amazon.co.uk/dp/B085Y25JJ7?ref=tracking',
+        'https://www.amazon.co.uk/Chocolate-Gift/dp/B085Y25JJ7/?ref=tracking',
         'wishlist.example',
         { fetchPage }
       )
@@ -555,9 +558,141 @@ describe('fetchProductMetadata', () => {
       productUrl: 'https://www.amazon.co.uk/dp/B085Y25JJ7',
       title: "Montezuma's Black Forest",
       price: '3.00',
-      imageUrl: '',
+      imageUrl: 'https://m.media-amazon.com/images/I/chocolate._AC_SL1000_.jpg',
       aiAssisted: false
     });
+
+    expect(fetchPage.mock.calls.map(([url]) => url)).toEqual([
+      'https://www.amazon.co.uk/Chocolate-Gift/dp/B085Y25JJ7/?ref=tracking',
+      'https://www.amazon.co.uk/gp/aw/d/B085Y25JJ7'
+    ]);
+  });
+
+  it('tries the Amazon mobile route before Browser Run when the desktop route is blocked', async () => {
+    const fetchPage = vi
+      .fn<(url: string, init: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(new Response('Forbidden', { status: 403 }))
+      .mockResolvedValueOnce(
+        htmlResponse(
+          '<span id="productTitle">Family board game</span><div data-asin-price="19.99">'
+        )
+      );
+    const renderPage = vi.fn<ProductPageRenderer>();
+
+    await expect(
+      fetchProductMetadata('https://www.amazon.co.uk/dp/B012345678', 'wishlist.example', {
+        fetchPage,
+        renderPage
+      })
+    ).resolves.toMatchObject({
+      productUrl: 'https://www.amazon.co.uk/dp/B012345678',
+      title: 'Family board game',
+      price: '19.99'
+    });
+
+    expect(fetchPage.mock.calls.map(([url]) => url)).toEqual([
+      'https://www.amazon.co.uk/dp/B012345678',
+      'https://www.amazon.co.uk/gp/aw/d/B012345678'
+    ]);
+    expect(renderPage).not.toHaveBeenCalled();
+  });
+
+  it('uses one rendered-browser fallback when an ordinary shop returns a challenge', async () => {
+    const fetchPage = vi.fn(() =>
+      Promise.resolve(
+        htmlResponse(`
+          <title>Just a moment...</title>
+          <script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>
+        `)
+      )
+    );
+    const renderPage = vi.fn(() =>
+      Promise.resolve({
+        html: `
+          <meta property="og:title" content="Three-month Xbox Game Pass Ultimate">
+          <meta property="product:price:amount" content="24.99">
+          <meta property="product:price:currency" content="GBP">
+          <meta property="og:image" content="https://cdn.loaded.example/game-pass.jpg">
+        `,
+        finalUrl: 'https://www.loaded.example/xbox-game-pass',
+        navigationUrls: []
+      })
+    );
+
+    await expect(
+      fetchProductMetadata('https://www.loaded.example/xbox-game-pass', 'wishlist.example', {
+        fetchPage,
+        renderPage
+      })
+    ).resolves.toEqual({
+      productUrl: 'https://www.loaded.example/xbox-game-pass',
+      title: 'Three-month Xbox Game Pass Ultimate',
+      price: '24.99',
+      imageUrl: 'https://cdn.loaded.example/game-pass.jpg',
+      aiAssisted: false
+    });
+
+    expect(fetchPage).toHaveBeenCalledOnce();
+    expect(renderPage).toHaveBeenCalledOnce();
+    expect(renderPage).toHaveBeenCalledWith('https://www.loaded.example/xbox-game-pass');
+  });
+
+  it('uses the rendered-browser fallback for a blocked server response', async () => {
+    const fetchPage = vi.fn(() => Promise.resolve(new Response('Forbidden', { status: 403 })));
+    const renderPage = vi.fn(() =>
+      Promise.resolve({
+        html: '<h1 id="product-name">JavaScript-powered puzzle</h1><div class="product-price">£18.50</div>',
+        finalUrl: 'https://shop.example/puzzle',
+        navigationUrls: []
+      })
+    );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/puzzle', 'wishlist.example', {
+        fetchPage,
+        renderPage
+      })
+    ).resolves.toMatchObject({ title: 'JavaScript-powered puzzle', price: '18.50' });
+
+    expect(fetchPage).toHaveBeenCalledOnce();
+    expect(renderPage).toHaveBeenCalledOnce();
+  });
+
+  it('uses the rendered-browser fallback when the server page is an empty app shell', async () => {
+    const renderPage = vi.fn(() =>
+      Promise.resolve({
+        html: '<meta property="og:title" content="Rendered wooden train">',
+        finalUrl: 'https://shop.example/train',
+        navigationUrls: []
+      })
+    );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/train', 'wishlist.example', {
+        fetchPage: () => Promise.resolve(htmlResponse('<div id="app"></div>')),
+        renderPage
+      })
+    ).resolves.toMatchObject({ title: 'Rendered wooden train' });
+
+    expect(renderPage).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an unsafe rendered redirect and keeps the ordinary failure message', async () => {
+    const renderPage = vi.fn(() =>
+      Promise.resolve({
+        html: '<title>Private service</title>',
+        finalUrl: 'http://127.0.0.1/private',
+        navigationUrls: ['https://shop.example/product']
+      })
+    );
+
+    await expect(
+      fetchProductMetadata('https://shop.example/product', 'wishlist.example', {
+        fetchPage: () => Promise.resolve(new Response('Forbidden', { status: 403 })),
+        renderPage
+      })
+    ).rejects.toThrow('wouldn’t share');
+    expect(renderPage).toHaveBeenCalledOnce();
   });
 
   it('reads only the bounded start of a large page', async () => {

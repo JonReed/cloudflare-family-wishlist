@@ -146,8 +146,9 @@ Working today:
   application-level disablement and preservation of the person's wishlist;
 - switching between all family wishlists;
 - adding, editing and deleting items;
-- filling a new wish's name, image and GBP price from a public product link, with optional AI help
-  when the page does not publish a reliable name or price;
+- filling a new wish's name, image and GBP price from a public product link, with a rendered-browser
+  fallback for otherwise unusable pages and optional AI help when the page does not publish reliable
+  details;
 - adding a product to one or more family lists from Android’s Share menu, the iPhone/iPad Share Sheet
   or a desktop browser button;
 - safe product links, notes, prices and priorities;

@@ -12,6 +12,7 @@ import {
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
+  createBrowserRunProductRenderer,
   createWorkersAiProductExtractor,
   fetchProductMetadata,
   ProductMetadataError,
@@ -145,6 +146,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         try {
           await consumeProductLookupBudget(env.DB, member.id);
           const product = await fetchProductMetadata(productUrl, new URL(request.url).hostname, {
+            renderPage: createBrowserRunProductRenderer(env.BROWSER),
             extractWithAi:
               String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
                 ? createWorkersAiProductExtractor(env.AI, env.PRODUCT_AI_MODEL)

@@ -6,12 +6,15 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cloudflare-family-wishlist",
   "account_id": "fe36a5f853539765511b8639f28c4b6c",
-  "compatibility_date": "2026-08-31",
+  "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "./workers/app.ts",
   "ai": {
     "binding": "AI",
     "remote": true
+  },
+  "browser": {
+    "binding": "BROWSER"
   },
   "vars": {
     "PRODUCT_AI_ENABLED": "true",

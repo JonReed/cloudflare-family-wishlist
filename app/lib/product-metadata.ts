@@ -2,8 +2,10 @@ import { normaliseProductImageUrl, normaliseProductUrl } from './product-url';
 
 const MAX_HTML_BYTES = 512 * 1024;
 const MAX_RETAILER_HTML_BYTES = 1024 * 1024;
+const MAX_BROWSER_RESPONSE_BYTES = MAX_RETAILER_HTML_BYTES * 2 + 64 * 1024;
 const MAX_REDIRECTS = 4;
 const FETCH_TIMEOUT_MS = 8_000;
+const BROWSER_TIMEOUT_MS = 10_000;
 const AI_TIMEOUT_MS = 5_000;
 const MAX_AI_PAGE_CHARACTERS = 10_000;
 const MAX_AI_IMAGE_CANDIDATES = 8;
@@ -34,6 +36,14 @@ const PRODUCT_AI_MODELS = [DEFAULT_PRODUCT_AI_MODEL, '@cf/zai-org/glm-4.7-flash'
 type ProductAiModel = (typeof PRODUCT_AI_MODELS)[number];
 
 type FetchPage = (url: string, init: RequestInit) => Promise<Response>;
+
+type RenderedProductPage = {
+  html: string;
+  finalUrl: string;
+  navigationUrls: string[];
+};
+
+export type ProductPageRenderer = (url: string) => Promise<RenderedProductPage | null>;
 
 export type ProductMetadata = {
   productUrl: string;
@@ -70,6 +80,7 @@ export type ProductAiExtractor = (request: ProductAiRequest) => Promise<ProductA
 
 type ProductMetadataOptions = {
   fetchPage?: FetchPage;
+  renderPage?: ProductPageRenderer;
   extractWithAi?: ProductAiExtractor;
 };
 
@@ -459,7 +470,7 @@ async function extractPageEvidence(html: string): Promise<PageEvidence> {
 
   const documentTitle = firstEvidence(evidence, ['document-title']);
   if (
-    /\b(?:robot check|captcha|verify (?:that )?you are human|security check|access denied|request blocked)\b/i.test(
+    /\b(?:just a moment|robot check|captcha|verify (?:that )?you are human|security check|access denied|request blocked)\b/i.test(
       documentTitle
     )
   ) {
@@ -659,7 +670,14 @@ type RetailerAdapter = {
   priceCandidates: (evidence: PageEvidence) => PriceCandidate[];
   imageCandidates: (evidence: PageEvidence) => string[];
   retryUrl: (url: URL) => URL;
+  canonicalUrl: (url: URL) => URL;
 };
+
+function amazonAsin(url: URL): string {
+  return (
+    /\/(?:dp|gp\/product|gp\/aw\/d)\/([a-z0-9]{10})(?:[/?]|$)/i.exec(url.pathname)?.[1] ?? ''
+  ).toUpperCase();
+}
 
 function largestAmazonDynamicImage(rawValue: string): string {
   if (!rawValue) return '';
@@ -726,8 +744,15 @@ const AMAZON_UK_ADAPTER: RetailerAdapter = {
     ];
   },
   retryUrl(url) {
-    const asin = /\/(?:dp|gp\/product)\/([a-z0-9]{10})(?:[/?]|$)/i.exec(url.pathname)?.[1];
-    return asin ? new URL(`/dp/${asin.toUpperCase()}`, url.origin) : url;
+    const asin = amazonAsin(url);
+    // Amazon currently challenges Cloudflare Worker egress on its desktop
+    // product route while serving equivalent product evidence from this
+    // lightweight mobile route. Use it only after detecting a real challenge.
+    return asin ? new URL(`/gp/aw/d/${asin}`, url.origin) : url;
+  },
+  canonicalUrl(url) {
+    const asin = amazonAsin(url);
+    return asin ? new URL(`/dp/${asin}`, url.origin) : url;
   }
 };
 
@@ -1330,6 +1355,107 @@ async function readBoundedHtml(response: Response, byteLimit = MAX_HTML_BYTES): 
   }
 }
 
+function browserRunResponseMetadata(response: Response): Record<string, number | string> {
+  const rawBrowserMilliseconds = response.headers.get('x-browser-ms-used');
+  const browserMilliseconds = Number(rawBrowserMilliseconds);
+  return {
+    status: response.status,
+    ...(rawBrowserMilliseconds !== null && Number.isFinite(browserMilliseconds)
+      ? { browserMilliseconds }
+      : {})
+  };
+}
+
+export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPageRenderer {
+  return async (url) => {
+    try {
+      const response = await browser.quickAction('content', {
+        url,
+        gotoOptions: {
+          waitUntil: 'networkidle2',
+          timeout: BROWSER_TIMEOUT_MS
+        },
+        actionTimeout: BROWSER_TIMEOUT_MS,
+        bestAttempt: true,
+        cacheTTL: 300,
+        // Product images are read from the DOM, not downloaded by the renderer.
+        // Avoid spending the fallback allowance on heavy binary resources.
+        rejectResourceTypes: ['image', 'media', 'font']
+      });
+      const responseText = await readBoundedHtml(response, MAX_BROWSER_RESPONSE_BYTES);
+      if (!response.ok) {
+        console.warn(
+          JSON.stringify({
+            event: 'product_browser_render_failed',
+            ...browserRunResponseMetadata(response)
+          })
+        );
+        return null;
+      }
+
+      const parsed: unknown = JSON.parse(responseText);
+      if (!isRecord(parsed) || parsed.success !== true || typeof parsed.result !== 'string') {
+        console.warn(
+          JSON.stringify({
+            event: 'product_browser_render_invalid_response',
+            ...browserRunResponseMetadata(response)
+          })
+        );
+        return null;
+      }
+
+      const meta = isRecord(parsed.meta) ? parsed.meta : {};
+      const originStatus = typeof meta.status === 'number' ? meta.status : null;
+      if (originStatus !== null && originStatus >= 400) {
+        console.warn(
+          JSON.stringify({
+            event: 'product_browser_render_failed',
+            originStatus,
+            ...browserRunResponseMetadata(response)
+          })
+        );
+        return null;
+      }
+      const redirectChain = Array.isArray(meta.redirectChain) ? meta.redirectChain : [];
+      const navigationUrls = redirectChain.flatMap((hop) => {
+        if (!isRecord(hop) || typeof hop.url !== 'string') return [];
+        const urls = [hop.url];
+        if (isRecord(hop.headers) && typeof hop.headers.location === 'string') {
+          try {
+            urls.push(new URL(hop.headers.location, hop.url).toString());
+          } catch {
+            throw new Error('Browser Run returned an invalid redirect location.');
+          }
+        }
+        return urls;
+      });
+      const finalUrl = typeof meta.finalUrl === 'string' ? meta.finalUrl : url;
+
+      console.info(
+        JSON.stringify({
+          event: 'product_browser_render_succeeded',
+          ...browserRunResponseMetadata(response)
+        })
+      );
+      return { html: parsed.result, finalUrl, navigationUrls };
+    } catch (error) {
+      console.warn(
+        JSON.stringify({
+          event: 'product_browser_render_failed',
+          errorName: error instanceof Error ? error.name : 'UnknownError'
+        })
+      );
+      return null;
+    }
+  };
+}
+
+function truncateHtmlToBytes(html: string, byteLimit: number): string {
+  const encoded = new TextEncoder().encode(html);
+  if (encoded.byteLength <= byteLimit) return html;
+  return new TextDecoder().decode(encoded.subarray(0, byteLimit));
+}
+
 export async function fetchProductMetadata(
   input: unknown,
   blockedHostname: string,
@@ -1344,11 +1470,63 @@ export async function fetchProductMetadata(
   }
 
   let target = new URL(normalised);
+  let productUrl = target.toString();
   const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
   let redirectCount = 0;
   let challengeRetries = 0;
+  let browserAttempted = false;
 
   try {
+    const renderFallback = async (): Promise<{
+      html: string;
+      metadata: ExtractedMetadata;
+    } | null> => {
+      if (browserAttempted || !options.renderPage) return null;
+      browserAttempted = true;
+
+      try {
+        const rendered = await options.renderPage(target.toString());
+        if (!rendered) return null;
+
+        for (const navigationUrl of [...rendered.navigationUrls, rendered.finalUrl]) {
+          assertPublicTarget(new URL(navigationUrl), blockedHostname);
+        }
+
+        const finalTarget = new URL(rendered.finalUrl, target);
+        const finalAdapter = retailerAdapter(finalTarget);
+        const renderedProductUrl =
+          finalTarget.toString() === target.toString()
+            ? productUrl
+            : (finalAdapter?.canonicalUrl(finalTarget).toString() ?? finalTarget.toString());
+        const html = truncateHtmlToBytes(
+          rendered.html,
+          finalAdapter?.htmlByteLimit ?? MAX_HTML_BYTES
+        );
+        const metadata = await extractMetadata(html, renderedProductUrl);
+        return metadata.challengeDetected ? null : { html, metadata };
+      } catch (error) {
+        console.warn(
+          JSON.stringify({
+            event: 'product_browser_render_rejected',
+            errorName: error instanceof Error ? error.name : 'UnknownError'
+          })
+        );
+        return null;
+      }
+    };
+
+    const applyRetailerRetry = (): boolean => {
+      if (challengeRetries !== 0) return false;
+      const adapter = retailerAdapter(target);
+      const retryTarget = adapter?.retryUrl(target);
+      if (!adapter || !retryTarget || retryTarget.toString() === target.toString()) return false;
+
+      challengeRetries += 1;
+      productUrl = adapter.canonicalUrl(target).toString();
+      target = retryTarget;
+      return true;
+    };
+
     while (true) {
       assertPublicTarget(target, blockedHostname);
 
@@ -1369,11 +1547,35 @@ export async function fetchProductMetadata(
         await response.body?.cancel();
         redirectCount += 1;
         target = new URL(location, target);
+        productUrl = target.toString();
         continue;
       }
 
       if (!response.ok) {
         await response.body?.cancel();
+        if ([403, 429, 503].includes(response.status)) {
+          if (applyRetailerRetry()) continue;
+          const rendered = await renderFallback();
+          if (rendered) {
+            let { metadata } = rendered;
+            if (options.extractWithAi) {
+              metadata = await enhanceMetadataWithAi(
+                rendered.html,
+                metadata,
+                options.extractWithAi
+              );
+            }
+            if (metadata.title || metadata.price) {
+              return {
+                productUrl: metadata.productUrl,
+                title: metadata.title,
+                price: metadata.price,
+                imageUrl: metadata.imageUrl,
+                aiAssisted: metadata.aiAssisted
+              };
+            }
+          }
+        }
         throw new ProductMetadataError('That page wouldn’t share its product details.');
       }
 
@@ -1383,20 +1585,28 @@ export async function fetchProductMetadata(
         throw new ProductMetadataError('That link isn’t an ordinary product page.');
       }
 
-      const html = await readBoundedHtml(
+      let html = await readBoundedHtml(
         response,
         retailerAdapter(target)?.htmlByteLimit ?? MAX_HTML_BYTES
       );
-      let metadata = await extractMetadata(html, target.toString());
+      let metadata = await extractMetadata(html, productUrl);
       if (metadata.challengeDetected) {
-        if (challengeRetries === 0) {
-          challengeRetries += 1;
-          target = retailerAdapter(target)?.retryUrl(target) ?? target;
-          continue;
+        if (applyRetailerRetry()) continue;
+        const rendered = await renderFallback();
+        if (rendered) {
+          html = rendered.html;
+          metadata = rendered.metadata;
+        } else {
+          throw new ProductMetadataError(
+            'That shop showed a verification page instead of the product. You can still add the details by hand.'
+          );
         }
-        throw new ProductMetadataError(
-          'That shop showed a verification page instead of the product. You can still add the details by hand.'
-        );
+      } else if (!metadata.title && !metadata.price) {
+        const rendered = await renderFallback();
+        if (rendered) {
+          html = rendered.html;
+          metadata = rendered.metadata;
+        }
       }
       if (options.extractWithAi) {
         metadata = await enhanceMetadataWithAi(html, metadata, options.extractWithAi);

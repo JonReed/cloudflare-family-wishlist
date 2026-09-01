@@ -11,7 +11,7 @@ This guide is the practical handoff for changing the application. Read [PRODUCT.
 
 Cloudflare credentials are not required for ordinary local development or tests. Remote bindings are
 disabled in Vite and Vitest, so local product import exercises deterministic extraction and graceful
-AI-unavailable behaviour without consuming a deployment's allowance.
+browser/AI-unavailable behaviour without consuming a deployment's allowance.
 
 ## First local run
 
@@ -96,7 +96,11 @@ pages must be rejected before AI is called. Product image rules must return a va
 When the AI enrichment pass is already needed, it may select only an integer index from a bounded list of
 validated page-image candidates; never accept a model-provided URL or automatically load
 private/local targets. Inject `ProductAiExtractor` in tests rather than connecting the test pool to
-Workers AI. `ProductImageField` keeps its picture address in the submitted form while presenting a
+Workers AI. Inject `ProductPageRenderer` for Browser Run fallback tests; the production renderer must
+remain a single bounded Quick Action attempted only after the ordinary fetch paths fail. It must not
+receive cookies, credentials, family headers or private targets, and rendered redirects and HTML must
+pass the same validation and byte limits before extraction. `ProductImageField` keeps its picture
+address in the submitted form while presenting a
 thumbnail-first interface; every preview and saved picture must use the same-origin `/product-image`
 proxy. Preserve its redirect validation, public-network enforcement, raster allowlist and 4 MiB cap.
 `public/product-import.js` owns the optional live preview, change and remove conveniences across both

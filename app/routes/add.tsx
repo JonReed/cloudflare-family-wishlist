@@ -14,6 +14,7 @@ import {
 } from '../lib/db/wishlists';
 import { fillMissingProductDraft } from '../lib/product-draft';
 import {
+  createBrowserRunProductRenderer,
   createWorkersAiProductExtractor,
   fetchProductMetadata,
   ProductMetadataError,
@@ -107,6 +108,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   try {
     await consumeProductLookupBudget(env.DB, member.id);
     const product = await fetchProductMetadata(productUrl, new URL(request.url).hostname, {
+      renderPage: createBrowserRunProductRenderer(env.BROWSER),
       extractWithAi:
         String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
           ? createWorkersAiProductExtractor(env.AI, env.PRODUCT_AI_MODEL)
@@ -152,6 +154,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         formData.get('productUrl'),
         new URL(request.url).hostname,
         {
+          renderPage: createBrowserRunProductRenderer(env.BROWSER),
           extractWithAi:
             String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
               ? createWorkersAiProductExtractor(env.AI, env.PRODUCT_AI_MODEL)

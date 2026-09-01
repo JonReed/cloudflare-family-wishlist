@@ -34,13 +34,14 @@ without giving them access to the private family space.
 
 Paste a product link—or share it from a phone or browser—and Family Wishlist can fill in an editable
 product name, picture and GBP price. It reads reliable information published by the shop first; when
-that is incomplete, Cloudflare Workers AI can help recover a missing name or price and choose the
-most likely product picture from the page.
+an ordinary request is blocked or returns only an empty application shell, Cloudflare Browser Run
+can make one rendered-page attempt. When the resulting page is still incomplete, Cloudflare Workers
+AI can help recover a missing name or price and choose the most likely product picture from the page.
 
-There is no separate AI account, API key or paid AI service to configure. The feature is designed to
-fit within the Workers AI free allocation. The normal editable form remains fully usable if a shop
-blocks extraction or the allowance is unavailable, and no suggestion is saved until a family member
-confirms it.
+There is no separate browser or AI account, API key or paid service to configure. The feature is
+designed to fit within the Browser Run and Workers AI free allocations. The normal editable form
+remains fully usable if a shop blocks extraction or an allowance is unavailable, and no suggestion
+is saved until a family member confirms it.
 
 ## Why this exists
 
@@ -64,6 +65,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - [React Router](https://reactrouter.com/) in full-stack framework mode
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) and the Cloudflare Vite plugin
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) for SQLite-compatible storage
+- [Cloudflare Browser Run](https://developers.cloudflare.com/browser-run/) for a free-tier rendered-page fallback after an ordinary product fetch fails
 - [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) for free-tier product-detail assistance when ordinary page metadata is incomplete
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/) with email one-time PINs and an exact email allow-list
 - TypeScript, React and Tailwind CSS
@@ -72,7 +74,8 @@ Most wishlist applications are either public, advertising-supported, complicated
 ## Documentation
 
 - [Install and deploy](docs/DEPLOYMENT.md) — start with a free Cloudflare account, understand the
-  live allowances, and finish with Access, D1, Workers AI and automatic deployments configured.
+  live allowances, and finish with Access, D1, Browser Run, Workers AI and automatic deployments
+  configured.
 - [Product model](docs/PRODUCT.md) — who the application serves, core workflows and non-goals.
 - [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
 - [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
@@ -118,8 +121,8 @@ Cloudflare configuration.
 
 A normal family installation needs a Cloudflare account but not a paid Cloudflare plan or a custom
 domain. The [installation guide](docs/DEPLOYMENT.md) starts before account setup, links to the current
-Workers, D1, Workers AI, Access and Builds allowances, and explains what happens if a free limit is
-reached.
+Workers, D1, Browser Run, Workers AI, Access and Builds allowances, and explains what happens if a
+free limit is reached.
 
 Do not expose a deployment containing family data until Cloudflare Access is configured with an **exact email allow-list**. Selecting “One-time PIN” as the only Access rule would allow any valid email address and is not sufficient.
 
