@@ -14,6 +14,19 @@ const configuration: AccessManagementEnv = {
   ACCESS_MANAGEMENT_API_TOKEN: 'test-token-that-must-not-appear-in-errors'
 };
 
+function policyListResponse(result: unknown[]): Response {
+  return Response.json({
+    success: true,
+    result,
+    result_info: {
+      page: 1,
+      count: result.length,
+      total_count: result.length,
+      total_pages: 1
+    }
+  });
+}
+
 describe('Cloudflare Access family membership', () => {
   it.each([
     {},
@@ -122,17 +135,14 @@ describe('Cloudflare Access family membership', () => {
     const invitationId = crypto.randomUUID();
     const policyId = crypto.randomUUID();
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({
-        success: true,
-        result: [
-          {
-            id: policyId,
-            name: `Family Wishlist member ${invitationId.slice(0, 8)}`,
-            decision: 'allow',
-            include: [{ email: { email: 'person@example.com' } }]
-          }
-        ]
-      })
+      policyListResponse([
+        {
+          id: policyId,
+          name: `Family Wishlist member ${invitationId.slice(0, 8)}`,
+          decision: 'allow',
+          include: [{ email: { email: 'person@example.com' } }]
+        }
+      ])
     );
 
     await expect(
@@ -147,7 +157,7 @@ describe('Cloudflare Access family membership', () => {
     const policyId = crypto.randomUUID();
     const fetcher = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(Response.json({ success: true, result: [] }))
+      .mockResolvedValueOnce(policyListResponse([]))
       .mockResolvedValueOnce(Response.json({ success: true, result: { id: policyId } }));
 
     await expect(
@@ -162,7 +172,7 @@ describe('Cloudflare Access family membership', () => {
     const replacementPolicyId = crypto.randomUUID();
     const fetcher = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(Response.json({ success: true, result: [] }))
+      .mockResolvedValueOnce(policyListResponse([]))
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(Response.json({ success: true, result: { id: replacementPolicyId } }));
 
@@ -186,15 +196,61 @@ describe('Cloudflare Access family membership', () => {
       decision: 'allow',
       include: [{ email: { email: 'person@example.com' } }]
     });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        policyListResponse([candidate(crypto.randomUUID()), candidate(crypto.randomUUID())])
+      );
+
+    await expect(
+      ensureFamilyMemberAccess(configuration, invitationId, 'person@example.com', null, fetcher)
+    ).rejects.toMatchObject({ code: 'request_failed' });
+  });
+
+  it('examines the complete policy list rather than only the first 50 entries', async () => {
+    const invitationId = crypto.randomUUID();
+    const policyId = crypto.randomUUID();
+    const unrelated = Array.from({ length: 50 }, (_, index) => ({
+      id: crypto.randomUUID(),
+      name: `Unrelated policy ${index}`,
+      decision: 'allow',
+      include: [{ email: { email: `other-${index}@example.com` } }]
+    }));
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({
-        success: true,
-        result: [candidate(crypto.randomUUID()), candidate(crypto.randomUUID())]
-      })
+      policyListResponse([
+        ...unrelated,
+        {
+          id: policyId,
+          name: `Family Wishlist member ${invitationId.slice(0, 8)}`,
+          decision: 'allow',
+          include: [{ email: { email: 'person@example.com' } }]
+        }
+      ])
     );
 
     await expect(
       ensureFamilyMemberAccess(configuration, invitationId, 'person@example.com', null, fetcher)
+    ).resolves.toBe(policyId);
+    expect(fetcher.mock.calls[0]?.[0]).toContain('?page=1&per_page=1000');
+  });
+
+  it('fails closed if Cloudflare says the policy list is incomplete', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        success: true,
+        result: [],
+        result_info: { page: 1, count: 0, total_count: 51, total_pages: 2 }
+      })
+    );
+
+    await expect(
+      ensureFamilyMemberAccess(
+        configuration,
+        crypto.randomUUID(),
+        'person@example.com',
+        null,
+        fetcher
+      )
     ).rejects.toMatchObject({ code: 'request_failed' });
   });
 

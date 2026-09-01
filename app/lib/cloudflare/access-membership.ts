@@ -120,8 +120,29 @@ function policyName(invitationId: string): string {
 
 function policyIdsFromList(value: unknown, invitationId: string, email: string): string[] | null {
   if (typeof value !== 'object' || value === null) return null;
-  const envelope = value as { success?: unknown; result?: unknown };
-  if (envelope.success !== true || !Array.isArray(envelope.result)) return null;
+  const envelope = value as { success?: unknown; result?: unknown; result_info?: unknown };
+  if (
+    envelope.success !== true ||
+    !Array.isArray(envelope.result) ||
+    typeof envelope.result_info !== 'object' ||
+    envelope.result_info === null
+  ) {
+    return null;
+  }
+  const resultInfo = envelope.result_info as {
+    page?: unknown;
+    count?: unknown;
+    total_count?: unknown;
+    total_pages?: unknown;
+  };
+  if (
+    resultInfo.page !== 1 ||
+    resultInfo.total_pages !== 1 ||
+    resultInfo.count !== envelope.result.length ||
+    resultInfo.total_count !== envelope.result.length
+  ) {
+    return null;
+  }
 
   const expectedName = policyName(invitationId);
   return envelope.result.flatMap((candidate) => {
@@ -286,7 +307,7 @@ export async function ensureFamilyMemberAccess(
   const configuration = readConfiguration(env);
   const response = await cloudflareRequest(
     configuration,
-    `${policyUrl(configuration)}?per_page=50`,
+    `${policyUrl(configuration)}?page=1&per_page=1000`,
     { method: 'GET' },
     fetcher
   );
