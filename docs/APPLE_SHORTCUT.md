@@ -56,6 +56,14 @@ The exported shortcut uses Apple's built-in **Gift** glyph on its muted **Grey G
 Favourites and their order are device-local preferences and cannot be preset in a shared shortcut;
 the member can add **Wishlist** to Favourites once through **Edit Actions**.
 
+## Installation and updates
+
+An exported shortcut is a new installation, not an in-place update. Before installing a replacement,
+the member must delete the existing **Wishlist** shortcut. After tapping the download link, they must
+open the file only once: continue in Shortcuts if it opens automatically, or use Safari's Downloads
+button only when nothing opened. Opening the Downloads copy after Shortcuts has already handled the
+download creates a duplicate.
+
 ## Instruction review
 
 Last checked against the current product documentation on **1 September 2026**:

@@ -227,18 +227,31 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   2
                 </span>
                 <div>
-                  <h3>Install the ready-made shortcut</h3>
+                  <h3>Remove an older copy</h3>
                   <p>
-                    Tap <strong>Download the Apple Shortcut</strong>. Open the downloaded{' '}
-                    <strong>Wishlist</strong> file if Safari does not open it automatically, then
-                    tap <strong>Add Shortcut</strong> in Shortcuts. Apple validates the shortcut
-                    before it can be imported.
+                    If <strong>Wishlist</strong> is already in the Shortcuts app, press and hold it,
+                    tap <strong>Delete</strong>, then <strong>Delete Shortcut</strong>. Return here
+                    afterwards. Skip this step for your first installation.
                   </p>
                 </div>
               </li>
               <li>
                 <span className="bookmarklet-step-number" aria-hidden="true">
                   3
+                </span>
+                <div>
+                  <h3>Install the ready-made shortcut</h3>
+                  <p>
+                    Tap <strong>Download the Apple Shortcut</strong>. If Shortcuts opens, stay there
+                    and do not open the copy in Downloads as well. Only if nothing opens, tap
+                    Safari’s Downloads button and open <strong>Wishlist</strong> once. Then tap{' '}
+                    <strong>Add Shortcut</strong>. Apple validates it before it can be imported.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  4
                 </span>
                 <div>
                   <h3>Paste the address once</h3>
