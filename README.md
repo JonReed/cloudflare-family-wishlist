@@ -75,6 +75,8 @@ Most wishlist applications are either public, advertising-supported, complicated
 - [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
 - [Design guide](docs/DESIGN.md) — family-first IA, visual language, copy and accessibility.
 - [Roadmap](docs/ROADMAP.md) — completed phases and remaining release work.
+- [Project stewardship and support](docs/STEWARDSHIP.md) — maintainer, funding, review provenance and
+  optional support.
 
 Agents and automated contributors should begin with [AGENTS.md](AGENTS.md).
 
@@ -130,6 +132,10 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased implementation plan.
 ## Open source and contributions
 
 This project is MIT licensed and intentionally fork-friendly. It is also maintainer-led: issues and ideas are welcome, but there is no promise that feature requests or pull requests will be accepted. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Development tooling was supported by Furls Digital Ltd. See
+[project stewardship and support](docs/STEWARDSHIP.md) for the precise relationship, development
+process and optional Buy Me a Coffee link.
 
 ## Security
 
