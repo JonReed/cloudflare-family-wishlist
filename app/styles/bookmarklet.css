@@ -392,12 +392,69 @@
 
 .bookmarklet-demo {
   position: relative;
-  overflow: hidden;
   margin-top: 1.25rem;
-  border: 1px solid rgb(48 51 41 / 0.24);
+  border: 1px solid rgb(48 51 41 / 0.18);
   background:
-    radial-gradient(circle at 25% 85%, rgb(135 168 143 / 0.15), transparent 18rem), #eee4d3;
-  box-shadow: inset 0 0 0 6px rgb(255 250 240 / 0.55);
+    linear-gradient(180deg, rgb(255 250 240 / 0.38), transparent 65%),
+    radial-gradient(circle at 25% 85%, rgb(135 168 143 / 0.18), transparent 18rem), #e8ddca;
+  padding: clamp(1rem, 3vw, 2rem) clamp(0.75rem, 3vw, 2.25rem) 1.25rem;
+}
+
+.bookmarklet-computer {
+  position: relative;
+  max-width: 58rem;
+  margin: 0 auto;
+  padding-bottom: 3.8rem;
+}
+
+.bookmarklet-screen {
+  position: relative;
+  overflow: hidden;
+  border: clamp(0.5rem, 1.3vw, 0.8rem) solid var(--leaf-dark);
+  border-bottom-width: clamp(0.85rem, 1.8vw, 1.15rem);
+  border-radius: 0.8rem 0.8rem 0.35rem 0.35rem;
+  background: #eee4d3;
+  box-shadow:
+    0 1rem 1.8rem rgb(48 51 41 / 0.16),
+    inset 0 0 0 1px rgb(255 250 240 / 0.2);
+}
+
+.bookmarklet-screen::before {
+  position: absolute;
+  z-index: 4;
+  top: -0.47rem;
+  left: 50%;
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 50%;
+  background: rgb(5 24 17 / 0.88);
+  box-shadow: 0 0 0 2px rgb(255 250 240 / 0.08);
+  content: '';
+  transform: translateX(-50%);
+}
+
+.bookmarklet-monitor-neck {
+  position: absolute;
+  bottom: 1.1rem;
+  left: 50%;
+  width: 7rem;
+  height: 2.8rem;
+  border-inline: 1px solid rgb(48 51 41 / 0.28);
+  background: linear-gradient(90deg, #c6bba8, #ede3d3 46%, #c2b6a2);
+  transform: translateX(-50%);
+}
+
+.bookmarklet-monitor-foot {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: min(17rem, 55%);
+  height: 1.25rem;
+  border: 1px solid rgb(48 51 41 / 0.28);
+  border-radius: 50% 50% 0.2rem 0.2rem;
+  background: linear-gradient(180deg, #eee4d3, #bdb19e);
+  box-shadow: 0 0.55rem 0.7rem rgb(48 51 41 / 0.13);
+  transform: translateX(-50%);
 }
 
 .bookmarklet-browser-example {
@@ -447,7 +504,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 2px dashed rgb(40 80 62 / 0.36);
+  border-bottom: 1px solid rgb(40 80 62 / 0.3);
   padding: 0.8rem 1.2rem;
   color: var(--leaf-dark);
 }
@@ -460,25 +517,35 @@
 }
 
 .bookmarklet-target-bar strong {
+  display: inline-flex;
+  min-width: 8.5rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 2px dashed rgb(154 68 49 / 0.54);
+  border-radius: 2px;
+  background: rgb(255 250 240 / 0.58);
+  padding: 0.35rem 0.65rem;
+  color: var(--rust);
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
 .bookmarklet-drag-stage {
   position: relative;
   display: grid;
-  min-height: 21rem;
+  min-height: 22rem;
   place-items: end center;
-  padding: 3rem 1.5rem 2.4rem;
+  padding: 4rem 1.5rem 2.4rem;
 }
 
 .bookmarklet-drag-arrow {
   position: absolute;
-  top: 0.35rem;
+  z-index: 1;
+  top: -3.8rem;
   left: 50%;
-  width: min(28rem, 78%);
-  height: 14.5rem;
+  width: min(34rem, 84%);
+  height: 22rem;
   color: var(--rust);
   stroke: currentColor;
   stroke-linecap: round;
@@ -489,14 +556,15 @@
 
 .bookmarklet-drag-label {
   position: absolute;
-  top: 7.9rem;
-  left: calc(50% + 4.4rem);
+  z-index: 2;
+  top: 8.2rem;
+  left: calc(50% + 5.2rem);
   color: var(--rust);
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-style: italic;
   font-weight: 600;
-  transform: rotate(-8deg);
+  transform: rotate(-7deg);
 }
 
 .bookmarklet-button {
@@ -599,24 +667,24 @@
   }
 
   .bookmarklet-target-bar {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.65rem;
   }
 
   .bookmarklet-drag-stage {
-    min-height: 18.5rem;
+    min-height: 19.5rem;
   }
 
   .bookmarklet-drag-arrow {
-    width: 22rem;
+    top: -3.35rem;
+    width: 25rem;
     max-width: 92%;
-    height: 12.5rem;
+    height: 19rem;
   }
 
   .bookmarklet-drag-label {
-    top: 7rem;
-    left: 56%;
+    top: 7.5rem;
+    left: 53%;
+    font-size: 1.1rem;
   }
 }
 
@@ -638,6 +706,35 @@
   .clipboard-form > button {
     width: 100%;
     justify-content: center;
+  }
+
+  .bookmarklet-demo {
+    margin-inline: -0.35rem;
+    padding-inline: 0.5rem;
+  }
+
+  .bookmarklet-computer {
+    padding-bottom: 2.8rem;
+  }
+
+  .bookmarklet-monitor-neck {
+    bottom: 0.8rem;
+    width: 4.5rem;
+    height: 2rem;
+  }
+
+  .bookmarklet-monitor-foot {
+    width: 10rem;
+    height: 0.9rem;
+  }
+
+  .bookmarklet-target-bar {
+    padding-inline: 0.65rem;
+  }
+
+  .bookmarklet-target-bar strong {
+    min-width: auto;
+    padding-inline: 0.45rem;
   }
 }
 

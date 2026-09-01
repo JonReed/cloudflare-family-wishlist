@@ -417,50 +417,59 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </div>
 
             <section className="bookmarklet-demo" aria-label="Where to drag the browser button">
-              <div className="bookmarklet-browser-example" aria-hidden="true">
-                <div className="bookmarklet-browser-toolbar">
-                  <span />
-                  <span />
-                  <span />
-                  <div className="bookmarklet-address">family wishlist</div>
-                </div>
-                <div className="bookmarklet-target-bar">
-                  <span>Bookmarks bar</span>
-                  <strong>Drop the button here</strong>
-                </div>
-              </div>
+              <div className="bookmarklet-computer">
+                <div className="bookmarklet-screen">
+                  <div className="bookmarklet-browser-example" aria-hidden="true">
+                    <div className="bookmarklet-browser-toolbar">
+                      <span />
+                      <span />
+                      <span />
+                      <div className="bookmarklet-address">family wishlist</div>
+                    </div>
+                    <div className="bookmarklet-target-bar">
+                      <span>Bookmarks bar</span>
+                      <strong>
+                        <GiftIcon className="size-4" /> Wishlist
+                      </strong>
+                    </div>
+                  </div>
 
-              <div className="bookmarklet-drag-stage">
-                <svg
-                  className="bookmarklet-drag-arrow"
-                  viewBox="0 0 360 235"
-                  aria-hidden="true"
-                  fill="none"
-                >
-                  <path d="M112 208C104 142 118 106 166 87C208 70 248 78 267 39" />
-                  <path d="m238 50 31-16 5 34" />
-                </svg>
-                <span className="bookmarklet-drag-label" aria-hidden="true">
-                  Drag this way
-                </span>
-                <a
-                  href="#bookmarklet-click-help"
-                  data-bookmarklet-href={loaderData.bookmarkletHref}
-                  data-bookmarklet-click-help="bookmarklet-click-help"
-                  className="bookmarklet-button"
-                  title="Drag this to your bookmarks bar"
-                >
-                  <GiftIcon className="size-5" />
-                  <span>Add to Family Wishlist</span>
-                </a>
-                <p
-                  id="bookmarklet-click-help"
-                  className="bookmarklet-click-help"
-                  role="status"
-                  hidden
-                >
-                  Nearly! Press and hold the button, then drag it upwards instead of clicking it.
-                </p>
+                  <div className="bookmarklet-drag-stage">
+                    <svg
+                      className="bookmarklet-drag-arrow"
+                      viewBox="0 0 520 360"
+                      aria-hidden="true"
+                      fill="none"
+                    >
+                      <path d="M198 330C145 278 151 201 225 163C311 118 444 145 498 55" />
+                      <path d="m465 72 38-24 8 43" />
+                    </svg>
+                    <span className="bookmarklet-drag-label" aria-hidden="true">
+                      Drag up to the bar
+                    </span>
+                    <a
+                      href="#bookmarklet-click-help"
+                      data-bookmarklet-href={loaderData.bookmarkletHref}
+                      data-bookmarklet-click-help="bookmarklet-click-help"
+                      className="bookmarklet-button"
+                      title="Drag this to your bookmarks bar"
+                    >
+                      <GiftIcon className="size-5" />
+                      <span>Add to Family Wishlist</span>
+                    </a>
+                    <p
+                      id="bookmarklet-click-help"
+                      className="bookmarklet-click-help"
+                      role="status"
+                      hidden
+                    >
+                      Nearly! Press and hold the button, then drag it upwards instead of clicking
+                      it.
+                    </p>
+                  </div>
+                </div>
+                <div className="bookmarklet-monitor-neck" aria-hidden="true" />
+                <div className="bookmarklet-monitor-foot" aria-hidden="true" />
               </div>
             </section>
 
