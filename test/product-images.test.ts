@@ -36,9 +36,23 @@ describe('product image fetch budget', () => {
   it('enforces the daily budget across minute windows', async () => {
     const member = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
     const dayStart = 1_800_057_600;
-    for (let index = 0; index < 500; index += 1) {
-      await consumeProductImageBudget(env.DB, member.id, dayStart + index * 60);
-    }
+
+    await env.DB.prepare(
+      `INSERT INTO product_image_fetch_limits (
+           member_id,
+           minute_started_at,
+           minute_request_count,
+           day_started_at,
+           day_request_count
+         )
+         VALUES (?1, ?2, 1, ?3, 499)`
+    )
+      .bind(member.id, dayStart + 498 * 60, dayStart)
+      .run();
+
+    await expect(
+      consumeProductImageBudget(env.DB, member.id, dayStart + 499 * 60)
+    ).resolves.toBeUndefined();
 
     await expect(
       consumeProductImageBudget(env.DB, member.id, dayStart + 500 * 60)
