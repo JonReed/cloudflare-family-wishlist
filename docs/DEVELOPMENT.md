@@ -80,7 +80,8 @@ cohesive component or server helper rather than growing one more unrelated block
 Product metadata lookup is progressive enhancement. Keep the ordinary `fetch-product` form intent
 working without JavaScript, and keep `public/product-import.js` limited to the same-origin convenience
 layer. Any outbound page fetch must preserve the timeout, response-byte cap, manual redirect checks,
-public-target checks and credential-free request in `app/lib/product-metadata.ts`. AI extraction must
+public-target checks, member-scoped D1 lookup budget and credential-free request in
+`app/lib/product-metadata.ts`. AI extraction must
 remain optional, receive only reduced public-page text, accept only source-supported values and never
 save a wish. Add general evidence rules before retailer-specific ones; keep retailer exceptions in a
 hostname-matched adapter, and add a compact regression fixture for every new metadata shape. Challenge
@@ -89,8 +90,10 @@ When the text fallback is already needed, AI may select only an integer index fr
 validated page-image candidates; never accept a model-provided URL or automatically load
 private/local targets. Inject `ProductAiExtractor` in tests rather than connecting the test pool to
 Workers AI. `ProductImageField` keeps its picture address in the submitted form while presenting a
-thumbnail-first interface; `public/product-import.js` owns its optional live preview, change and
-remove conveniences across both ordinary and multi-list forms.
+thumbnail-first interface; every preview and saved picture must use the same-origin `/product-image`
+proxy. Preserve its redirect validation, public-network enforcement, raster allowlist and 4 MiB cap.
+`public/product-import.js` owns the optional live preview, change and remove conveniences across both
+ordinary and multi-list forms.
 
 The **Add from anywhere** page is presented by `app/routes/bookmarklet.tsx` at the existing
 `/bookmarklet` URL. `app/lib/bookmarklet.ts` derives both the add-page address used by Apple Shortcuts
@@ -138,8 +141,9 @@ after reading the account-specific private handoff and verifying the active Wran
 - Fail closed when production configuration or the assertion is missing.
 - Keep the development identity restricted to a development build and a loopback hostname.
 - Never log assertions, tokens or full authentication payloads.
-- Keep family admission fail-closed: validate the admin role before calling Cloudflare, create only
-  an exact-email Allow policy, and record it as waiting only after Cloudflare succeeds.
+- Keep family admission fail-closed: write a pending invitation before calling Cloudflare, create only
+  an exact-email Allow policy, activate it only after Cloudflare succeeds, and never provision a later
+  member from a pending or cleanup-required row.
 - Treat `ACCESS_MANAGEMENT_API_TOKEN` as a secret. Keep the account and application identifiers in
   deployment configuration, not family-facing output.
 - Preserve the bounded response reader, timeout and compensating policy deletion around Access API
@@ -166,8 +170,11 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/bookmarklet.test.ts`         | safe, deployment-specific add-page and bookmarklet construction    |
 | `test/family-members.test.ts`      | roles, admin checks, invitation state and first-login conversion   |
 | `test/member-provisioning.test.ts` | email validation, idempotent first login and one-list constraint   |
+| `test/product-image.test.ts`       | same-origin proxy types, redirects and response-byte boundary      |
+| `test/product-lookups.test.ts`     | member lookup budget, reset and concurrent enforcement             |
 | `test/product-metadata.test.ts`    | bounded public fetches, metadata extraction and optional AI safety |
 | `test/product-url.test.ts`         | safe HTTP(S) links, credential rejection and size limits           |
+| `test/request-security.test.ts`    | mutation origins, content types and request-body boundary          |
 | `test/wishlist-service.test.ts`    | CRUD validation, ordering, claims, concurrency and owner privacy   |
 
 `vitest.config.ts` runs tests through the Cloudflare pool. `test/apply-migrations.ts` applies every SQL

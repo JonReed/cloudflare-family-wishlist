@@ -2,15 +2,19 @@ import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  activateFamilyInvitation,
+  beginFamilyInvitation,
+  cancelPendingFamilyInvitation,
   listFamilyPeople,
-  prepareFamilyInvitation,
-  saveFamilyInvitation
+  markFamilyInvitationForCleanup
 } from '../app/lib/db/family-members';
 import { ensureMemberForEmail } from '../app/lib/db/members';
+import { inviteAndProvisionMember } from './family-fixtures';
 
 describe('family member administration', () => {
   beforeEach(async () => {
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM product_lookup_limits'),
       env.DB.prepare('DELETE FROM claims'),
       env.DB.prepare('DELETE FROM items'),
       env.DB.prepare('DELETE FROM wishlists'),
@@ -29,15 +33,15 @@ describe('family member administration', () => {
   ])('rejects invalid invitation input: %o', async (input, message) => {
     const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
 
-    await expect(prepareFamilyInvitation(env.DB, admin.id, input)).rejects.toThrow(message);
+    await expect(beginFamilyInvitation(env.DB, admin.id, input)).rejects.toThrow(message);
   });
 
   it('allows only an admin to prepare an invitation', async () => {
-    await ensureMemberForEmail(env.DB, 'admin@example.com');
-    const member = await ensureMemberForEmail(env.DB, 'member@example.com');
+    const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
+    const member = await inviteAndProvisionMember(env.DB, admin, 'member@example.com');
 
     await expect(
-      prepareFamilyInvitation(env.DB, member.id, {
+      beginFamilyInvitation(env.DB, member.id, {
         displayName: 'Another person',
         email: 'another@example.com'
       })
@@ -46,11 +50,11 @@ describe('family member administration', () => {
 
   it('shows an invited person as waiting until their first login', async () => {
     const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
-    const invitation = await prepareFamilyInvitation(env.DB, admin.id, {
+    const invitation = await beginFamilyInvitation(env.DB, admin.id, {
       displayName: 'Jamie Reed',
       email: 'Jamie@example.com'
     });
-    await saveFamilyInvitation(env.DB, admin.id, invitation, crypto.randomUUID());
+    await activateFamilyInvitation(env.DB, invitation.id, crypto.randomUUID());
 
     expect(await listFamilyPeople(env.DB)).toEqual([
       expect.objectContaining({
@@ -85,44 +89,83 @@ describe('family member administration', () => {
 
   it('rejects emails that already belong to a member or invitation', async () => {
     const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
-    await ensureMemberForEmail(env.DB, 'joined@example.com');
+    await inviteAndProvisionMember(env.DB, admin, 'joined@example.com');
 
     await expect(
-      prepareFamilyInvitation(env.DB, admin.id, {
+      beginFamilyInvitation(env.DB, admin.id, {
         displayName: 'Already joined',
         email: 'JOINED@example.com'
       })
     ).rejects.toThrow('already part');
 
-    const invitation = await prepareFamilyInvitation(env.DB, admin.id, {
+    const invitation = await beginFamilyInvitation(env.DB, admin.id, {
       displayName: 'Waiting person',
       email: 'waiting@example.com'
     });
-    await saveFamilyInvitation(env.DB, admin.id, invitation, crypto.randomUUID());
+    await activateFamilyInvitation(env.DB, invitation.id, crypto.randomUUID());
 
     await expect(
-      prepareFamilyInvitation(env.DB, admin.id, {
+      beginFamilyInvitation(env.DB, admin.id, {
         displayName: 'Same person again',
         email: 'WAITING@example.com'
       })
     ).rejects.toThrow('already part');
   });
 
-  it('rechecks the admin role and uniqueness when saving', async () => {
+  it('rechecks the admin role and uniqueness when beginning', async () => {
     const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
-    const member = await ensureMemberForEmail(env.DB, 'member@example.com');
-    const invitation = await prepareFamilyInvitation(env.DB, admin.id, {
+    const member = await inviteAndProvisionMember(env.DB, admin, 'member@example.com');
+
+    await expect(
+      beginFamilyInvitation(env.DB, member.id, {
+        displayName: 'Future member',
+        email: 'future@example.com'
+      })
+    ).rejects.toThrow('family organiser');
+
+    await beginFamilyInvitation(env.DB, admin.id, {
       displayName: 'Future member',
       email: 'future@example.com'
     });
-
     await expect(
-      saveFamilyInvitation(env.DB, member.id, invitation, crypto.randomUUID())
-    ).rejects.toThrow('family organiser');
+      beginFamilyInvitation(env.DB, admin.id, {
+        displayName: 'Future member',
+        email: 'future@example.com'
+      })
+    ).rejects.toThrow('already part');
+  });
 
-    await saveFamilyInvitation(env.DB, admin.id, invitation, crypto.randomUUID());
+  it('does not admit a pending or cleanup-required invitation', async () => {
+    const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
+    const pending = await beginFamilyInvitation(env.DB, admin.id, {
+      displayName: 'Pending person',
+      email: 'pending@example.com'
+    });
+
+    await expect(ensureMemberForEmail(env.DB, pending.email)).rejects.toThrow(
+      'completed family invitation'
+    );
+
+    await markFamilyInvitationForCleanup(env.DB, pending.id, crypto.randomUUID());
+    await expect(ensureMemberForEmail(env.DB, pending.email)).rejects.toThrow(
+      'completed family invitation'
+    );
+    expect(await listFamilyPeople(env.DB)).toHaveLength(1);
+  });
+
+  it('can cancel a pending invitation without admitting it', async () => {
+    const admin = await ensureMemberForEmail(env.DB, 'admin@example.com');
+    const pending = await beginFamilyInvitation(env.DB, admin.id, {
+      displayName: 'Retry person',
+      email: 'retry@example.com'
+    });
+
+    await cancelPendingFamilyInvitation(env.DB, pending.id);
     await expect(
-      saveFamilyInvitation(env.DB, admin.id, invitation, crypto.randomUUID())
-    ).rejects.toThrow('already been added');
+      beginFamilyInvitation(env.DB, admin.id, {
+        displayName: 'Retry person',
+        email: 'retry@example.com'
+      })
+    ).resolves.toMatchObject({ email: 'retry@example.com' });
   });
 });

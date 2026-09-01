@@ -105,4 +105,14 @@ describe('Cloudflare Access family membership', () => {
       expect.objectContaining({ method: 'DELETE' })
     );
   });
+
+  it('rejects an unsuccessful policy deletion envelope', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ success: false, result: null }));
+
+    await expect(
+      revokeFamilyMemberAccess(configuration, crypto.randomUUID(), fetcher)
+    ).rejects.toMatchObject({ code: 'request_failed' });
+  });
 });

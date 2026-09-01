@@ -11,9 +11,11 @@ import { cloudflareContext, identityContext } from '../lib/context';
 import {
   FamilyAdminRequiredError,
   FamilyMemberInputError,
+  activateFamilyInvitation,
+  beginFamilyInvitation,
+  cancelPendingFamilyInvitation,
   listFamilyPeople,
-  prepareFamilyInvitation,
-  saveFamilyInvitation,
+  markFamilyInvitationForCleanup,
   type FamilyPerson
 } from '../lib/db/family-members';
 import { ensureMemberForEmail } from '../lib/db/members';
@@ -54,25 +56,59 @@ export async function action({ request, context }: Route.ActionArgs) {
   const emailValue = formData.get('email');
 
   try {
-    const invitation = await prepareFamilyInvitation(env.DB, member.id, {
+    const invitation = await beginFamilyInvitation(env.DB, member.id, {
       displayName: displayNameValue,
       email: emailValue
     });
 
-    const accessPolicyId = await grantFamilyMemberAccess(env, invitation.id, invitation.email);
-
+    let accessPolicyId: string;
     try {
-      await saveFamilyInvitation(env.DB, member.id, invitation, accessPolicyId);
+      accessPolicyId = await grantFamilyMemberAccess(env, invitation.id, invitation.email);
     } catch (error) {
       try {
-        await revokeFamilyMemberAccess(env, accessPolicyId);
+        await cancelPendingFamilyInvitation(env.DB, invitation.id);
       } catch {
         console.error(
           JSON.stringify({
-            event: 'family_invitation_cleanup_failed',
-            policyId: accessPolicyId
+            event: 'family_invitation_pending_cleanup_failed',
+            invitationId: invitation.id
           })
         );
+      }
+      throw error;
+    }
+
+    try {
+      await activateFamilyInvitation(env.DB, invitation.id, accessPolicyId);
+    } catch (error) {
+      let revoked = false;
+      try {
+        await revokeFamilyMemberAccess(env, accessPolicyId);
+        revoked = true;
+      } catch {
+        try {
+          await markFamilyInvitationForCleanup(env.DB, invitation.id, accessPolicyId);
+        } catch {
+          console.error(
+            JSON.stringify({
+              event: 'family_invitation_cleanup_state_failed',
+              invitationId: invitation.id
+            })
+          );
+        }
+      }
+
+      if (revoked) {
+        try {
+          await cancelPendingFamilyInvitation(env.DB, invitation.id);
+        } catch {
+          console.error(
+            JSON.stringify({
+              event: 'family_invitation_pending_cleanup_failed',
+              invitationId: invitation.id
+            })
+          );
+        }
       }
 
       throw error;

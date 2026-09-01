@@ -52,20 +52,23 @@ email. Missing or invalid production configuration fails closed.
    subsequent people are members.
 4. The loader requests all family wishlists for the viewer. Their own list sorts first; `?list=` chooses
    the active list rendered in the document.
-5. Forms post an explicit intent to an action. React Router verifies that the browser origin matches
-   the request origin before the action validates the request shape, invokes a service mutation and
-   redirects. The add form can instead request an editable draft from a product link without creating
-   an item.
+5. Forms post an explicit intent to an action. Before authentication or routing, the Worker requires
+   a non-opaque `Origin` that exactly matches the request origin and reads at most 32 KiB of supported
+   form data. React Router repeats its own origin check before the action validates the request shape,
+   invokes a service mutation and redirects. The add form can instead request an editable draft from
+   a product link without creating an item.
 6. `/add?url=` is the landing route for the iPhone/iPad Share Sheet Shortcut, copied links and the
    desktop bookmarklet. It loads an editable product draft and all family list choices; its action
    inserts one independent item per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
 
 The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
-validates the organiser role and proposed name/email, creates a single exact-email application
-policy through Cloudflare's API, then stores the invitation in D1. If the D1 insert fails, it attempts
-to delete the newly created policy before returning an error. The API token is a Worker secret and is
-never returned to loaders, HTML or logs.
+validates the organiser role and proposed name/email and writes a non-admitting `pending` invitation
+before creating a single exact-email application policy through Cloudflare's API. It marks the row
+`active` only after Cloudflare succeeds. If activation fails, it attempts to delete the policy; a
+failed rollback is retained as `cleanup_required` with the policy ID. Neither `pending` nor
+`cleanup_required` can provision a member, so Access and D1 failures remain fail-closed. The API token
+is a Worker secret and is never returned to loaders, HTML or logs.
 
 Authentication happens before provisioning. There is no application endpoint that accepts an email
 address and creates a member without a verified Access identity.
@@ -143,13 +146,20 @@ family_invitations
   id (UUID) PK
   email UNIQUE
   display_name
-  access_policy_id UNIQUE
+  access_policy_id UNIQUE, nullable while pending
+  status: pending | active | cleanup_required
   invited_by_member_id FK -> members
 ```
 
 Tables are SQLite `STRICT` tables with foreign keys, length/state checks and indexes for wishlist
 ordering and member claims. Externally visible IDs are UUIDs. A new schema change must be a new numbered
 migration; applied migrations are immutable history.
+
+Wishlist reads order items by a priority rank (`high`, `normal`, `low`) and then by descending
+creation time. The item expression index mirrors that exact rank expression and includes
+`wishlist_id`, `created_at DESC` and `id DESC`, so D1 can search each list's items in the required
+order. The family-wide result may still perform a small outer sort to keep the viewer's list first
+and the remaining family names alphabetical.
 
 ## Claim privacy by construction
 
@@ -223,10 +233,14 @@ Product import is deliberately staged:
 
 Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the
 first choice; AI image selection happens only as part of an already-needed text fallback and only
-from the page's bounded candidate list. Images are optional, editable and loaded with no cross-site
-referrer. Literal local/private-network addresses and credential-bearing URLs are rejected because
-an image loads automatically in the family member's browser. This keeps the feature within the
-existing Worker and D1 setup; no R2 bucket or image-processing service is required.
+from the page's bounded candidate list. Browser markup uses the same-origin `/product-image` route,
+not the remote address. That route requires a completed family membership, validates every redirect,
+relies on Workers public-network fetch enforcement, accepts only five raster formats, buffers at most
+4 MiB and caches the safe response for one day in the member's private browser cache. SVG and
+ambiguous response types are rejected. This
+prevents family browsers from exposing
+their address or cookies to an arbitrary picture host and keeps CSP `img-src` same-origin. No R2
+bucket or image-processing service is required.
 
 No Access assertion, cookie, family data or requesting-user identity is sent to the model. The model
 cannot fetch another URL, invoke a tool or persist anything. Only the ordinary add-wish action can
@@ -266,19 +280,22 @@ without becoming a new persistence or availability dependency.
 - all application documents are `private, no-store`;
 - CSP allows only the resources the application currently needs and no third-party scripts/fonts;
 - form actions remain same-origin, with a `same-origin` referrer policy so browsers send a verifiable
-  `Origin` header for ordinary HTML form posts;
+  `Origin` header for ordinary HTML form posts; opaque, missing and cross-origin mutations are rejected
+  before authentication, and mutation bodies are capped at 32 KiB;
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
-- automatically loaded product images accept only HTTPS, reject embedded credentials and obvious
-  local/private-network targets, and send no cross-site referrer;
+- automatically loaded product images pass through the bounded same-origin raster proxy and never
+  cause a family browser to contact the remote image host directly;
 - product metadata fetches accept only public HTTP(S) pages, validate each redirect and use the same
   restrained desktop-browser navigation profile for initial requests and retries. They never forward
   user headers, credentials, cookies or referrers, stop after 8 seconds, inspect at most 512 KiB of
   HTML and reject verification pages;
 - AI receives at most 10,000 characters of reduced public-page text, returns only draft fields and
   cannot override deterministic metadata or persist data;
+- every metadata/AI entry point shares a D1-backed budget of 12 lookups per member per minute;
 - every user-controlled database value uses a prepared statement with `.bind()`;
-- only an authenticated admin member can create a family invitation, and the Access API request can
-  create only the exact-email policy shape constructed by the server;
+- only an authenticated admin member can create a family invitation, the Access API request can create
+  only the exact-email policy shape constructed by the server, and only an active D1 invitation can
+  provision any member after the first organiser;
 - mutations validate type, length, UUID, ownership and allowed state at the server boundary;
 - errors shown to users do not reveal internals;
 - logs omit tokens, private claim surprises and query strings; and

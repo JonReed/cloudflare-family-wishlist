@@ -1,3 +1,4 @@
+import { productImagePath } from '../lib/product-image';
 import { normaliseProductImageUrl } from '../lib/product-url';
 
 export function ProductImageField({
@@ -15,7 +16,7 @@ export function ProductImageField({
       <div className="product-image-overview">
         <div className="product-image-preview" data-product-image-preview="" hidden={!hasPreview}>
           <img
-            src={previewUrl || undefined}
+            src={previewUrl ? productImagePath(previewUrl) : undefined}
             alt="Product picture preview"
             width="160"
             height="160"
@@ -30,62 +31,51 @@ export function ProductImageField({
           <span aria-hidden="true">+</span>
         </div>
 
-        <div className="product-image-copy">
-          <p className="form-label">Picture</p>
-          <strong data-product-image-present="" hidden={!hasPreview}>
-            Here’s the picture we’ll use
-          </strong>
-          <strong data-product-image-missing="" hidden={hasPreview}>
-            No picture yet
-          </strong>
-          <p data-product-image-present="" hidden={!hasPreview}>
-            Check that it shows the right product. You can change or remove it before saving.
-          </p>
-          <p data-product-image-missing="" hidden={hasPreview}>
-            It’s optional, but a picture can make the wish easier to recognise.
-          </p>
-        </div>
-      </div>
-
-      <div className="product-image-actions">
-        <details className="product-image-editor">
-          <summary className="button-quiet">
-            <span data-product-image-present="" hidden={!hasPreview}>
-              Change picture
-            </span>
-            <span data-product-image-missing="" hidden={hasPreview}>
-              Add a picture
-            </span>
-          </summary>
-          <div className="product-image-editor-fields">
-            <label htmlFor={`${formId}-image-url`} className="form-label">
-              Picture address
-            </label>
-            <input
-              id={`${formId}-image-url`}
-              name="imageUrl"
-              type="url"
-              maxLength={2048}
-              defaultValue={defaultValue ?? ''}
-              className="form-control"
-              placeholder="https://…"
-              aria-describedby={`${formId}-image-url-hint`}
-              data-product-image=""
-            />
-            <p id={`${formId}-image-url-hint`} className="product-image-hint">
-              If you have another picture online, paste its direct web address here.
-            </p>
+        <div className="product-image-details">
+          <div className="product-image-copy">
+            <p className="form-label">Picture</p>
+            <strong data-product-image-missing="" hidden={hasPreview}>
+              No picture yet
+            </strong>
           </div>
-        </details>
 
-        <button
-          type="button"
-          className="button-quiet product-image-remove"
-          data-product-image-remove=""
-          hidden
-        >
-          Remove picture
-        </button>
+          <div className="product-image-actions">
+            <details className="product-image-editor">
+              <summary className="button-quiet">
+                <span data-product-image-present="" hidden={!hasPreview}>
+                  Change picture
+                </span>
+                <span data-product-image-missing="" hidden={hasPreview}>
+                  Add a picture
+                </span>
+              </summary>
+              <div className="product-image-editor-fields">
+                <label htmlFor={`${formId}-image-url`} className="form-label">
+                  Picture address
+                </label>
+                <input
+                  id={`${formId}-image-url`}
+                  name="imageUrl"
+                  type="url"
+                  maxLength={2048}
+                  defaultValue={defaultValue ?? ''}
+                  className="form-control"
+                  placeholder="https://…"
+                  data-product-image=""
+                />
+              </div>
+            </details>
+
+            <button
+              type="button"
+              className="button-quiet product-image-remove"
+              data-product-image-remove=""
+              hidden
+            >
+              Remove picture
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

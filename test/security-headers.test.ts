@@ -7,5 +7,21 @@ describe('security headers', () => {
     const response = withSecurityHeaders(new Response('ok'), 'test-nonce');
 
     expect(response.headers.get('Referrer-Policy')).toBe('same-origin');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
+  it('allows only a marked proxied image to use the private browser cache', () => {
+    const response = withSecurityHeaders(
+      new Response('image', {
+        headers: {
+          'Cache-Control': 'public, max-age=999999',
+          'X-Product-Image-Proxy': '1'
+        }
+      }),
+      'test-nonce'
+    );
+
+    expect(response.headers.get('Cache-Control')).toBe('private, max-age=86400');
+    expect(response.headers.has('X-Product-Image-Proxy')).toBe(false);
   });
 });

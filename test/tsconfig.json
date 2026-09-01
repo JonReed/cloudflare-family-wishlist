@@ -23,9 +23,12 @@
     "../app/lib/cloudflare/access-membership.ts",
     "../app/lib/db/family-members.ts",
     "../app/lib/db/members.ts",
+    "../app/lib/db/product-lookups.ts",
     "../app/lib/db/wishlists.ts",
+    "../app/lib/product-image.ts",
     "../app/lib/product-metadata.ts",
     "../app/lib/product-url.ts",
+    "../app/lib/request-security.ts",
     "../app/lib/security-headers.ts"
   ]
 }

@@ -5,6 +5,7 @@ import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
+import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
   createWishlistItems,
   listFamilyWishlists,
@@ -89,6 +90,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   try {
+    await consumeProductLookupBudget(env.DB, member.id);
     const product = await fetchProductMetadata(productUrl, new URL(request.url).hostname, {
       extractWithAi:
         String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
@@ -103,7 +105,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       fetchError: null
     };
   } catch (error) {
-    if (!(error instanceof ProductMetadataError)) throw error;
+    if (!(error instanceof ProductMetadataError || error instanceof ProductLookupRateLimitError)) {
+      throw error;
+    }
 
     return {
       member,

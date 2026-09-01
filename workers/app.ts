@@ -2,6 +2,7 @@ import { RouterContextProvider, createRequestHandler } from 'react-router';
 
 import { AuthenticationError, authenticateAccessRequest } from '../app/lib/auth/access';
 import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/context';
+import { RequestSecurityError, secureMutationRequest } from '../app/lib/request-security';
 import { withSecurityHeaders } from '../app/lib/security-headers';
 
 const requestHandler = createRequestHandler(
@@ -32,16 +33,30 @@ export default {
 
     try {
       const runtimeEnv = env as RuntimeEnv;
-      const identity = await authenticateAccessRequest(request, runtimeEnv, {
+      const securedRequest = await secureMutationRequest(request, {
+        allowDevelopmentOrigin: import.meta.env.DEV
+      });
+      const identity = await authenticateAccessRequest(securedRequest, runtimeEnv, {
         allowLocalDevelopmentIdentity: import.meta.env.DEV
       });
 
       context.set(cloudflareContext, { env: runtimeEnv, ctx, cspNonce });
       context.set(identityContext, identity);
 
-      const response = await requestHandler(request, context);
+      const response = await requestHandler(securedRequest, context);
       return withSecurityHeaders(response, cspNonce);
     } catch (error) {
+      if (error instanceof RequestSecurityError) {
+        console.warn(
+          JSON.stringify({
+            event: 'request_rejected',
+            code: error.code,
+            status: error.status
+          })
+        );
+        return withSecurityHeaders(new Response(error.message, { status: error.status }), cspNonce);
+      }
+
       if (error instanceof AuthenticationError) {
         console.warn(
           JSON.stringify({

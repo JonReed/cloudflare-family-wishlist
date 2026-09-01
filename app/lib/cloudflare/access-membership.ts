@@ -104,6 +104,12 @@ function policyIdFromResponse(value: unknown): string | null {
   return typeof result.id === 'string' && UUID_PATTERN.test(result.id) ? result.id : null;
 }
 
+function successfulEnvelope(value: unknown): boolean {
+  return (
+    typeof value === 'object' && value !== null && (value as { success?: unknown }).success === true
+  );
+}
+
 async function cloudflareRequest(
   configuration: AccessManagementConfiguration,
   url: string,
@@ -203,5 +209,10 @@ export async function revokeFamilyMemberAccess(
     );
   }
 
-  await response.body?.cancel();
+  if (response.body && !successfulEnvelope(await readBoundedJson(response))) {
+    throw new AccessManagementError(
+      'Cloudflare could not confirm cleanup of an incomplete invitation.',
+      'request_failed'
+    );
+  }
 }

@@ -13,9 +13,14 @@ const SECURITY_HEADERS = {
 
 export function withSecurityHeaders(response: Response, cspNonce: string): Response {
   const headers = new Headers(response.headers);
+  const isProductImage = headers.get('X-Product-Image-Proxy') === '1';
+  headers.delete('X-Product-Image-Proxy');
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    headers.set(name, value);
+    headers.set(
+      name,
+      name === 'Cache-Control' && isProductImage ? 'private, max-age=86400' : value
+    );
   }
 
   headers.set(
@@ -24,7 +29,7 @@ export function withSecurityHeaders(response: Response, cspNonce: string): Respo
       "default-src 'self'",
       `script-src 'nonce-${cspNonce}'`,
       "style-src 'self'",
-      "img-src 'self' https: data:",
+      "img-src 'self' data:",
       "font-src 'self'",
       "connect-src 'self'",
       "object-src 'none'",

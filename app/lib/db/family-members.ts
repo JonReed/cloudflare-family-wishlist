@@ -107,7 +107,8 @@ export async function listFamilyPeople(db: D1Database): Promise<FamilyPerson[]> 
          family_invitations.display_name,
          family_invitations.created_at
        FROM family_invitations
-       WHERE NOT EXISTS (
+       WHERE family_invitations.status = 'active'
+       AND NOT EXISTS (
          SELECT 1
          FROM members
          WHERE members.email = family_invitations.email COLLATE NOCASE
@@ -136,7 +137,7 @@ export async function listFamilyPeople(db: D1Database): Promise<FamilyPerson[]> 
   return [...joined, ...waiting];
 }
 
-export async function prepareFamilyInvitation(
+export async function beginFamilyInvitation(
   db: D1Database,
   invitedByMemberId: string,
   input: FamilyInvitationInput
@@ -165,19 +166,12 @@ export async function prepareFamilyInvitation(
     throw new FamilyMemberInputError('That email address is already part of this family.');
   }
 
-  return {
+  const invitation = {
     id: crypto.randomUUID(),
     email,
     displayName
   };
-}
 
-export async function saveFamilyInvitation(
-  db: D1Database,
-  invitedByMemberId: string,
-  invitation: PreparedFamilyInvitation,
-  accessPolicyId: string
-): Promise<void> {
   try {
     const result = await db
       .prepare(
@@ -185,25 +179,19 @@ export async function saveFamilyInvitation(
            id,
            email,
            display_name,
-           access_policy_id,
+           status,
            invited_by_member_id
          )
-         SELECT ?1, ?2, ?3, ?4, members.id
+         SELECT ?1, ?2, ?3, 'pending', members.id
          FROM members
-         WHERE members.id = ?5
+         WHERE members.id = ?4
            AND members.role = 'admin'
            AND NOT EXISTS (
              SELECT 1 FROM members existing_member
              WHERE existing_member.email = ?2 COLLATE NOCASE
            )`
       )
-      .bind(
-        invitation.id,
-        invitation.email,
-        invitation.displayName,
-        accessPolicyId,
-        invitedByMemberId
-      )
+      .bind(invitation.id, invitation.email, invitation.displayName, invitedByMemberId)
       .run();
 
     if (!result.success || result.meta.changes !== 1) {
@@ -215,5 +203,64 @@ export async function saveFamilyInvitation(
     throw new FamilyMemberInputError(
       'That email address has already been added. Refresh the page to see the latest family list.'
     );
+  }
+
+  return invitation;
+}
+
+export async function activateFamilyInvitation(
+  db: D1Database,
+  invitationId: string,
+  accessPolicyId: string
+): Promise<void> {
+  const result = await db
+    .prepare(
+      `UPDATE family_invitations
+       SET access_policy_id = ?1, status = 'active'
+       WHERE id = ?2 AND status = 'pending' AND access_policy_id IS NULL`
+    )
+    .bind(accessPolicyId, invitationId)
+    .run();
+
+  if (!result.success || result.meta.changes !== 1) {
+    throw new FamilyMemberInputError(
+      'The invitation could not be completed. Nothing has been admitted, so it is safe to try again.'
+    );
+  }
+}
+
+export async function cancelPendingFamilyInvitation(
+  db: D1Database,
+  invitationId: string
+): Promise<void> {
+  const result = await db
+    .prepare(
+      `DELETE FROM family_invitations
+       WHERE id = ?1 AND status = 'pending' AND access_policy_id IS NULL`
+    )
+    .bind(invitationId)
+    .run();
+
+  if (!result.success || result.meta.changes !== 1) {
+    throw new Error('Could not cancel the pending family invitation.');
+  }
+}
+
+export async function markFamilyInvitationForCleanup(
+  db: D1Database,
+  invitationId: string,
+  accessPolicyId: string
+): Promise<void> {
+  const result = await db
+    .prepare(
+      `UPDATE family_invitations
+       SET access_policy_id = ?1, status = 'cleanup_required'
+       WHERE id = ?2 AND status = 'pending' AND access_policy_id IS NULL`
+    )
+    .bind(accessPolicyId, invitationId)
+    .run();
+
+  if (!result.success || result.meta.changes !== 1) {
+    throw new Error('Could not record the Access policy requiring cleanup.');
   }
 }

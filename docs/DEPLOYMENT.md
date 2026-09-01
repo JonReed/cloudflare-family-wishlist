@@ -35,9 +35,10 @@ Migration `0002_family_members.sql` assigns the earliest existing member the adm
 the waiting-invitation table. Apply it before deploying application code that reads member roles.
 
 Product pictures use validated remote HTTPS URLs stored in D1. They do not require an R2 bucket,
-Cloudflare Images or another binding. Existing deployments upgrading from a version before item
-images must run `npm run db:migrate:remote` before deploying the application code that reads the new
-column.
+Cloudflare Images or another binding; browsers load them through the bounded same-origin Worker proxy.
+Existing deployments must apply all pending migrations before deploying the matching application
+code. The admission-state migration makes later-member provisioning depend on an active invitation,
+and the lookup-limit migration adds the D1 budget used before product page and AI requests.
 
 ## 3. Workers AI is enabled with the deployment
 
@@ -98,6 +99,11 @@ reserved as the family organiser. In the application's Authentication settings:
 - turn off **Accept all available identity providers**;
 - select only **One-time PIN**;
 - enable instant authentication when Cloudflare offers it.
+
+In **Advanced settings → Cookie settings**, keep `HttpOnly` enabled and set the application cookie's
+`SameSite` attribute to **Lax**. This single-domain application does not rely on cross-site use of its
+authorization cookie. The Worker also enforces an exact mutation origin, so this setting is a second
+CSRF boundary rather than the only one.
 
 One-time PIN is only the login method. It is not an allow-list by itself: an Allow policy containing only the OTP method would admit any valid email address.
 

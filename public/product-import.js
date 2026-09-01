@@ -1,4 +1,4 @@
-/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, document, fetch, setTimeout */
+/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, URL, document, fetch, setTimeout */
 
 const imagePreviewUpdates = new Map();
 
@@ -38,9 +38,12 @@ for (const field of document.querySelectorAll('[data-product-image-field]')) {
       return;
     }
 
-    if (imagePreviewImage.src !== imageUrl) {
+    const proxyUrl = new URL('/product-image', document.baseURI);
+    proxyUrl.searchParams.set('url', imageUrl);
+
+    if (imagePreviewImage.src !== proxyUrl.href) {
       showPreview(true);
-      imagePreviewImage.src = imageUrl;
+      imagePreviewImage.src = proxyUrl.href;
     } else if (imagePreviewImage.complete && imagePreviewImage.naturalWidth > 0) {
       showPreview(true);
     }

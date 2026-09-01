@@ -62,6 +62,9 @@ Any member can choose any family member's list and add, edit or remove an item. 
 The interface should speak in family language (“wish”, “their list”, “your family”), not expose data
 model terms such as “one list per member”.
 
+Wishes are grouped automatically: top wishes first, ordinary wishes next and nice-to-have wishes
+last. Within each group, the newest addition appears first.
+
 ### Save something while browsing
 
 The top-level **Add from anywhere** setup page provides two deployment-specific routes back to Family

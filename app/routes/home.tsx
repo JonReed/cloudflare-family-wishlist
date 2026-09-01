@@ -5,12 +5,14 @@ import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext, identityContext } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
+import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
   createWorkersAiProductExtractor,
   fetchProductMetadata,
   ProductMetadataError,
   type ProductMetadata
 } from '../lib/product-metadata';
+import { productImagePath } from '../lib/product-image';
 import {
   claimWishlistItem,
   createWishlistItem,
@@ -119,6 +121,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         const productUrl = formData.get('productUrl');
 
         try {
+          await consumeProductLookupBudget(env.DB, member.id);
           const product = await fetchProductMetadata(productUrl, new URL(request.url).hostname, {
             extractWithAi:
               String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
@@ -127,7 +130,11 @@ export async function action({ request, context }: Route.ActionArgs) {
           });
           return { wishlistId, product: productFormDraft(formData, product), fetchError: null };
         } catch (error) {
-          if (!(error instanceof ProductMetadataError)) throw error;
+          if (!(
+            error instanceof ProductMetadataError || error instanceof ProductLookupRateLimitError
+          )) {
+            throw error;
+          }
 
           return {
             wishlistId,
@@ -192,37 +199,59 @@ function ItemFields({
   recipientName,
   urlFirst = false,
   draft,
-  urlHelper
+  urlAction,
+  urlStatus
 }: {
   item?: WishlistItem;
   formId: string;
   recipientName: string;
   urlFirst?: boolean;
   draft?: ProductFormDraft;
-  urlHelper?: React.ReactNode;
+  urlAction?: React.ReactNode;
+  urlStatus?: React.ReactNode;
 }) {
+  const priorityField = (
+    <div>
+      <label htmlFor={`${formId}-priority`} className="form-label">
+        How much would {recipientName} like it?
+      </label>
+      <select
+        id={`${formId}-priority`}
+        name="priority"
+        defaultValue={item?.priority ?? draft?.priority ?? 'normal'}
+        className="form-control"
+      >
+        <option value="low">Nice to have</option>
+        <option value="normal">Would love</option>
+        <option value="high">Top wish</option>
+      </select>
+    </div>
+  );
   const urlField = (
     <div>
       <label htmlFor={`${formId}-url`} className="form-label">
         {urlFirst ? 'Start with a link' : 'Where can we find it?'}
       </label>
-      <input
-        id={`${formId}-url`}
-        name="productUrl"
-        type="url"
-        maxLength={2048}
-        defaultValue={item?.productUrl ?? draft?.productUrl ?? ''}
-        className="form-control"
-        placeholder={urlFirst ? 'Paste the shop or product link' : 'https://…'}
-        data-product-url={urlFirst ? '' : undefined}
-      />
+      <div className={urlFirst ? 'product-link-field' : undefined}>
+        <input
+          id={`${formId}-url`}
+          name="productUrl"
+          type="url"
+          maxLength={2048}
+          defaultValue={item?.productUrl ?? draft?.productUrl ?? ''}
+          className="form-control"
+          placeholder={urlFirst ? 'Paste the shop or product link' : 'https://…'}
+          data-product-url={urlFirst ? '' : undefined}
+        />
+        {urlFirst ? urlAction : null}
+      </div>
+      {urlFirst ? urlStatus : null}
     </div>
   );
 
   return (
     <div className="form-fields">
       {urlFirst ? urlField : null}
-      {urlFirst ? urlHelper : null}
 
       <div>
         <label htmlFor={`${formId}-title`} className="form-label">
@@ -249,7 +278,7 @@ function ItemFields({
         <textarea
           id={`${formId}-notes`}
           name="notes"
-          rows={3}
+          rows={urlFirst ? 2 : 3}
           maxLength={2000}
           defaultValue={item?.notes ?? draft?.notes ?? ''}
           className="form-control resize-y"
@@ -277,23 +306,10 @@ function ItemFields({
             />
           </div>
         </div>
+        {urlFirst ? priorityField : null}
       </div>
 
-      <div>
-        <label htmlFor={`${formId}-priority`} className="form-label">
-          How much would {recipientName} like it?
-        </label>
-        <select
-          id={`${formId}-priority`}
-          name="priority"
-          defaultValue={item?.priority ?? draft?.priority ?? 'normal'}
-          className="form-control"
-        >
-          <option value="low">Nice to have</option>
-          <option value="normal">Would love</option>
-          <option value="high">Top wish</option>
-        </select>
-      </div>
+      {urlFirst ? null : priorityField}
     </div>
   );
 }
@@ -366,7 +382,6 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
 
 const priorityLabels = {
   low: 'Nice to have',
-  normal: 'Would love',
   high: 'Top wish'
 } as const;
 
@@ -379,7 +394,7 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
       <div className={item.imageUrl ? 'wish-content wish-content-with-image' : 'wish-content'}>
         {item.imageUrl ? (
           <img
-            src={item.imageUrl}
+            src={productImagePath(item.imageUrl)}
             alt=""
             width="160"
             height="160"
@@ -393,9 +408,11 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
         <div className="wish-copy">
           <div className="wish-heading">
             <h3>{item.title}</h3>
-            <span className={`priority priority-${item.priority}`}>
-              {priorityLabels[item.priority]}
-            </span>
+            {item.priority === 'normal' ? null : (
+              <span className={`priority priority-${item.priority}`}>
+                {priorityLabels[item.priority]}
+              </span>
+            )}
           </div>
 
           {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
@@ -409,24 +426,23 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
                 See where to find it <span aria-hidden="true">↗</span>
               </a>
             ) : null}
+            <details className="edit-panel">
+              <summary>Edit this wish</summary>
+              <form method="post" action={wishlistFormAction(wishlist.id)} className="edit-form">
+                <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+                <ItemFields item={item} formId={formId} recipientName={recipientName} />
+                <div className="form-actions">
+                  <button name="intent" value="edit-item" className="button-primary">
+                    Save changes
+                  </button>
+                  <button name="intent" value="delete-item" className="button-danger">
+                    Remove from the list
+                  </button>
+                </div>
+              </form>
+            </details>
           </div>
         </div>
-
-        <details className="edit-panel">
-          <summary>Edit this wish</summary>
-          <form method="post" action={wishlistFormAction(wishlist.id)} className="edit-form">
-            <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-            <ItemFields item={item} formId={formId} recipientName={recipientName} />
-            <div className="form-actions">
-              <button name="intent" value="edit-item" className="button-primary">
-                Save changes
-              </button>
-              <button name="intent" value="delete-item" className="button-danger">
-                Remove from the list
-              </button>
-            </div>
-          </form>
-        </details>
       </div>
 
       <div className="wish-claim">
@@ -490,31 +506,31 @@ function AddWishPanel({
     actionData && 'fetchError' in actionData && actionData.wishlistId === wishlist.id
       ? actionData.fetchError
       : null;
-  const urlHelper = (
-    <div className="product-fetch-row">
-      <button
-        name="intent"
-        value="fetch-product"
-        className="button-secondary product-fetch-button"
-        formNoValidate
-        data-product-fetch
-      >
-        Fill from link
-      </button>
-      <p
-        className={fetchError ? 'product-fetch-status product-fetch-error' : 'product-fetch-status'}
-        role="status"
-        aria-live="polite"
-        data-product-status
-      >
-        {fetchError ??
-          (fetchedDraft
-            ? fetchedDraft.aiAssisted
-              ? 'We found some details with a little AI help. Check them before adding.'
-              : 'We found some details. Check them before adding.'
-            : '')}
-      </p>
-    </div>
+  const urlAction = (
+    <button
+      name="intent"
+      value="fetch-product"
+      className="button-secondary product-fetch-button"
+      formNoValidate
+      data-product-fetch
+    >
+      Fill from link
+    </button>
+  );
+  const urlStatus = (
+    <p
+      className={fetchError ? 'product-fetch-status product-fetch-error' : 'product-fetch-status'}
+      role="status"
+      aria-live="polite"
+      data-product-status
+    >
+      {fetchError ??
+        (fetchedDraft
+          ? fetchedDraft.aiAssisted
+            ? 'We found some details with a little AI help. Check them before adding.'
+            : 'We found some details. Check them before adding.'
+          : '')}
+    </p>
   );
 
   return (
@@ -536,7 +552,8 @@ function AddWishPanel({
           recipientName={recipientName}
           urlFirst
           draft={fetchedDraft}
-          urlHelper={urlHelper}
+          urlAction={urlAction}
+          urlStatus={urlStatus}
         />
         <button name="intent" value="add-item" className="button-primary">
           Add to the list

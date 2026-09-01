@@ -2,10 +2,12 @@ import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ensureMemberForEmail, updateMemberDisplayName } from '../app/lib/db/members';
+import { inviteAndProvisionMember } from './family-fixtures';
 
 describe('ensureMemberForEmail', () => {
   beforeEach(async () => {
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM product_lookup_limits'),
       env.DB.prepare('DELETE FROM claims'),
       env.DB.prepare('DELETE FROM items'),
       env.DB.prepare('DELETE FROM wishlists'),
@@ -58,19 +60,17 @@ describe('ensureMemberForEmail', () => {
 
   it('makes only the first member an admin and defaults later members to member', async () => {
     const organiser = await ensureMemberForEmail(env.DB, 'organiser@example.com');
-    const relative = await ensureMemberForEmail(env.DB, 'relative@example.com');
+    const relative = await inviteAndProvisionMember(env.DB, organiser, 'relative@example.com');
 
     expect(organiser.role).toBe('admin');
     expect(relative.role).toBe('member');
   });
 
-  it('assigns exactly one admin when two first logins arrive together', async () => {
-    const members = await Promise.all([
-      ensureMemberForEmail(env.DB, 'first@example.com'),
-      ensureMemberForEmail(env.DB, 'second@example.com')
-    ]);
-
-    expect(members.map((member) => member.role).sort()).toEqual(['admin', 'member']);
+  it('rejects an Access-admitted email without a completed invitation', async () => {
+    await ensureMemberForEmail(env.DB, 'first@example.com');
+    await expect(ensureMemberForEmail(env.DB, 'second@example.com')).rejects.toThrow(
+      'completed family invitation'
+    );
   });
 
   it('enforces one wishlist per member at the database boundary', async () => {
@@ -87,6 +87,7 @@ describe('ensureMemberForEmail', () => {
 describe('updateMemberDisplayName', () => {
   beforeEach(async () => {
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM product_lookup_limits'),
       env.DB.prepare('DELETE FROM claims'),
       env.DB.prepare('DELETE FROM items'),
       env.DB.prepare('DELETE FROM wishlists'),
@@ -118,7 +119,7 @@ describe('updateMemberDisplayName', () => {
 
   it('updates only the authenticated member represented by the supplied id', async () => {
     const alex = await ensureMemberForEmail(env.DB, 'alex@example.com');
-    const sam = await ensureMemberForEmail(env.DB, 'sam@example.com');
+    const sam = await inviteAndProvisionMember(env.DB, alex, 'sam@example.com');
 
     await updateMemberDisplayName(env.DB, alex.id, 'Alex Reed');
 

@@ -12,6 +12,8 @@ export type MemberWithWishlist = {
 
 export class MemberInputError extends Error {}
 
+export class MemberAdmissionError extends Error {}
+
 type MemberWithWishlistRow = {
   id: string;
   email: string;
@@ -115,7 +117,7 @@ export async function ensureMemberForEmail(
     db
       .prepare(
         `INSERT INTO members (id, email, display_name, role)
-         VALUES (
+         SELECT
            ?1,
            ?2,
            COALESCE(
@@ -123,6 +125,7 @@ export async function ensureMemberForEmail(
                SELECT family_invitations.display_name
                FROM family_invitations
                WHERE family_invitations.email = ?2 COLLATE NOCASE
+                 AND family_invitations.status = 'active'
                LIMIT 1
              ),
              ?3
@@ -131,7 +134,14 @@ export async function ensureMemberForEmail(
              WHEN EXISTS (SELECT 1 FROM members) THEN 'member'
              ELSE 'admin'
            END
-         )
+         WHERE NOT EXISTS (SELECT 1 FROM members)
+            OR EXISTS (
+              SELECT 1
+              FROM family_invitations
+              WHERE family_invitations.email = ?2 COLLATE NOCASE
+                AND family_invitations.status = 'active'
+                AND family_invitations.access_policy_id IS NOT NULL
+            )
          ON CONFLICT (email) DO NOTHING`
       )
       .bind(memberId, email, initialDisplayName(email)),
@@ -149,7 +159,7 @@ export async function ensureMemberForEmail(
   const member = await findMemberWithWishlist(db, email);
 
   if (!member) {
-    throw new Error('Member provisioning did not produce a wishlist.');
+    throw new MemberAdmissionError('This identity does not have a completed family invitation.');
   }
 
   return member;

@@ -1,4 +1,6 @@
-import { cloudflareContext } from '../lib/context';
+import { cloudflareContext, identityContext } from '../lib/context';
+import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
+import { ensureMemberForEmail } from '../lib/db/members';
 import {
   createWorkersAiProductExtractor,
   fetchProductMetadata,
@@ -23,7 +25,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   try {
     const { env } = context.get(cloudflareContext);
+    const identity = context.get(identityContext);
+    const member = await ensureMemberForEmail(env.DB, identity.email);
     const formData = await request.formData();
+    await consumeProductLookupBudget(env.DB, member.id);
     const metadata = await fetchProductMetadata(
       formData.get('productUrl'),
       new URL(request.url).hostname,
@@ -38,6 +43,13 @@ export async function action({ request, context }: Route.ActionArgs) {
   } catch (error) {
     if (error instanceof ProductMetadataError) {
       return Response.json({ error: error.message }, { status: 400 });
+    }
+
+    if (error instanceof ProductLookupRateLimitError) {
+      return Response.json(
+        { error: error.message },
+        { status: 429, headers: { 'Retry-After': String(error.retryAfterSeconds) } }
+      );
     }
 
     throw error;

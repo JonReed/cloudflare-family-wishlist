@@ -104,8 +104,13 @@ const LIST_FAMILY_WISHLISTS = `
   ORDER BY
     CASE WHEN wishlists.owner_member_id = ?1 THEN 0 ELSE 1 END,
     members.display_name COLLATE NOCASE,
-    items.position,
-    items.created_at
+    CASE items.priority
+      WHEN 'high' THEN 0
+      WHEN 'normal' THEN 1
+      ELSE 2
+    END,
+    items.created_at DESC,
+    items.id DESC
 `;
 
 export class WishlistInputError extends Error {}

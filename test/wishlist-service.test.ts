@@ -13,6 +13,7 @@ import {
   updateWishlistItem,
   type ItemInput
 } from '../app/lib/db/wishlists';
+import { inviteAndProvisionMember } from './family-fixtures';
 
 function itemInput(overrides: Partial<ItemInput> = {}): ItemInput {
   return {
@@ -27,15 +28,24 @@ function itemInput(overrides: Partial<ItemInput> = {}): ItemInput {
 }
 
 async function createMember(email: string): Promise<MemberWithWishlist> {
-  return ensureMemberForEmail(env.DB, email);
+  const existingAdmin = await env.DB.prepare(
+    `SELECT email FROM members WHERE role = 'admin' LIMIT 1`
+  ).first<{ email: string }>();
+
+  if (!existingAdmin) return ensureMemberForEmail(env.DB, email);
+  const admin = await ensureMemberForEmail(env.DB, existingAdmin.email);
+  if (admin.email === email.trim().toLowerCase()) return admin;
+  return inviteAndProvisionMember(env.DB, admin, email);
 }
 
 describe('wishlist service', () => {
   beforeEach(async () => {
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM product_lookup_limits'),
       env.DB.prepare('DELETE FROM claims'),
       env.DB.prepare('DELETE FROM items'),
       env.DB.prepare('DELETE FROM wishlists'),
+      env.DB.prepare('DELETE FROM family_invitations'),
       env.DB.prepare('DELETE FROM members')
     ]);
   });
@@ -192,6 +202,61 @@ describe('wishlist service', () => {
 
     expect(view.map((wishlist) => wishlist.owner.id)).toEqual([robin.id, alex.id]);
     expect(view.map((wishlist) => wishlist.isOwn)).toEqual([true, false]);
+  });
+
+  it('orders top wishes first and newest wishes first within each priority', async () => {
+    const member = await createMember('owner@example.com');
+    const wishes = [
+      ['Older ordinary wish', 'normal', '2026-01-02T10:00:00.000Z'],
+      ['Newer nice-to-have', 'low', '2026-01-06T10:00:00.000Z'],
+      ['Older top wish', 'high', '2026-01-01T10:00:00.000Z'],
+      ['Newer ordinary wish', 'normal', '2026-01-05T10:00:00.000Z'],
+      ['Older nice-to-have', 'low', '2026-01-03T10:00:00.000Z'],
+      ['Newer top wish', 'high', '2026-01-04T10:00:00.000Z']
+    ] as const;
+
+    for (const [title, priority, createdAt] of wishes) {
+      await createWishlistItem(
+        env.DB,
+        member.id,
+        member.wishlistId,
+        itemInput({ title, priority })
+      );
+      await env.DB.prepare(`UPDATE items SET created_at = ?1 WHERE title = ?2`)
+        .bind(createdAt, title)
+        .run();
+    }
+
+    const view = await listFamilyWishlists(env.DB, member.id);
+    expect(view[0]?.items.map((item) => item.title)).toEqual([
+      'Newer top wish',
+      'Older top wish',
+      'Newer ordinary wish',
+      'Older ordinary wish',
+      'Newer nice-to-have',
+      'Older nice-to-have'
+    ]);
+
+    const { results: queryPlan } = await env.DB.prepare(
+      `EXPLAIN QUERY PLAN
+       SELECT id
+       FROM items
+       WHERE wishlist_id = ?1
+       ORDER BY
+         CASE priority
+           WHEN 'high' THEN 0
+           WHEN 'normal' THEN 1
+           ELSE 2
+         END,
+         created_at DESC,
+         id DESC`
+    )
+      .bind(member.wishlistId)
+      .all<{ detail: string }>();
+    const planDetails = queryPlan.map((step) => step.detail).join('\n');
+
+    expect(planDetails).toContain('items_wishlist_priority_created_idx');
+    expect(planDetails).not.toContain('USE TEMP B-TREE');
   });
 
   it('hides claim and purchase data from the wishlist owner at the query boundary', async () => {
