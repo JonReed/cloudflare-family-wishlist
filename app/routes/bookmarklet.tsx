@@ -301,9 +301,9 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                     <h3>Add the four actions</h3>
                     <p>
                       Use <strong>Search Actions</strong> at the bottom to add, in order:{' '}
-                      <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>, the action
-                      named exactly <strong>URL</strong>, and <strong>Open URLs</strong>. Do not
-                      choose <strong>Get Contents of URL</strong>.
+                      <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>,{' '}
+                      <strong>Text</strong>, and <strong>Open URLs</strong>. Do not choose{' '}
+                      <strong>Get Contents of URL</strong>.
                     </p>
                   </div>
                 </li>
@@ -312,9 +312,9 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                     4
                   </span>
                   <div>
-                    <h3>Fill the URL action</h3>
+                    <h3>Fill the Text action</h3>
                     <p>
-                      Paste the copied wishlist address into the <strong>URL</strong> action. Tap
+                      Paste the copied wishlist address into the <strong>Text</strong> action. Tap
                       immediately after its final <strong>=</strong>, choose{' '}
                       <strong>Select Variable</strong>, then choose{' '}
                       <strong>URL Encoded Text</strong>. Tap <strong>Done</strong> to save.

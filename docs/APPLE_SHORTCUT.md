@@ -14,9 +14,9 @@ The shortcut:
 1. receives only **Safari Web Pages** and **URLs** from the Share Sheet;
 2. gets URLs from the shortcut input;
 3. URL-encodes the shared product link;
-4. reads the deployment-specific `/add?url=` address supplied during import;
-5. joins that address to the encoded product link; and
-6. opens the resulting Family Wishlist draft.
+4. places the deployment-specific `/add?url=` address supplied during import into a plain **Text**
+   action, followed by the encoded product link; and
+5. opens the resulting Family Wishlist draft.
 
 The shared value is only a product URL. Authentication, product lookup, list selection and saving all
 remain inside the protected Worker.
@@ -28,7 +28,8 @@ The source of truth for behaviour is the workflow above and the matching manual 
 
 1. rebuild it in Apple Shortcuts using the documented workflow;
 2. keep **Show in Share Sheet** enabled and limit its input to **Safari Web Pages** and **URLs**;
-3. attach the import question to the deployment address only, not to the assembled product URL;
+3. attach the import question to the deployment address inside a **Text** action, never a
+   URL-validated field, then append the **URL Encoded Text** variable;
 4. export it **For: Anyone**, allowing Apple to validate the copy;
 5. replace `public/add-to-family-wishlist.shortcut` and test a fresh import on a current iPhone or
    iPad; and
@@ -37,7 +38,7 @@ The source of truth for behaviour is the workflow above and the matching manual 
 Current SHA-256:
 
 ```text
-a2affffd11be10c518fd19766313e23e609ce3e742c1f967d218e3d2970723c3
+a6a6bfdedc1137300c13dc6b78828b56de782ce3295e05bd16f203a004bca81b
 ```
 
 Apple's supported `shortcuts://create-shortcut` URL opens an empty editor; it cannot supply actions.
