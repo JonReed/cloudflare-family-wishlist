@@ -1,5 +1,6 @@
 import { redirect } from 'react-router';
 
+import { InPlaceActionForm } from '../components/in-place-action-form';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
@@ -179,13 +180,13 @@ export async function action({ request, context }: Route.ActionArgs) {
         break;
       case 'claim-item':
         await claimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
-        break;
+        return { wishlistId, updated: 'claim' as const };
       case 'mark-purchased':
         await setOwnClaimState(env.DB, member.id, formString(formData, 'itemId'), 'purchased');
-        break;
+        return { wishlistId, updated: 'purchase' as const };
       case 'unclaim-item':
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
-        break;
+        return { wishlistId, updated: 'unclaim' as const };
       case 'create-share-link': {
         const shareLinkName = normaliseWishlistShareLinkName(formData.get('shareLinkName'));
         if (!import.meta.env.DEV) {
@@ -366,12 +367,25 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
 
   if (!item.claim) {
     return (
-      <form method="post" action={wishlistFormAction(wishlist.id)}>
-        <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-        <button name="intent" value="claim-item" className="button-secondary">
-          I’ll get this
-        </button>
-      </form>
+      <InPlaceActionForm
+        method="post"
+        action={wishlistFormAction(wishlist.id)}
+        actionKey={`claim:${item.id}`}
+      >
+        {({ isPending }) => (
+          <>
+            <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+            <button
+              name="intent"
+              value="claim-item"
+              className="button-secondary"
+              disabled={isPending}
+            >
+              {isPending ? 'Saving…' : 'I’ll get this'}
+            </button>
+          </>
+        )}
+      </InPlaceActionForm>
     );
   }
 
@@ -395,19 +409,45 @@ function ClaimControls({ wishlist, item }: { wishlist: FamilyWishlist; item: Wis
       {item.claim.isClaimedByViewer ? (
         <div className="claim-actions">
           {!isPurchased ? (
-            <form method="post" action={wishlistFormAction(wishlist.id)}>
-              <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-              <button name="intent" value="mark-purchased" className="button-small">
-                I’ve bought it
-              </button>
-            </form>
+            <InPlaceActionForm
+              method="post"
+              action={wishlistFormAction(wishlist.id)}
+              actionKey={`purchase:${item.id}`}
+            >
+              {({ isPending }) => (
+                <>
+                  <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+                  <button
+                    name="intent"
+                    value="mark-purchased"
+                    className="button-small"
+                    disabled={isPending}
+                  >
+                    {isPending ? 'Saving…' : 'I’ve bought it'}
+                  </button>
+                </>
+              )}
+            </InPlaceActionForm>
           ) : null}
-          <form method="post" action={wishlistFormAction(wishlist.id)}>
-            <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-            <button name="intent" value="unclaim-item" className="button-quiet">
-              I’m not getting this
-            </button>
-          </form>
+          <InPlaceActionForm
+            method="post"
+            action={wishlistFormAction(wishlist.id)}
+            actionKey={`unclaim:${item.id}`}
+          >
+            {({ isPending }) => (
+              <>
+                <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+                <button
+                  name="intent"
+                  value="unclaim-item"
+                  className="button-quiet"
+                  disabled={isPending}
+                >
+                  {isPending ? 'Saving…' : 'I’m not getting this'}
+                </button>
+              </>
+            )}
+          </InPlaceActionForm>
         </div>
       ) : null}
     </div>
@@ -422,9 +462,18 @@ const priorityLabels = {
 function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
   const formId = `edit-${item.id}`;
   const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
+  const hasClaimControls = !wishlist.isOwn && item.claimVisibility === 'visible';
 
   return (
-    <li className={`wish-row wish-row-${item.priority}`}>
+    <li
+      className={[
+        'wish-row',
+        `wish-row-${item.priority}`,
+        hasClaimControls ? 'wish-row-with-claim' : null
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className={item.imageUrl ? 'wish-content wish-content-with-image' : 'wish-content'}>
         {item.imageUrl ? (
           <img
@@ -464,9 +513,11 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
         </div>
       </div>
 
-      <div className="wish-claim">
-        <ClaimControls wishlist={wishlist} item={item} />
-      </div>
+      {hasClaimControls ? (
+        <div className="wish-claim" aria-live="polite">
+          <ClaimControls wishlist={wishlist} item={item} />
+        </div>
+      ) : null}
 
       <details className="edit-panel">
         <summary>Edit this wish</summary>

@@ -196,6 +196,14 @@ after reading the account-specific private handoff and verifying the active Wran
   pills and generic product-spec copy.
 - Use British English and direct family language.
 - Keep semantic HTML, visible labels, keyboard focus and the JavaScript-free form path.
+- Use `InPlaceActionForm` for small mutations that should not navigate. Give every instance a stable,
+  resource-specific `actionKey`, show its local pending state, return structured action data so
+  React Router revalidates loaders, and render its local error. Keep larger form journeys as ordinary
+  navigation forms unless their validation and focus behaviour are designed explicitly.
+- Keep authenticated hydration and every generated script on the per-response CSP nonce. Public
+  sharing pages must continue to omit `<Scripts>` and authenticated JavaScript bundles. Preserve the
+  `meta[property="csp-nonce"]`, `ServerRouter`, render-stream and CSP wiring together: Vite uses that
+  meta nonce for styles it injects in development.
 - Exercise the affected flow at desktop and narrow mobile widths. Check empty, populated, validation
   and error states where relevant.
 - Optimise committed raster assets and provide meaningful alternative text only when the image conveys
@@ -209,6 +217,8 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/access-membership.test.ts`        | exact-email policy shape, bounded API handling and cleanup         |
 | `test/access-public-sharing.test.ts`    | narrow, idempotent public-path setup and drift detection           |
 | `test/configure-access-session.test.ts` | idempotent 30-day session setup without Access configuration drift |
+| `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts   |
+| `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback  |
 | `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures |
 | `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction    |
 | `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion   |

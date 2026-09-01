@@ -19,6 +19,8 @@
     "./**/*.tsx",
     "../.react-router/types/+server-build.d.ts",
     "../app/components/brand.tsx",
+    "../app/components/client-runtime.tsx",
+    "../app/components/in-place-action-form.tsx",
     "../app/components/product-image-field.tsx",
     "../app/components/site-header.tsx",
     "../app/lib/auth/access.ts",

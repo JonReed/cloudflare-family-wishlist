@@ -1,5 +1,6 @@
-import { isRouteErrorResponse, Link, Links, Meta, Outlet } from 'react-router';
+import { isRouteErrorResponse, Link, Links, Meta, Outlet, useRouteLoaderData } from 'react-router';
 
+import { ClientRuntime } from './components/client-runtime';
 import { cloudflareContext } from './lib/context';
 import { isPublicSharePath } from './lib/public-share-path';
 import type { Route } from './+types/root';
@@ -15,6 +16,8 @@ export function loader({ context, request }: Route.LoaderArgs) {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const loaderData = useRouteLoaderData<typeof loader>('root');
+
   return (
     <html lang="en-GB">
       <head>
@@ -22,8 +25,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light" />
         <meta name="theme-color" content="#eee3cf" />
+        <meta property="csp-nonce" nonce={loaderData?.cspNonce} suppressHydrationWarning />
         <Meta />
-        <Links />
+        {/* Stylesheet links are covered by `style-src 'self'`. An explicit empty value prevents
+            ServerRouter's nonce fallback from conflicting with browsers that conceal link nonces
+            during hydration. */}
+        <Links nonce="" />
       </head>
       <body>{children}</body>
     </html>
@@ -34,15 +41,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <Outlet />
-      {loaderData.isPublicShare ? null : (
-        <>
-          <script src="/product-import.js" nonce={loaderData.cspNonce} defer />
-          <script src="/bookmarklet.js" nonce={loaderData.cspNonce} defer />
-          <script src="/family-members.js" nonce={loaderData.cspNonce} defer />
-          <script src="/share-links.js" nonce={loaderData.cspNonce} defer />
-          <script src="/pwa-install.js" nonce={loaderData.cspNonce} defer />
-        </>
-      )}
+      <ClientRuntime cspNonce={loaderData.cspNonce} isPublicShare={loaderData.isPublicShare} />
     </>
   );
 }

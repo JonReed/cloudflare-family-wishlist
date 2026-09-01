@@ -36,7 +36,7 @@ export function withSecurityHeaders(
     [
       "default-src 'self'",
       `script-src 'nonce-${cspNonce}'`,
-      "style-src 'self'",
+      `style-src 'self' 'nonce-${cspNonce}'`,
       "img-src 'self' data:",
       "font-src 'self'",
       "connect-src 'self'",

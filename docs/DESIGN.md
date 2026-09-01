@@ -104,7 +104,10 @@ not replace the wish name, and repeated adjacent alt text should be avoided.
 
 On someone else's list, “I’ll get this” is a direct, reversible action. The person choosing it can
 mark the gift bought or leave it for someone else. Choices made by another person are informative
-rather than actionable.
+rather than actionable. When JavaScript is available, these small actions update in place with a
+local pending state and an error beside the affected wish. The same controls must remain ordinary
+server forms without JavaScript; optimistic presentation must never override the server's answer to
+a competing claim.
 
 On the recipient's own list, claim data must not merely be hidden with CSS: it must be absent from
 the server response. Do not spend permanent page space explaining this invariant. Keep the warm,

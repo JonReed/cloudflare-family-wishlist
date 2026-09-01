@@ -68,9 +68,11 @@ enforcement cannot disagree.
    the active list rendered in the document.
 5. Forms post an explicit intent to an action. Before authentication or routing, the Worker requires
    a non-opaque `Origin` that exactly matches the request origin and reads at most 32 KiB of supported
-   form data. React Router repeats its own origin check before the action validates the request shape,
-   invokes a service mutation and redirects. The add form can instead request an editable draft from
-   a product link without creating an item.
+   form data. React Router repeats its own origin check before the action validates the request shape
+   and invokes a service mutation. Small actions can return data for automatic loader revalidation;
+   larger form journeys redirect. Without JavaScript, both paths remain ordinary document form
+   submissions. The add form can instead request an editable draft from a product link without
+   creating an item.
 6. `/share-target` extracts a validated web link from Android share parameters and redirects to
    `/add?url=`. That add route is also the landing route for the iPhone/iPad Share Sheet Shortcut,
    copied links and the desktop bookmarklet. It loads an editable product draft and all family list
@@ -108,6 +110,13 @@ address and creates a member without a verified Access identity.
 
 The project uses React Router v8 in full-stack framework mode with Cloudflare's Vite plugin.
 
+Authenticated pages hydrate React Router's client runtime through nonce-bearing scripts. The shared
+`InPlaceActionForm` component uses fetchers for small mutations that should update in place, while
+still rendering a native form for browsers without JavaScript. Public sharing pages deliberately
+omit the client runtime and all authenticated JavaScript bundles. The per-response nonce is also
+published through Vite's `csp-nonce` meta contract so development-injected styles remain covered by
+the same strict CSP; dependency-free form helpers load only after React has hydrated the document.
+
 Why:
 
 - loaders and actions keep reads and mutations on the server, which is valuable for claim privacy;
@@ -121,27 +130,29 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 
 ## Source boundaries
 
-| Layer                                            | Responsibility                                                                     |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `workers/app.ts`                                 | Production request boundary, Access enforcement, response headers and router entry |
-| `app/lib/auth/access.ts`                         | Access JWT verification and tightly constrained local identity                     |
-| `app/lib/context.ts`                             | Typed identity and binding handoff to loaders/actions                              |
-| `app/routes/home.tsx`                            | HTTP-level loading, form intent dispatch and page composition                      |
-| `app/routes/add.tsx`                             | Product-link draft landing page, multi-list chooser and save action                |
-| `app/routes/bookmarklet.tsx`                     | Android, Share Sheet Shortcut, clipboard and browser-button setup                  |
-| `app/routes/share-target.ts`                     | Safe Android shared-text/link handoff to the editable add route                    |
-| `app/routes/family.tsx`                          | Organiser-only joined/waiting member administration                                |
-| `app/routes/profile.tsx`                         | Personal details and persistent active viewing-link management                     |
-| `app/routes/product-details.ts`                  | Same-origin progressive-enhancement endpoint for product-link metadata             |
-| `app/lib/bookmarklet.ts`, `public/*.js`          | Deployment-specific add links, installation and progressively enhanced setup tools |
-| `app/lib/cloudflare/access-membership.ts`        | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
-| `app/lib/product-metadata.ts`                    | Bounded public-page fetching, redirect policy and metadata extraction              |
-| `app/lib/db/members.ts`                          | Identity normalisation and member/list provisioning                                |
-| `app/lib/db/family-members.ts`                   | Admin checks, waiting invitations and family roster reads                          |
-| `app/lib/db/wishlists.ts`                        | Domain validation, reads, mutations, claim ownership and privacy                   |
-| `app/lib/db/shared-wishlists.ts`                 | Hashed viewing links, active-link inventory, public reads and image budgets        |
-| `migrations/`                                    | Append-only persistent schema history                                              |
-| `app/root.tsx`, `app/app.css`, `app/components/` | Document shell, design system and shared presentation                              |
+| Layer                                     | Responsibility                                                                     |
+| ----------------------------------------- | ---------------------------------------------------------------------------------- |
+| `workers/app.ts`                          | Production request boundary, Access enforcement, response headers and router entry |
+| `app/lib/auth/access.ts`                  | Access JWT verification and tightly constrained local identity                     |
+| `app/lib/context.ts`                      | Typed identity and binding handoff to loaders/actions                              |
+| `app/routes/home.tsx`                     | HTTP-level loading, form intent dispatch and page composition                      |
+| `app/routes/add.tsx`                      | Product-link draft landing page, multi-list chooser and save action                |
+| `app/routes/bookmarklet.tsx`              | Android, Share Sheet Shortcut, clipboard and browser-button setup                  |
+| `app/routes/share-target.ts`              | Safe Android shared-text/link handoff to the editable add route                    |
+| `app/routes/family.tsx`                   | Organiser-only joined/waiting member administration                                |
+| `app/routes/profile.tsx`                  | Personal details and persistent active viewing-link management                     |
+| `app/routes/product-details.ts`           | Same-origin progressive-enhancement endpoint for product-link metadata             |
+| `app/lib/bookmarklet.ts`, `public/*.js`   | Deployment-specific add links, installation and progressively enhanced setup tools |
+| `app/lib/cloudflare/access-membership.ts` | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
+| `app/lib/product-metadata.ts`             | Bounded public-page fetching, redirect policy and metadata extraction              |
+| `app/lib/db/members.ts`                   | Identity normalisation and member/list provisioning                                |
+| `app/lib/db/family-members.ts`            | Admin checks, waiting invitations and family roster reads                          |
+| `app/lib/db/wishlists.ts`                 | Domain validation, reads, mutations, claim ownership and privacy                   |
+| `app/lib/db/shared-wishlists.ts`          | Hashed viewing links, active-link inventory, public reads and image budgets        |
+| `migrations/`                             | Append-only persistent schema history                                              |
+| `app/root.tsx`, `app/entry.server.tsx`    | Document shell, authenticated hydration and CSP nonce propagation                  |
+| `app/components/in-place-action-form.tsx` | Reusable progressive form, local pending state and action errors                   |
+| `app/app.css`, `app/components/`          | Design system and shared presentation                                              |
 
 Keep security and database rules below the component layer. A visual condition is allowed to explain a
 rule to the user, but it must not be the only enforcement of that rule.
