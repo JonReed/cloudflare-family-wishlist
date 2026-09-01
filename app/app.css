@@ -336,8 +336,8 @@
   display: grid;
   width: 100%;
   margin-inline: 0 auto;
-  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 13rem));
-  gap: 0.8rem 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 10.5rem));
+  gap: 0.8rem 0.75rem;
   justify-content: start;
 }
 
@@ -383,7 +383,7 @@
   transform: rotate(-0.45deg);
 }
 
-.family-tag-wrap .family-tag:hover {
+.family-tag-wrap .family-tag:hover:not([aria-current='page']) {
   background: #fffaf0;
   color: var(--ink);
   transform: translateY(-2px) rotate(-0.4deg);
@@ -392,6 +392,7 @@
 .family-tag-wrap .family-tag[aria-current='page']:hover {
   background: var(--leaf-dark);
   color: var(--paper);
+  transform: translateY(-2px) rotate(-0.4deg);
 }
 
 .family-tag:focus-visible {
@@ -427,6 +428,7 @@
   letter-spacing: 0.09em;
   opacity: 0.72;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .form-alert {
@@ -701,6 +703,12 @@
 .public-share-sheet {
   max-width: 64rem;
   margin-inline: auto;
+}
+
+.public-share-sheet .paper-tape-right {
+  top: -1.45rem;
+  right: 5%;
+  bottom: auto;
 }
 
 .public-share-sheet .wishlist-heading h1 {
@@ -1466,6 +1474,47 @@ button:disabled {
   font-weight: 800;
 }
 
+.profile-sign-out {
+  margin-top: 1.25rem;
+  border-top: 1px solid rgb(139 104 72 / 0.28);
+  padding-top: 1rem;
+}
+
+.profile-sign-out summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--rust);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.5;
+  text-underline-offset: 0.2rem;
+}
+
+.profile-sign-out summary:hover {
+  text-decoration: underline;
+}
+
+.profile-sign-out summary:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.profile-sign-out-body {
+  margin-top: 0.8rem;
+}
+
+.profile-sign-out-body p {
+  margin: 0 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.profile-sign-out-body strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
 .profile-shares {
   margin-top: clamp(3rem, 7vw, 5rem);
   border-top: 1px dashed rgb(48 51 41 / 0.28);
@@ -1671,6 +1720,56 @@ button:disabled {
   display: grid;
   justify-items: end;
   gap: 0.35rem;
+}
+
+.family-remove-access {
+  width: 17rem;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: end;
+}
+
+.family-remove-access summary {
+  width: fit-content;
+  margin-left: auto;
+  cursor: pointer;
+  color: var(--rust);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.5;
+  text-underline-offset: 0.2rem;
+}
+
+.family-remove-access summary:hover {
+  text-decoration: underline;
+}
+
+.family-remove-access summary:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.family-remove-access-body {
+  margin-top: 0.65rem;
+  border-left: 4px solid var(--rust);
+  background: rgb(246 224 215 / 0.58);
+  padding: 0.8rem;
+}
+
+.family-remove-access-body p {
+  margin: 0 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.family-remove-access-body strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.family-remove-access-body .button-danger {
+  width: 100%;
 }
 
 .family-copy-status {
@@ -1906,6 +2005,15 @@ button:disabled {
   .family-invite-copy {
     grid-column: 2;
     justify-items: start;
+  }
+
+  .family-remove-access {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .family-remove-access summary {
+    margin-left: 0;
   }
 
   .family-copy-status {

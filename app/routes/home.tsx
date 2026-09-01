@@ -1,4 +1,4 @@
-import { redirect } from 'react-router';
+import { Link, redirect } from 'react-router';
 
 import { InPlaceActionForm } from '../components/in-place-action-form';
 import { ProductImageField } from '../components/product-image-field';
@@ -806,17 +806,14 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
               return (
                 <div key={wishlist.id} className="family-tag-wrap">
-                  <a
-                    href={`/?list=${encodeURIComponent(wishlist.id)}#wishlist`}
+                  <Link
+                    to={`/?list=${encodeURIComponent(wishlist.id)}`}
+                    preventScrollReset
                     className="family-tag"
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <span>{wishlist.owner.displayName}</span>
-                    {wishlist.isOwn ? (
-                      <small>Your wishlist</small>
-                    ) : (
-                      <small>See their wishlist</small>
-                    )}
+                    {wishlist.isOwn ? <small>Your wishlist</small> : <small>Their wishlist</small>}
                     <img
                       src="/images/tag-string-hanging.png"
                       alt=""
@@ -825,7 +822,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                       className="tag-string"
                       draggable="false"
                     />
-                  </a>
+                  </Link>
                 </div>
               );
             })}

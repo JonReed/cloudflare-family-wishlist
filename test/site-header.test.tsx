@@ -14,7 +14,7 @@ describe('SiteHeader', () => {
     expect(html).toContain('href="/bookmarklet">Add from anywhere</a>');
     expect(html).toContain('href="/family" aria-current="page">Your family</a>');
     expect(html).toContain('href="/profile">Profile</a>');
-    expect(html).toContain('href="/cdn-cgi/access/logout">Sign out</a>');
+    expect(html).not.toContain('/cdn-cgi/access/logout');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
   });
 
@@ -29,7 +29,7 @@ describe('SiteHeader', () => {
     expect(html).toContain('Hello, <strong>A very loved family member</strong>');
     expect(html).not.toContain('href="/family"');
     expect(html).toContain('href="/profile" aria-current="page">Profile</a>');
-    expect(html).toContain('href="/cdn-cgi/access/logout">Sign out</a>');
+    expect(html).not.toContain('/cdn-cgi/access/logout');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
   });
 });

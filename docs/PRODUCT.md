@@ -28,6 +28,9 @@ The application records who is waiting to join but does not send an invitation e
 copies a prepared message and shares it through email, WhatsApp or any other private channel. There
 is no application-managed password, password reset or public registration flow. Removing someone
 from Access prevents future entry, but does not silently delete their wishlist or history from D1.
+Cloudflare Access also owns sign-out: ending a session signs that email out on all of their devices,
+so Profile labels the account-wide effect before linking to the Access logout endpoint. Other family
+members use separate identities and remain signed in.
 
 “Wishlist owner” and “gift-giver” describe the viewer's relationship to a particular list:
 
@@ -139,7 +142,8 @@ Working today:
 - first-login member and wishlist provisioning;
 - self-service display-name editing from a personal profile page;
 - organiser-only family admission with joined and waiting-to-join states;
-- organiser-controlled member removal, including immediate application-level disablement;
+- organiser-controlled member removal, including an explicit confirmation, immediate
+  application-level disablement and preservation of the person's wishlist;
 - switching between all family wishlists;
 - adding, editing and deleting items;
 - filling a new wish's name, image and GBP price from a public product link, with optional AI help

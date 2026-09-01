@@ -1,5 +1,6 @@
 import { data, Form, redirect, useNavigation } from 'react-router';
 
+import { AccessSignOut } from '../components/access-sign-out';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
@@ -146,6 +147,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                   </>
                 ) : null}
               </p>
+              <AccessSignOut email={member.email} />
             </aside>
           </div>
 
@@ -175,7 +177,8 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                         <time dateTime={sharedList.createdAt}>
                           {new Intl.DateTimeFormat('en-GB', {
                             dateStyle: 'medium',
-                            timeStyle: 'short'
+                            timeStyle: 'short',
+                            timeZone: 'Europe/London'
                           }).format(new Date(sharedList.createdAt))}
                         </time>
                       </p>

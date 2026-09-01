@@ -545,7 +545,8 @@ migration.
 ## Removing a family member
 
 The organiser can choose **Remove access** beside an ordinary member on **Your family**. The
-application immediately disables that identity in D1, deletes its exact-email Access policy and
+interface asks for explicit confirmation and explains the effect before the action is submitted. The
+application then immediately disables that identity in D1, deletes its exact-email Access policy and
 revokes every session for this Access application. Everyone is signed out once so no previously
 issued token can outlive the change. The removed person's wishlist and historical data remain in D1.
 

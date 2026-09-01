@@ -1,5 +1,6 @@
 import { data, Form, redirect, useNavigation } from 'react-router';
 
+import { FamilyMemberRemoval } from '../components/family-member-removal';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import {
@@ -270,13 +271,7 @@ function FamilyPersonRow({
       ) : null}
 
       {person.status === 'joined' && person.role === 'member' ? (
-        <Form method="post">
-          <input type="hidden" name="intent" value="remove-member" />
-          <input type="hidden" name="memberId" value={person.id} />
-          <button type="submit" className="button-quiet">
-            Remove access
-          </button>
-        </Form>
+        <FamilyMemberRemoval displayName={person.displayName} memberId={person.id} />
       ) : null}
 
       {person.status === 'removing' ? (

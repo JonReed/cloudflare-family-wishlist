@@ -38,7 +38,6 @@ export function SiteHeader({ member, current }: SiteHeaderProps) {
         <a href="/profile" aria-current={currentPage(current, 'profile')}>
           Profile
         </a>
-        <a href="/cdn-cgi/access/logout">Sign out</a>
       </nav>
     </header>
   );

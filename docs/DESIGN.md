@@ -19,16 +19,16 @@ novelty.
 
 The signed-in home has four stable regions:
 
-1. **Identity:** the Family Wishlist mark, the current member and sign out.
+1. **Identity:** the Family Wishlist mark and the current member.
 2. **Family selector:** one looped-string gift tag per member over a quiet parcel-table image.
 3. **Active wishlist:** one person's complete list, with an always-open add form alongside it on
    wider screens.
 4. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
 
 The signed-in header is identical on every route for the same member. It always includes “Hello” and
-their display name, Wishlists, Add from anywhere, Profile and Sign out; the family organiser also sees
-Your family in the same position. Keep the current destination in place and mark it with a quiet strip
-of parcel tape rather than removing its link or changing the navigation order.
+their display name, Wishlists, Add from anywhere and Profile; the family organiser also sees Your
+family in the same position. Keep the current destination in place and mark it with a quiet strip of
+parcel tape rather than removing its link or changing the navigation order.
 
 Only one wishlist is rendered as the active working area. This prevents a family with many members
 or long lists from becoming one enormous dashboard. The selected list is represented by a `list`
@@ -51,7 +51,9 @@ not imply that a wish is saved automatically.
 Household administration lives on the separate, infrequently visited **Your family** page. It shows
 joined people and those waiting for their first login, with an add form kept apart from the everyday
 wishlist. Cloudflare policy terminology and deployment setup stay out of family-facing copy so the
-normal list never feels like an admin console.
+normal list never feels like an admin console. Put **Remove access** behind a native disclosure with
+a second explicit action. Its warning must say that the person can no longer sign in, everyone will
+be signed out once, and the person's wishlist and wishes remain.
 
 Sharing one person's ideas outside the family stays attached to that active wishlist. A visible
 **Share this list** link belongs in the active list heading beside its wish count; it opens compact
@@ -68,6 +70,11 @@ active link as a plain list with its private name, wishlist owner, the family me
 creation date, a route back to the wishlist and an explicit **Stop sharing this link** action. Explain
 that each wishlist can have up to five active links and that each readable address is shown only when
 made. Keep technical terms such as “revoke” out of family-facing controls and explanations.
+
+Access sign-out affects the same email on every device, so it does not belong in the everyday header.
+Keep **Sign out on all devices** with the signed-in email on Profile, behind a native disclosure that
+states the effect and requires a second, explicit **Yes, sign out everywhere** action. Reassure the
+person that other family members stay signed in.
 
 The page calls the admin the “family organiser”. Waiting rows offer a prepared invitation to copy,
 but must not claim that an email was sent: the application authorises the exact address and the
@@ -126,9 +133,10 @@ public visitor cannot do.
 Member navigation uses paper gift tags with a visible cotton-string loop through each tag hole and a
 clear active state. The grid always begins at the left edge of the family board, including when it
 contains a single tag, and a single tag stays tag-sized rather than stretching across the page. Tags
-should remain compact enough for at least six to share a typical desktop row when space permits. They
-may wrap into additional rows and must work with long display names. They are navigation, not filter
-chips.
+should remain compact enough for at least six to share a typical desktop row when space permits.
+They may wrap into additional rows and must work with long display names. The supporting labels are
+**Your wishlist** and **Their wishlist**. Every tag should lift on hover, including inactive tags,
+and switching lists must not jump the page down to the list. They are navigation, not filter chips.
 
 The tag body, layout and states remain responsive HTML and CSS. The reinforced hole and fibrous cord
 use the small transparent
