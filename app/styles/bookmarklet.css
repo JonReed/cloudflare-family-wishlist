@@ -62,72 +62,66 @@
   line-height: 1.75;
 }
 
-.device-chooser {
+.device-contents {
+  display: grid;
   margin-top: clamp(2rem, 5vw, 3.5rem);
-  border-top: 1px solid var(--line);
-  padding-top: 1.5rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem 2rem;
+  align-items: center;
+  border-block: 3px double rgb(48 51 41 / 0.28);
+  padding-block: 0.65rem;
 }
 
-.device-chooser h2 {
-  margin: 0.35rem 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.65rem, 4vw, 2.4rem);
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1;
+.device-contents > p {
+  margin: 0;
+  color: var(--rust);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.device-chooser-links {
-  display: grid;
-  margin-top: 1.25rem;
-  border: 1px solid rgb(80 68 50 / 0.2);
-  background: rgb(255 250 240 / 0.5);
-  box-shadow: 4px 4px 0 rgb(88 69 46 / 0.07);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.device-chooser-links a {
-  display: grid;
+.device-contents ol {
+  display: flex;
   min-width: 0;
-  gap: 0.35rem;
-  border-left: 3px solid transparent;
-  padding: 1rem 1.1rem 1.05rem;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.5rem;
+  list-style: none;
+}
+
+.device-contents a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--ink);
-  text-decoration: none;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-
-.device-chooser-links a + a {
-  border-top: 0;
-  border-left-color: var(--line);
-}
-
-.device-chooser-links a:hover {
-  border-left-color: var(--rust);
-  background: rgb(187 145 101 / 0.13);
-}
-
-.device-chooser-links a:focus-visible {
-  position: relative;
-  z-index: 1;
-  outline: 2px solid var(--rust);
-  outline-offset: -2px;
-}
-
-.device-chooser-links strong {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
+  text-decoration-color: var(--kraft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3rem;
 }
 
-.device-chooser-links span {
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.5;
+.device-contents a:hover {
+  color: var(--leaf-dark);
+  text-decoration-color: var(--rust);
+}
+
+.device-contents a:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.device-contents a span {
+  color: var(--rust);
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .android-share-setup,
@@ -543,13 +537,13 @@
     grid-template-columns: 1fr;
   }
 
-  .device-chooser-links {
+  .device-contents {
     grid-template-columns: 1fr;
+    gap: 0.15rem;
   }
 
-  .device-chooser-links a + a {
-    border-top: 1px solid var(--line);
-    border-left-color: transparent;
+  .device-contents ol {
+    gap: 0 1.15rem;
   }
 
   .shortcut-steps,

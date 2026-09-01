@@ -33,8 +33,9 @@ The product model remains deliberately small: one member, one list. Birthdays, C
 occasions do not create separate list types. A wish can stay useful throughout the year.
 
 **Add from anywhere** is a stable top-level destination rather than a profile-only setting. Its setup
-page begins with square-edged device links that jump directly to Android, iPhone/iPad or desktop
-instructions. Android’s install-once Share-menu journey is followed by the iPhone and iPad Share Sheet
+page begins with a compact, ruled contents line that jumps directly to Android, iPhone/iPad or desktop
+instructions. It should read as editorial navigation within the paper sheet, not a row of feature
+cards. Android’s install-once Share-menu journey is followed by the iPhone and iPad Share Sheet
 journey with a tap-by-tap Apple Shortcut recipe and the deployment-specific address ready to copy.
 The desktop bookmarklet follows, called the “browser button” in family-facing copy, with a visual
 demonstration of the drag from the real button towards a labelled bookmarks bar. Do not assume that a

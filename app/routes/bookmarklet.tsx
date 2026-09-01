@@ -67,23 +67,28 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
 
-          <nav className="device-chooser" aria-labelledby="device-chooser-title">
-            <p className="bookmarklet-kicker">Skip the instructions you do not need</p>
-            <h2 id="device-chooser-title">What are you using?</h2>
-            <div className="device-chooser-links">
-              <a href="#android-instructions">
-                <strong>Android phone or tablet</strong>
-                <span>Install it, then use Android’s Share menu</span>
-              </a>
-              <a href="#apple-instructions">
-                <strong>iPhone or iPad</strong>
-                <span>Make an Apple Shortcut for the Share Sheet</span>
-              </a>
-              <a href="#desktop-instructions">
-                <strong>Laptop or desktop</strong>
-                <span>Drag a button into your browser’s bookmarks bar</span>
-              </a>
-            </div>
+          <nav className="device-contents" aria-label="Go straight to your device instructions">
+            <p>Go straight to</p>
+            <ol>
+              <li>
+                <a href="#android-instructions">
+                  <span aria-hidden="true">01</span>
+                  Android phone or tablet
+                </a>
+              </li>
+              <li>
+                <a href="#apple-instructions">
+                  <span aria-hidden="true">02</span>
+                  iPhone or iPad
+                </a>
+              </li>
+              <li>
+                <a href="#desktop-instructions">
+                  <span aria-hidden="true">03</span>
+                  Laptop or desktop
+                </a>
+              </li>
+            </ol>
           </nav>
 
           <section
