@@ -426,21 +426,6 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
                 See where to find it <span aria-hidden="true">↗</span>
               </a>
             ) : null}
-            <details className="edit-panel">
-              <summary>Edit this wish</summary>
-              <form method="post" action={wishlistFormAction(wishlist.id)} className="edit-form">
-                <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-                <ItemFields item={item} formId={formId} recipientName={recipientName} />
-                <div className="form-actions">
-                  <button name="intent" value="edit-item" className="button-primary">
-                    Save changes
-                  </button>
-                  <button name="intent" value="delete-item" className="button-danger">
-                    Remove from the list
-                  </button>
-                </div>
-              </form>
-            </details>
           </div>
         </div>
       </div>
@@ -448,6 +433,22 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
       <div className="wish-claim">
         <ClaimControls wishlist={wishlist} item={item} />
       </div>
+
+      <details className="edit-panel">
+        <summary>Edit this wish</summary>
+        <form method="post" action={wishlistFormAction(wishlist.id)} className="edit-form">
+          <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+          <ItemFields item={item} formId={formId} recipientName={recipientName} />
+          <div className="form-actions">
+            <button name="intent" value="edit-item" className="button-primary">
+              Save changes
+            </button>
+            <button name="intent" value="delete-item" className="button-danger">
+              Remove from the list
+            </button>
+          </div>
+        </form>
+      </details>
     </li>
   );
 }

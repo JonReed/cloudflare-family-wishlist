@@ -105,6 +105,15 @@ for (const form of forms) {
 
   const fetchDetails = async (candidate, force = false) => {
     const productUrl = candidate.trim();
+    if (!productUrl) {
+      lastRequestedUrl = '';
+      activeRequest?.abort();
+      activeRequest = undefined;
+      fetchButton.disabled = false;
+      form.removeAttribute('aria-busy');
+      setStatus('');
+      return;
+    }
     if (!/^https?:\/\//i.test(productUrl)) {
       setStatus(
         'That link doesn’t look right. Use an address beginning with http:// or https://.',
@@ -175,6 +184,9 @@ for (const form of forms) {
     // Paste fires before the browser updates the input. Waiting one task also
     // handles replacing a selection or pasting into a partly completed URL.
     setTimeout(() => void fetchDetails(urlInput.value), 0);
+  });
+  urlInput.addEventListener('input', () => {
+    if (!urlInput.value.trim()) void fetchDetails('');
   });
   urlInput.addEventListener('change', () => void fetchDetails(urlInput.value));
   fetchButton.addEventListener('click', (event) => {

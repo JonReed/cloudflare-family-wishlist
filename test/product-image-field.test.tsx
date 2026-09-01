@@ -23,10 +23,11 @@ describe('product image field', () => {
     expect(html).toContain('name="imageUrl"');
   });
 
-  it('shows a friendly optional empty state without exposing the address field', () => {
+  it('shows a compact optional empty state without exposing the address field', () => {
     const html = renderToStaticMarkup(<ProductImageField formId="new-wish" />);
 
-    expect(html).toContain('No picture yet');
+    expect(html).not.toContain('No picture yet');
+    expect(html).toContain('Picture');
     expect(html).not.toContain('a picture can make the wish easier to recognise');
     expect(html).toContain('Add a picture');
     expect(html).toContain('<details class="product-image-editor">');

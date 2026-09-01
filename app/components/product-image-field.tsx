@@ -34,9 +34,6 @@ export function ProductImageField({
         <div className="product-image-details">
           <div className="product-image-copy">
             <p className="form-label">Picture</p>
-            <strong data-product-image-missing="" hidden={hasPreview}>
-              No picture yet
-            </strong>
           </div>
 
           <div className="product-image-actions">

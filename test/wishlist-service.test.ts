@@ -122,6 +122,7 @@ describe('wishlist service', () => {
     view = await listFamilyWishlists(env.DB, member.id);
     expect(view[0]?.items[0]).toMatchObject({
       title: 'Blue scarf',
+      productUrl: null,
       imageUrl: null,
       priceAmountMinor: 0,
       priceCurrency: 'GBP',
