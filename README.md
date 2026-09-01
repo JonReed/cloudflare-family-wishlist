@@ -20,7 +20,7 @@
 Each family member has one wishlist. Everyone in the invited family group can view and edit every list, while claims and purchases are hidden from the owner of the list so surprises stay surprising.
 
 > [!NOTE]
-> The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls, add-from-anywhere tools and private claims are working; release hardening and item reordering remain.
+> The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls, add-from-anywhere tools and private claims are working; release hardening remains.
 
 <p align="center">
   <img src="docs/assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist showing gift-tag family navigation, a paper wishlist and its add form">
@@ -36,6 +36,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - a family-organiser page showing who has joined and who is still waiting;
 - one wishlist per family member;
 - shared editing across the family;
+- high, normal and low priorities that keep the most useful wishes at the top;
 - editable names, pictures and GBP prices filled from product links when shops publish them;
 - iPhone/iPad Share Sheet and desktop browser tools for adding something to one or more lists while shopping;
 - private claims that the recipient cannot see;

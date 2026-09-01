@@ -125,7 +125,6 @@ Working today:
 
 Still planned:
 
-- manual item reordering;
 - backup, restore and upgrade guidance;
 - final abuse-case/privacy review; and
 - a repeatable fresh-deployment acceptance test and tagged release.
@@ -137,6 +136,7 @@ Still planned:
 - application-managed passwords or login email;
 - self-service public registration;
 - granular per-list permissions or wishlist editing roles;
+- manual item ordering beyond the existing high, normal and low priorities;
 - a multi-family SaaS control plane;
 - advertising, affiliate tracking or analytics scripts; and
 - extra Cloudflare services without a demonstrated need.

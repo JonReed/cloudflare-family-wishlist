@@ -23,7 +23,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 
 - [x] Members schema.
 - [x] Enforce exactly one wishlist per member.
-- [x] Wishlist item schema, ordering and optional product links.
+- [x] Wishlist item schema, priority ordering and optional product links.
 - [x] Store claims and purchase state separately from owner-visible data.
 - [x] Add the query and mutation service layer.
 
@@ -47,7 +47,6 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 ## Phase 5 — Wishlist items
 
 - [x] Add, edit and delete items.
-- [ ] Reorder items.
 - [x] Optional notes, price guidance, priority and safe external product links.
 - [x] Look up product details from a pasted link and offer them as editable suggestions.
 - [x] Add products to one or more family lists from a browser bookmarklet.
