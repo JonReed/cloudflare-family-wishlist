@@ -37,9 +37,12 @@ The source of truth for behaviour is the workflow above and the matching manual 
    question and variables in one action lets the imported answer erase the shared product URL;
 6. export it **For: Anyone**, allowing Apple to validate the copy;
 7. replace `public/Wishlist.shortcut` and test a fresh import on a current iPhone or
-   iPad; and
+   iPad;
 8. update the checksum below and the short checksum in the download link's `?v=` query string so
-   existing members cannot receive a browser-cached copy.
+   existing members cannot receive a browser-cached copy; and
+9. remove the editable source shortcut from the maintainer's iCloud Shortcuts library after export.
+   If the test iPhone uses the same Apple Account, leaving that source installed silently syncs an
+   extra, unconfigured copy to the phone and makes the website download appear to install twice.
 
 Current SHA-256:
 
