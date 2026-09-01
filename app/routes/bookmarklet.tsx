@@ -168,7 +168,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </div>
 
             <div className="shortcut-address-wrap">
-              <span>URL action</span>
+              <span>Paste this into the URL action</span>
               <code className="shortcut-address">
                 {loaderData.addPageHref}?url=<strong>[URL Encoded]</strong>
               </code>
@@ -180,9 +180,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   1
                 </span>
                 <div>
-                  <h3>Name it</h3>
+                  <h3>Open and name the shortcut</h3>
                   <p>
-                    Call the new shortcut <strong>Add to Family Wishlist</strong>.
+                    Tap <strong>Open a new Shortcut</strong> above. In Shortcuts, tap{' '}
+                    <strong>New Shortcut</strong>, choose <strong>Rename</strong>, and call it{' '}
+                    <strong>Add to Family Wishlist</strong>.
                   </p>
                 </div>
               </li>
@@ -191,10 +193,12 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   2
                 </span>
                 <div>
-                  <h3>Show it when sharing</h3>
+                  <h3>Add the first action</h3>
                   <p>
-                    Open the shortcut’s details, turn on <strong>Show in Share Sheet</strong>, and
-                    let it receive only <strong>URLs</strong> and <strong>Safari Web Pages</strong>.
+                    Tap <strong>Add Action</strong>, then <strong>Search Actions</strong>. Search
+                    for and choose <strong>Get URLs from Input</strong>. Do not choose{' '}
+                    <strong>Get Contents of URL</strong>. In the shortcut, the action will read{' '}
+                    <strong>Get URLs from Shortcut Input</strong>.
                   </p>
                 </div>
               </li>
@@ -203,10 +207,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   3
                 </span>
                 <div>
-                  <h3>Prepare the product link</h3>
+                  <h3>Encode the product link</h3>
                   <p>
-                    Add <strong>Get URLs from Input</strong>, then add <strong>URL Encode</strong>{' '}
-                    for the URLs it found.
+                    Tap the <strong>Search Actions</strong> field at the bottom (swipe it upwards if
+                    it is tucked away), search for <strong>URL Encode</strong>, and choose that
+                    action. It should automatically use the URLs from the first action.
                   </p>
                 </div>
               </li>
@@ -215,11 +220,40 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   4
                 </span>
                 <div>
-                  <h3>Open Family Wishlist</h3>
+                  <h3>Build the Family Wishlist address</h3>
                   <p>
-                    Add a <strong>URL</strong> action. Paste the wishlist address copied above, then
-                    insert the <strong>URL Encoded</strong> result immediately after it. Finish with
-                    an <strong>Open URLs</strong> action.
+                    Search Actions again, search for <strong>URL</strong>, and choose the action
+                    named exactly <strong>URL</strong>. Paste the wishlist address copied above into
+                    its box. Tap immediately after the final <strong>=</strong>, choose{' '}
+                    <strong>Select Variable</strong>, and select <strong>URL Encoded</strong>.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  5
+                </span>
+                <div>
+                  <h3>Open the address</h3>
+                  <p>
+                    Search Actions once more, search for <strong>Open URLs</strong>, and choose that
+                    action. Your shortcut should now contain, in order:{' '}
+                    <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>,{' '}
+                    <strong>URL</strong>, then <strong>Open URLs</strong>.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  6
+                </span>
+                <div>
+                  <h3>Put it in the Share Sheet</h3>
+                  <p>
+                    Tap the shortcut’s name at the top, choose <strong>Details</strong>, and turn on{' '}
+                    <strong>Show in Share Sheet</strong>. Tap the input types beside{' '}
+                    <strong>Receive</strong>, turn off everything except <strong>URLs</strong> and{' '}
+                    <strong>Safari Web Pages</strong>, then tap <strong>Done</strong>.
                   </p>
                 </div>
               </li>
