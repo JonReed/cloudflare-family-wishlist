@@ -264,15 +264,15 @@
 .account-links a[aria-current='page']::after {
   position: absolute;
   z-index: -1;
+  top: 50%;
   right: -0.12rem;
-  bottom: 0.45rem;
   left: var(--nav-link-start);
-  height: 0.62rem;
+  height: 1.05rem;
   content: '';
   background-color: var(--tape);
   background-image: var(--tape-texture);
   clip-path: var(--tape-edge-b);
-  transform: rotate(-1.2deg);
+  transform: translateY(-43%) rotate(-1.2deg);
 }
 
 .parcel-hero {
