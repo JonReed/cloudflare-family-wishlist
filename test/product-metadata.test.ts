@@ -397,6 +397,27 @@ describe('fetchProductMetadata', () => {
     });
   });
 
+  it('reads far enough into large Amazon pages to find the primary product image', async () => {
+    const amazonPreamble = `<title>Eaten Alive Smoked Sriracha : Amazon.co.uk</title>${'x'.repeat(600_000)}`;
+
+    await expect(
+      fetchProductMetadata('https://www.amazon.co.uk/dp/B07YDTCJTP', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`${amazonPreamble}
+              <div id="imgTagWrapperId">
+                <img id="landingImage"
+                  src="https://m.media-amazon.com/images/I/61BbuuVhXuL._AC_SY300_.jpg"
+                  data-old-hires="https://m.media-amazon.com/images/I/61BbuuVhXuL._AC_SL1500_.jpg">
+              </div>`)
+          )
+      })
+    ).resolves.toMatchObject({
+      title: 'Eaten Alive Smoked Sriracha',
+      imageUrl: 'https://m.media-amazon.com/images/I/61BbuuVhXuL._AC_SL1500_.jpg'
+    });
+  });
+
   it.each([
     ['<div data-asin-price="16.25" data-asin-currency-code="GBP"></div>', '16.25'],
     ['<input id="attach-base-product-price" value="£18.75">', '18.75'],

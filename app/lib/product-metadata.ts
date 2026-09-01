@@ -1,6 +1,7 @@
 import { normaliseProductImageUrl, normaliseProductUrl } from './product-url';
 
 const MAX_HTML_BYTES = 512 * 1024;
+const MAX_RETAILER_HTML_BYTES = 1024 * 1024;
 const MAX_REDIRECTS = 4;
 const FETCH_TIMEOUT_MS = 8_000;
 const AI_TIMEOUT_MS = 5_000;
@@ -625,6 +626,7 @@ type ExtractedMetadata = ProductMetadata & {
 
 type RetailerAdapter = {
   matches: (url: URL) => boolean;
+  htmlByteLimit?: number;
   cleanTitle: (title: string) => string;
   titleCandidates: (evidence: PageEvidence) => string[];
   priceCandidates: (evidence: PageEvidence) => PriceCandidate[];
@@ -662,6 +664,10 @@ const AMAZON_UK_ADAPTER: RetailerAdapter = {
     const hostname = url.hostname.toLowerCase();
     return hostname === 'amazon.co.uk' || hostname.endsWith('.amazon.co.uk');
   },
+  // Amazon can place the primary product block just beyond the general page
+  // limit after large inline styles and scripts. Keep the fetch bounded, but
+  // allow enough of known Amazon product pages to reach that block.
+  htmlByteLimit: MAX_RETAILER_HTML_BYTES,
   cleanTitle(rawTitle) {
     const title = cleanText(rawTitle).replace(/\s*:\s*Amazon\.co\.uk(?::.*)?$/i, '');
     const firstClause = title.split(/\s*,\s*/, 1)[0] ?? '';
@@ -1266,7 +1272,7 @@ async function enhanceMetadataWithAi(
   }
 }
 
-async function readBoundedHtml(response: Response): Promise<string> {
+async function readBoundedHtml(response: Response, byteLimit = MAX_HTML_BYTES): Promise<string> {
   if (!response.body) return '';
 
   const reader = response.body.getReader();
@@ -1275,11 +1281,11 @@ async function readBoundedHtml(response: Response): Promise<string> {
   let html = '';
 
   try {
-    while (bytesRead < MAX_HTML_BYTES) {
+    while (bytesRead < byteLimit) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const remaining = MAX_HTML_BYTES - bytesRead;
+      const remaining = byteLimit - bytesRead;
       const chunk = value.byteLength > remaining ? value.subarray(0, remaining) : value;
       bytesRead += chunk.byteLength;
       html += decoder.decode(chunk, { stream: true });
@@ -1350,7 +1356,10 @@ export async function fetchProductMetadata(
         throw new ProductMetadataError('That link isn’t an ordinary product page.');
       }
 
-      const html = await readBoundedHtml(response);
+      const html = await readBoundedHtml(
+        response,
+        retailerAdapter(target)?.htmlByteLimit ?? MAX_HTML_BYTES
+      );
       let metadata = await extractMetadata(html, target.toString());
       if (metadata.challengeDetected) {
         if (challengeRetries === 0) {
