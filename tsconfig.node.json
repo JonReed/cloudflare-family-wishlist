@@ -1,6 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["react-router.config.ts", "scripts/**/*.ts", "vite.config.ts", "vitest.config.ts"],
+  "include": [
+    "app/lib/cloudflare/access-public-sharing.ts",
+    "react-router.config.ts",
+    "scripts/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "strict": true,

@@ -5,7 +5,8 @@ import { cloudflareContext } from '../app/lib/context';
 import { ensureMemberForEmail } from '../app/lib/db/members';
 import {
   getSharedWishlist,
-  replaceWishlistShareLink,
+  createWishlistShareLink,
+  listActiveWishlistShareLinks,
   revokeWishlistShareLink
 } from '../app/lib/db/shared-wishlists';
 import {
@@ -66,7 +67,12 @@ describe('public share Worker boundary', () => {
     if (!itemId) throw new Error('Shared-list fixture did not create an item.');
     await claimWishlistItem(env.DB, giver.id, itemId);
     await setOwnClaimState(env.DB, giver.id, itemId, 'purchased');
-    const token = await replaceWishlistShareLink(env.DB, owner.id, owner.wishlistId);
+    const token = await createWishlistShareLink(
+      env.DB,
+      owner.id,
+      owner.wishlistId,
+      'Family friend'
+    );
     return { owner, giver, itemId, token };
   }
 
@@ -88,13 +94,13 @@ describe('public share Worker boundary', () => {
             'Content-Type': 'application/x-www-form-urlencoded',
             Origin: origin
           },
-          body: 'intent=replace-share-link'
+          body: 'intent=create-share-link&shareLinkName=Friend'
         })
       ).status
     ).toBe(503);
   });
 
-  it('keeps claims out of public responses and invalidates replaced and revoked links', async () => {
+  it('keeps claims out of public responses and revokes only the selected link', async () => {
     const { owner, giver, token: oldToken } = await sharedFixture();
     const oldResponse = await (await fetchWorker(`/shared/${oldToken}`)).text();
 
@@ -102,12 +108,19 @@ describe('public share Worker boundary', () => {
     expect(oldResponse).not.toContain('purchased');
     expect(oldResponse).not.toContain('claimed');
     expect(oldResponse).not.toContain(giver.id);
+    expect(oldResponse).not.toContain('Family friend');
 
-    const newToken = await replaceWishlistShareLink(env.DB, owner.id, owner.wishlistId);
-    expect((await fetchWorker(`/shared/${oldToken}`)).status).toBe(404);
+    const newToken = await createWishlistShareLink(env.DB, owner.id, owner.wishlistId, 'Neighbour');
+    expect((await fetchWorker(`/shared/${oldToken}`)).status).toBe(200);
     expect((await fetchWorker(`/shared/${newToken}`)).status).toBe(200);
 
-    await revokeWishlistShareLink(env.DB, owner.id, owner.wishlistId);
-    expect((await fetchWorker(`/shared/${newToken}`)).status).toBe(404);
+    const links = await listActiveWishlistShareLinks(env.DB, owner.id);
+    const linkToRevoke = links[0];
+    if (!linkToRevoke) throw new Error('Expected an active viewing link.');
+    await revokeWishlistShareLink(env.DB, owner.id, linkToRevoke.id);
+    const oldStatus = (await fetchWorker(`/shared/${oldToken}`)).status;
+    const newStatus = (await fetchWorker(`/shared/${newToken}`)).status;
+    const statuses = [oldStatus, newStatus];
+    expect(statuses.sort()).toEqual([200, 404]);
   });
 });

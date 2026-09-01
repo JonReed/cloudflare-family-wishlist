@@ -1,9 +1,14 @@
-import { data, Form, useNavigation } from 'react-router';
+import { data, Form, redirect, useNavigation } from 'react-router';
 
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail, MemberInputError, updateMemberDisplayName } from '../lib/db/members';
+import {
+  listActiveWishlistShareLinks,
+  revokeWishlistShareLink,
+  SharedWishlistInputError
+} from '../lib/db/shared-wishlists';
 
 import type { Route } from './+types/profile';
 
@@ -26,7 +31,9 @@ export async function loader({ context }: Route.LoaderArgs) {
     organiserEmailForRequest(env, identity.email)
   );
 
-  return { member };
+  const sharedLists = await listActiveWishlistShareLinks(env.DB, member.id);
+
+  return { member, sharedLists };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -40,10 +47,24 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
 
   try {
-    await updateMemberDisplayName(env.DB, member.id, formData.get('displayName'));
-    return { saved: true, error: null };
+    const intent = formData.get('intent');
+    if (intent === 'save-profile') {
+      await updateMemberDisplayName(env.DB, member.id, formData.get('displayName'));
+      return { saved: true, error: null };
+    }
+
+    if (intent === 'revoke-share-link') {
+      const shareLinkId = formData.get('shareLinkId');
+      if (typeof shareLinkId !== 'string') {
+        throw new SharedWishlistInputError('This page is out of date. Refresh it and try again.');
+      }
+      await revokeWishlistShareLink(env.DB, member.id, shareLinkId);
+      return redirect('/profile#shared-lists');
+    }
+
+    throw new MemberInputError('This page is out of date. Refresh it and try again.');
   } catch (error) {
-    if (error instanceof MemberInputError) {
+    if (error instanceof MemberInputError || error instanceof SharedWishlistInputError) {
       return data({ saved: false, error: error.message }, { status: 400 });
     }
 
@@ -52,10 +73,15 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Profile({ loaderData, actionData }: Route.ComponentProps) {
-  const { member } = loaderData;
+  const { member, sharedLists } = loaderData;
   const [emailLocalPart, emailDomain] = member.email.split('@', 2);
   const navigation = useNavigation();
-  const isSaving = navigation.state === 'submitting';
+  const pendingIntent = navigation.formData?.get('intent');
+  const isSaving = navigation.state === 'submitting' && pendingIntent === 'save-profile';
+  const pendingShareLinkId =
+    navigation.state === 'submitting' && pendingIntent === 'revoke-share-link'
+      ? navigation.formData?.get('shareLinkId')
+      : null;
 
   return (
     <div className="site-shell">
@@ -73,6 +99,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
 
           <div className="profile-grid">
             <Form method="post" className="profile-form">
+              <input type="hidden" name="intent" value="save-profile" />
               {actionData?.error ? (
                 <div role="alert" className="form-alert profile-alert">
                   <strong>Sorry, that didn’t work.</strong> {actionData.error}
@@ -121,6 +148,73 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
               </p>
             </aside>
           </div>
+
+          <section
+            className="profile-shares"
+            id="shared-lists"
+            aria-labelledby="shared-lists-title"
+          >
+            <div className="profile-shares-heading">
+              <p className="profile-kicker">Shared outside your family</p>
+              <h2 id="shared-lists-title">Sharing links</h2>
+              <p>
+                Each wishlist can have up to five active sharing links. Anyone with one of those
+                links can see the list without signing in.
+              </p>
+            </div>
+
+            {sharedLists.length > 0 ? (
+              <ul className="profile-share-list">
+                {sharedLists.map((sharedList) => (
+                  <li key={sharedList.id} className="profile-share-item">
+                    <div>
+                      <h3>{sharedList.name}</h3>
+                      <p>
+                        For {sharedList.ownerDisplayName}’s wishlist · Made by{' '}
+                        {sharedList.createdByDisplayName} on{' '}
+                        <time dateTime={sharedList.createdAt}>
+                          {new Intl.DateTimeFormat('en-GB', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                          }).format(new Date(sharedList.createdAt))}
+                        </time>
+                      </p>
+                    </div>
+                    <div className="profile-share-actions">
+                      <a
+                        href={`/?list=${encodeURIComponent(sharedList.wishlistId)}#wishlist`}
+                        className="button-quiet"
+                      >
+                        View wishlist
+                      </a>
+                      <Form method="post">
+                        <input type="hidden" name="intent" value="revoke-share-link" />
+                        <input type="hidden" name="shareLinkId" value={sharedList.id} />
+                        <button
+                          type="submit"
+                          className="button-danger"
+                          disabled={pendingShareLinkId === sharedList.id}
+                        >
+                          {pendingShareLinkId === sharedList.id
+                            ? 'Stopping sharing…'
+                            : 'Stop sharing this link'}
+                        </button>
+                      </Form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="profile-shares-empty">
+                No wishlists are currently shared outside your family.
+              </p>
+            )}
+
+            <p className="profile-shares-note">
+              For safety, an address is shown only when it is made. View the wishlist to create and
+              copy a new one when there is space.
+            </p>
+          </section>
         </section>
       </main>
 

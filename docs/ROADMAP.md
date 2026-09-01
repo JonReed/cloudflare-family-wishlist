@@ -52,7 +52,7 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] Optional notes, price guidance, priority and safe external product links.
 - [x] Look up product details from a pasted link and offer them as editable suggestions.
 - [x] Add products to one or more family lists from a browser bookmarklet.
-- [x] Share one person's list outside the family with a revocable read-only viewing link.
+- [x] Share one person's list outside the family with removable, named, read-only links.
 - [x] Validate every mutation server-side.
 
 ## Phase 6 — Secret claims

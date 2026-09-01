@@ -4,6 +4,10 @@ import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
+import {
+  ensurePublicSharingAccess,
+  PublicSharingAccessError
+} from '../lib/cloudflare/access-public-sharing';
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
@@ -14,9 +18,9 @@ import {
 } from '../lib/product-metadata';
 import { productImagePath } from '../lib/product-image';
 import {
-  hasWishlistShareLink,
-  replaceWishlistShareLink,
-  revokeWishlistShareLink,
+  countWishlistShareLinks,
+  createWishlistShareLink,
+  normaliseWishlistShareLinkName,
   SharedWishlistInputError
 } from '../lib/db/shared-wishlists';
 import {
@@ -57,11 +61,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const requestedWishlistId = new URL(request.url).searchParams.get('list');
   const activeWishlist =
     wishlists.find((wishlist) => wishlist.id === requestedWishlistId) ?? wishlists[0] ?? null;
-  const shareLinkActive = activeWishlist
-    ? await hasWishlistShareLink(env.DB, activeWishlist.id)
-    : false;
+  const shareLinkCount = activeWishlist
+    ? await countWishlistShareLinks(env.DB, activeWishlist.id)
+    : 0;
 
-  return { member, wishlists, activeWishlist, shareLinkActive };
+  return { member, wishlists, activeWishlist, shareLinkCount };
 }
 
 function formString(formData: FormData, name: string): string {
@@ -183,13 +187,14 @@ export async function action({ request, context }: Route.ActionArgs) {
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         break;
       case 'create-share-link': {
-        const token = await replaceWishlistShareLink(env.DB, member.id, wishlistId);
+        const shareLinkName = normaliseWishlistShareLinkName(formData.get('shareLinkName'));
+        if (!import.meta.env.DEV) {
+          await ensurePublicSharingAccess(env, new URL(request.url).hostname);
+        }
+        const token = await createWishlistShareLink(env.DB, member.id, wishlistId, shareLinkName);
         const shareUrl = new URL(`/shared/${token}`, request.url).toString();
-        return { wishlistId, shareUrl };
+        return { wishlistId, shareLinkName, shareUrl };
       }
-      case 'revoke-share-link':
-        await revokeWishlistShareLink(env.DB, member.id, wishlistId);
-        return redirect(`/?list=${encodeURIComponent(wishlistId)}#sharing`);
       default:
         throw new WishlistInputError(
           'We couldn’t work out what to do. Refresh the page and try again.'
@@ -198,7 +203,11 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     return redirect(`/?list=${encodeURIComponent(wishlistId)}#wishlist`);
   } catch (error) {
-    if (error instanceof WishlistInputError || error instanceof SharedWishlistInputError) {
+    if (
+      error instanceof WishlistInputError ||
+      error instanceof SharedWishlistInputError ||
+      error instanceof PublicSharingAccessError
+    ) {
       return { error: error.message };
     }
 
@@ -480,25 +489,43 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
 
 function ShareWishlistPanel({
   wishlist,
-  active,
+  linkCount,
+  shareLinkName,
   shareUrl
 }: {
   wishlist: FamilyWishlist;
-  active: boolean;
+  linkCount: number;
+  shareLinkName?: string;
   shareUrl?: string;
 }) {
+  const active = linkCount > 0;
+  const atLimit = linkCount >= 5;
+
   return (
-    <details id="sharing" className="share-panel" open={Boolean(shareUrl)}>
-      <summary>Share this list</summary>
+    <details id="sharing" className="share-panel" open={Boolean(shareUrl)} data-share-panel>
+      <summary>
+        {active
+          ? `${linkCount} sharing ${linkCount === 1 ? 'link' : 'links'} active`
+          : 'Share this list'}
+      </summary>
       <div className="share-panel-body">
+        <a
+          href={wishlistFormAction(wishlist.id)}
+          className="share-panel-close"
+          aria-label="Close sharing options"
+          data-close-share-panel
+        >
+          <span aria-hidden="true">×</span>
+        </a>
         <p>
           {active
-            ? 'A viewing link is active. Anyone you send it to can see this wishlist.'
-            : 'Make a viewing link for relatives and friends outside your family.'}
+            ? `${linkCount} active sharing ${linkCount === 1 ? 'link' : 'links'} out of 5. Anyone you send one to can see this wishlist.`
+            : 'Make a sharing link for relatives and friends outside your family.'}
         </p>
 
         {shareUrl ? (
           <div className="share-link-result">
+            {shareLinkName ? <p className="share-link-name">{shareLinkName} is ready.</p> : null}
             <label htmlFor={`share-link-${wishlist.id}`} className="form-label">
               Copy and share this link
             </label>
@@ -518,22 +545,50 @@ function ShareWishlistPanel({
           </div>
         ) : null}
 
-        <div className="share-panel-actions">
-          <form method="post" action={wishlistFormAction(wishlist.id)}>
-            <ActionFields wishlistId={wishlist.id} />
-            <button name="intent" value="create-share-link" className="button-secondary">
-              {active ? 'Make a new link' : 'Create viewing link'}
-            </button>
-          </form>
-          {active ? (
-            <form method="post" action={wishlistFormAction(wishlist.id)}>
+        {atLimit ? (
+          <div className="share-limit-message" role="status">
+            <strong>You already have five sharing links for this wishlist.</strong>
+            <p>
+              To make another, first{' '}
+              <a href="/profile#shared-lists">stop sharing one from Profile</a>.
+            </p>
+          </div>
+        ) : (
+          <>
+            <form
+              method="post"
+              action={wishlistFormAction(wishlist.id)}
+              className="share-link-form"
+            >
               <ActionFields wishlistId={wishlist.id} />
-              <button name="intent" value="revoke-share-link" className="button-quiet">
-                Stop sharing
+              <div>
+                <label htmlFor={`share-link-name-${wishlist.id}`} className="form-label">
+                  Who is this link for?
+                </label>
+                <input
+                  id={`share-link-name-${wishlist.id}`}
+                  name="shareLinkName"
+                  required
+                  maxLength={80}
+                  className="form-control"
+                  placeholder="Uncle David"
+                  aria-describedby={`share-link-name-hint-${wishlist.id}`}
+                />
+                <p id={`share-link-name-hint-${wishlist.id}`} className="share-link-hint">
+                  This name is private and helps your family find the right link later.
+                </p>
+              </div>
+              <button name="intent" value="create-share-link" className="button-secondary">
+                {active ? 'Create another sharing link' : 'Create sharing link'}
               </button>
             </form>
-          ) : null}
-        </div>
+            {active ? (
+              <p className="share-panel-manage">
+                See or stop sharing existing links from <a href="/profile#shared-lists">Profile</a>.
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
     </details>
   );
@@ -541,11 +596,13 @@ function ShareWishlistPanel({
 
 function WishlistSheet({
   wishlist,
-  shareLinkActive,
+  shareLinkCount,
+  shareLinkName,
   shareUrl
 }: {
   wishlist: FamilyWishlist;
-  shareLinkActive: boolean;
+  shareLinkCount: number;
+  shareLinkName?: string;
   shareUrl?: string;
 }) {
   const possessiveName = wishlist.isOwn ? 'Your' : `${wishlist.owner.displayName}’s`;
@@ -563,7 +620,12 @@ function WishlistSheet({
           <p className="wish-count">
             {wishlist.items.length} {wishlist.items.length === 1 ? 'wish' : 'wishes'}
           </p>
-          <ShareWishlistPanel wishlist={wishlist} active={shareLinkActive} shareUrl={shareUrl} />
+          <ShareWishlistPanel
+            wishlist={wishlist}
+            linkCount={shareLinkCount}
+            shareLinkName={shareLinkName}
+            shareUrl={shareUrl}
+          />
         </div>
       </header>
 
@@ -662,13 +724,20 @@ function AddWishPanel({
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { member, wishlists, activeWishlist, shareLinkActive } = loaderData;
+  const { member, wishlists, activeWishlist, shareLinkCount } = loaderData;
   const shareUrl =
     actionData &&
     'shareUrl' in actionData &&
     activeWishlist &&
     actionData.wishlistId === activeWishlist.id
       ? actionData.shareUrl
+      : undefined;
+  const shareLinkName =
+    actionData &&
+    'shareLinkName' in actionData &&
+    activeWishlist &&
+    actionData.wishlistId === activeWishlist.id
+      ? actionData.shareLinkName
       : undefined;
 
   return (
@@ -723,7 +792,8 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
             <div className="wishlist-workspace">
               <WishlistSheet
                 wishlist={activeWishlist}
-                shareLinkActive={shareLinkActive}
+                shareLinkCount={shareLinkCount}
+                shareLinkName={shareLinkName}
                 shareUrl={shareUrl}
               />
               <AddWishPanel wishlist={activeWishlist} actionData={actionData} />

@@ -2,6 +2,7 @@ import type { ItemPriority } from './wishlists';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHARE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+const SHARE_LINK_NAME_MAX_LENGTH = 80;
 
 type SharedWishlistRow = {
   wishlist_id: string;
@@ -33,6 +34,15 @@ export type SharedWishlist = {
   items: SharedWishlistItem[];
 };
 
+export type ActiveWishlistShareLink = {
+  id: string;
+  name: string;
+  wishlistId: string;
+  ownerDisplayName: string;
+  createdByDisplayName: string;
+  createdAt: string;
+};
+
 export class SharedWishlistInputError extends Error {}
 export class SharedImageRateLimitError extends Error {
   readonly retryAfterSeconds: number;
@@ -55,6 +65,26 @@ function requireToken(value: unknown): string {
     throw new SharedWishlistInputError('The sharing link is invalid.');
   }
   return value;
+}
+
+export function normaliseWishlistShareLinkName(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new SharedWishlistInputError(
+      'Give this sharing link a name, such as the person you’re sending it to.'
+    );
+  }
+  const name = value.trim().replace(/\s+/g, ' ');
+  if (!name) {
+    throw new SharedWishlistInputError(
+      'Give this sharing link a name, such as the person you’re sending it to.'
+    );
+  }
+  if (name.length > SHARE_LINK_NAME_MAX_LENGTH) {
+    throw new SharedWishlistInputError(
+      `Keep the sharing link name to ${SHARE_LINK_NAME_MAX_LENGTH} characters or fewer.`
+    );
+  }
+  return name;
 }
 
 function makeShareToken(): string {
@@ -95,34 +125,100 @@ export async function hasWishlistShareLink(db: D1Database, wishlistId: string): 
   return row?.active === 1;
 }
 
-export async function replaceWishlistShareLink(
+export async function countWishlistShareLinks(db: D1Database, wishlistId: string): Promise<number> {
+  const targetWishlistId = requireUuid(wishlistId, 'The wishlist');
+  const row = await db
+    .prepare('SELECT COUNT(*) AS count FROM wishlist_share_links WHERE wishlist_id = ?1')
+    .bind(targetWishlistId)
+    .first<{ count: number }>();
+  return row?.count ?? 0;
+}
+
+export async function listActiveWishlistShareLinks(
+  db: D1Database,
+  actorMemberId: string
+): Promise<ActiveWishlistShareLink[]> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const { results } = await db
+    .prepare(
+      `SELECT
+         wishlist_share_links.id,
+         wishlist_share_links.name,
+         wishlist_share_links.wishlist_id AS wishlistId,
+         owners.display_name AS ownerDisplayName,
+         creators.display_name AS createdByDisplayName,
+         wishlist_share_links.created_at AS createdAt
+       FROM wishlist_share_links
+       INNER JOIN wishlists ON wishlists.id = wishlist_share_links.wishlist_id
+       INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+       INNER JOIN members AS creators ON creators.id = wishlist_share_links.created_by_member_id
+       WHERE EXISTS (
+         SELECT 1
+         FROM members AS actors
+         WHERE actors.id = ?1 AND actors.disabled_at IS NULL
+       )
+       ORDER BY
+         owners.display_name COLLATE NOCASE,
+         wishlist_share_links.created_at DESC,
+         wishlist_share_links.id DESC`
+    )
+    .bind(actorId)
+    .all<ActiveWishlistShareLink>();
+
+  return results;
+}
+
+export async function createWishlistShareLink(
   db: D1Database,
   actorMemberId: string,
-  wishlistId: string
+  wishlistId: string,
+  name: unknown
 ): Promise<string> {
   const actorId = requireUuid(actorMemberId, 'The signed-in member');
   const targetWishlistId = requireUuid(wishlistId, 'The wishlist');
+  const linkName = normaliseWishlistShareLinkName(name);
+  const shareLinkId = crypto.randomUUID();
   const token = makeShareToken();
   const hash = await hashShareToken(token);
 
   const result = await db
     .prepare(
       `INSERT INTO wishlist_share_links (
-         wishlist_id, token_hash, created_by_member_id
+         id, wishlist_id, name, token_hash, created_by_member_id
        )
-       SELECT wishlists.id, ?1, members.id
+       SELECT ?1, wishlists.id, ?2, ?3, members.id
        FROM wishlists
-       INNER JOIN members ON members.id = ?2
-       WHERE wishlists.id = ?3
-       ON CONFLICT (wishlist_id) DO UPDATE SET
-         token_hash = excluded.token_hash,
-         created_by_member_id = excluded.created_by_member_id,
-         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
+       INNER JOIN members ON members.id = ?4 AND members.disabled_at IS NULL
+       WHERE wishlists.id = ?5
+         AND (
+           SELECT COUNT(*)
+           FROM wishlist_share_links AS active_links
+           WHERE active_links.wishlist_id = wishlists.id
+         ) < 5`
     )
-    .bind(hash, actorId, targetWishlistId)
+    .bind(shareLinkId, linkName, hash, actorId, targetWishlistId)
     .run();
 
   if (!result.success || result.meta.changes !== 1) {
+    const status = await db
+      .prepare(
+        `SELECT
+           EXISTS (
+             SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL
+           ) AND EXISTS (
+             SELECT 1 FROM wishlists WHERE id = ?2
+           ) AS targetFound,
+           (
+             SELECT COUNT(*) FROM wishlist_share_links WHERE wishlist_id = ?2
+           ) AS activeLinkCount`
+      )
+      .bind(actorId, targetWishlistId)
+      .first<{ targetFound: number; activeLinkCount: number }>();
+    if (status?.targetFound === 1 && status.activeLinkCount >= 5) {
+      throw new SharedWishlistInputError(
+        'This wishlist already has five sharing links. Stop sharing one from Profile before making another.'
+      );
+    }
     throw new SharedWishlistInputError(
       'We couldn’t find that wishlist. Refresh the page and try again.'
     );
@@ -134,17 +230,17 @@ export async function replaceWishlistShareLink(
 export async function revokeWishlistShareLink(
   db: D1Database,
   actorMemberId: string,
-  wishlistId: string
+  shareLinkId: string
 ): Promise<void> {
   const actorId = requireUuid(actorMemberId, 'The signed-in member');
-  const targetWishlistId = requireUuid(wishlistId, 'The wishlist');
+  const targetShareLinkId = requireUuid(shareLinkId, 'The viewing link');
   const result = await db
     .prepare(
       `DELETE FROM wishlist_share_links
-       WHERE wishlist_id = ?1
-         AND EXISTS (SELECT 1 FROM members WHERE id = ?2)`
+       WHERE id = ?1
+         AND EXISTS (SELECT 1 FROM members WHERE id = ?2 AND disabled_at IS NULL)`
     )
-    .bind(targetWishlistId, actorId)
+    .bind(targetShareLinkId, actorId)
     .run();
 
   if (!result.success) {

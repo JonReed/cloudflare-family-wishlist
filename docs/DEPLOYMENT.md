@@ -314,24 +314,22 @@ JWT signature, issuer, audience, expiry, subject and email before touching D1.
 
 ## 9a. Enable read-only viewing links
 
-Family Wishlist can make a revocable viewing link for one person's list. Those links are intended for
+Family Wishlist can make a removable sharing link for one person's list. Those links are intended for
 relatives and friends who should not need a family login. They need one narrow exception to the
-Worker-level Access rule.
+Worker-level Access rule. Do not build this application manually: step 10 runs the repository's
+idempotent configuration command, and the create-link action verifies the same configuration again
+before it stores a token.
 
-In **Zero Trust → Access controls → Applications**, add path-specific public applications (or path
-destinations in one application where the dashboard offers that) for the production hostname. Give
-each one a **Bypass** policy with **Include → Everyone**:
+| Path               | Why it is public                            |
+| ------------------ | ------------------------------------------- |
+| `/shared/*`        | Hashed sharing-link list and picture routes |
+| `/shared-assets/*` | Compiled stylesheets only                   |
+| `/favicon.svg`     | Data-free application mark                  |
 
-| Path               | Why it is public                          |
-| ------------------ | ----------------------------------------- |
-| `/shared/*`        | Hashed, revocable list and picture routes |
-| `/shared-assets/*` | Compiled stylesheets only                 |
-| `/favicon.svg`     | Data-free application mark                |
-
-Use the complete production hostname, for example
-`cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev/shared/*`. If the family also uses a custom
-domain, add the same paths for that hostname; a link is built from whichever hostname the signed-in
-family member is currently visiting.
+The command creates one self-hosted Access application per production hostname, containing exactly
+those three public destinations and one **Bypass → Everyone** policy. A `workers.dev` hostname and a
+custom hostname are configured separately because an Access application supports at most five
+destinations. A link is built from whichever configured hostname the signed-in family member visits.
 
 Path-based Access rules take precedence over the broader Worker rule. Cloudflare documents that
 hierarchy in [Cloudflare Access for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/#understand-access-hierarchy)
@@ -344,15 +342,17 @@ The Worker remains a second boundary. It skips JWT validation only for GET or HE
 the exact shared-list or shared-picture shapes. A POST, a neighbouring path or any other dynamic route
 still requires Access. Static asset paths contain no family data. Shared secrets are 128-bit random
 values stored only as SHA-256 hashes in D1; public queries never join claims; responses are not cached
-or indexed; and replacing or stopping a link invalidates it immediately.
+or indexed; and revoking one link invalidates only that link immediately.
 
 Do not add a Bypass for `/product-image`, `/`, `/*` or the Worker as a whole. The general image proxy,
 all forms and every authenticated page must remain behind Access.
 
-When upgrading an installation that previously followed this guide, add `/shared-assets/*`, deploy
-and verify a signed-out viewing link, then remove the old `/assets/*`, `/app.webmanifest` and
-`/icons/*` Bypass destinations. Those older paths are no longer needed publicly; in particular,
-`/assets/*` also contains authenticated browser JavaScript and should not remain bypassed.
+The configuration is deliberately fail-closed. If an application with the managed name exists but
+its destinations or policy differ, setup and link creation stop and ask the operator to review it;
+they do not silently widen or overwrite an Access boundary. When upgrading an older installation,
+remove manually created `/assets/*`, `/app.webmanifest` and `/icons/*` bypasses after the automated
+application has been verified. `/assets/*` can contain authenticated browser JavaScript and must not
+remain public.
 
 ## 10. Allow the organiser to invite family members
 
@@ -387,21 +387,37 @@ Do not pipe or pass the token as a command argument. The deployment command uses
 later source deployments preserve dashboard-managed variables and secrets.
 
 Apply and verify the 30-day Access application session from this checkout. Export the two public
-identifiers, then read the API token privately so it does not enter shell history:
+identifiers and list every production hostname, then read the API token privately so it does not
+enter shell history:
 
 ```sh
 export ACCESS_MANAGEMENT_ACCOUNT_ID="YOUR-ACCOUNT-ID"
 export ACCESS_MANAGEMENT_APPLICATION_ID="YOUR-ACCESS-APPLICATION-UUID"
+export WISHLIST_PUBLIC_HOSTNAMES="cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev"
 read -s ACCESS_MANAGEMENT_API_TOKEN
 export ACCESS_MANAGEMENT_API_TOKEN
 npm run access:configure-session
+npm run access:configure-sharing
 unset ACCESS_MANAGEMENT_API_TOKEN
 ```
 
-The command reads the application before changing it, retains its destinations, attached policies,
+If a custom hostname already exists, include it in the comma-separated value, for example
+`cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev,wishlist.example.com`. The sharing command is
+idempotent: it confirms an exact existing application without writing. It never prints the token.
+First-time concurrent runs converge by re-reading Cloudflare after a create conflict.
+
+The session command reads the application before changing it, retains its destinations, attached policies,
 identity providers and cookie controls, and reads it again afterward. It is idempotent: rerunning it
 reports the existing 30-day value without writing. Cloudflare policy durations should remain **Same
 as application session duration** so organiser and invited-member policies inherit the same value.
+
+Verify the public edge rule without needing a real sharing secret. The deliberately invalid 22-character
+token must reach the Worker and return `404`; a redirect to Access means setup is incomplete:
+
+```sh
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  https://YOUR-PRODUCTION-HOST/shared/aaaaaaaaaaaaaaaaaaaaaa
+```
 
 Open **Your family**, add one test address and confirm that:
 
@@ -454,8 +470,11 @@ npm run db:migrate:remote
 
 Apply all pending migrations before the matching application code reaches production. Existing
 migrations include family roles, invitation admission and revocation state, item images, product
-lookup limits, product-image budgets and hashed viewing links.
-The shared-image requester-limit migration is also required before deploying its matching code.
+lookup limits, product-image budgets and hashed sharing links. Migration `0010` replaces the early
+single-link table with the named, five-link structure. Existing experimental sharing addresses stop
+working when it is applied and must be made again; the application does not carry those early links
+forward under invented names. The shared-image requester-limit migration is also required before
+deploying its matching code.
 
 ## 12. Add a custom domain (optional)
 
@@ -466,8 +485,11 @@ Routes → Add → Custom Domain** and enter a hostname such as `wishlist.exampl
 Cloudflare creates the DNS record and certificate. A custom domain cannot replace an existing CNAME
 and must belong to a zone you control. See Cloudflare's [Custom Domains requirements](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
 
-No application setting needs changing: links and Add from anywhere tools derive their origin from the
-current request. Because Access protects the Worker itself, the custom domain is already covered.
+Links and Add from anywhere derive their origin from the current request. The first viewing link
+created while visiting the custom hostname automatically creates and verifies that hostname's narrow
+public Access application. To verify it before family use, rerun
+`npm run access:configure-sharing -- wishlist.example.com` with the three Access management values
+exported as in step 10.
 
 ## 13. Final acceptance check
 
@@ -483,8 +505,12 @@ Before relying on the installation, verify all of these:
 - **Fill from link** only prefills an editable draft and manual entry still works;
 - an optional product picture is served from the application's `/product-image` address;
 - one family member can claim an item and the wishlist owner cannot see that claim or purchase state;
-- a viewing link opens in a signed-out private browser, contains no edit or claim controls, and stops
-  working after **Stop sharing**;
+- the invalid-token `curl` in step 10 returns `404`, not an Access redirect;
+- a viewing link opens in a signed-out private browser and contains no edit or claim controls;
+- Profile lists every active sharing link by its private name and **Stop sharing this link** stops only the selected link
+  immediately;
+- one wishlist can hold five independently working sharing links, and its popup replaces the creation
+  form with removal guidance while five are active;
 - a signed-out request to `/`, `/product-image` or a POST beneath `/shared/` still requires Access;
 - removing an ordinary member denies their next request and signs existing application sessions out;
 - `/family` is available only to the organiser; and

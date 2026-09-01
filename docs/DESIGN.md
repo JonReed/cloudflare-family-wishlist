@@ -55,9 +55,19 @@ normal list never feels like an admin console.
 
 Sharing one person's ideas outside the family stays attached to that active wishlist. A visible
 **Share this list** link belongs in the active list heading beside its wish count; it opens compact
-controls to create, replace or stop a viewing link without turning the normal list into an
-administration page. Show the newly created address with a clear copy control; after a reload, show
-that sharing is active without attempting to recover the secret from storage.
+controls to name, create or copy a sharing link without turning the normal list into an
+administration page. Ask who the link is for, with an example such as “Uncle David”, and explain that
+this private name helps the family recognise it later. Show the newly created address with a clear
+copy control; after a reload, show that one or more sharing links are active without attempting to
+recover their secrets from storage. Include a small link to Profile for reviewing or stopping active
+links; do not duplicate the removal action in this popup. When five links are active, replace the
+creation form with a clear explanation that one must first be stopped from Profile.
+
+Profile is the persistent management surface for sharing links. Below personal details, show every
+active link as a plain list with its private name, wishlist owner, the family member who made it, its
+creation date, a route back to the wishlist and an explicit **Stop sharing this link** action. Explain
+that each wishlist can have up to five active links and that each readable address is shown only when
+made. Keep technical terms such as “revoke” out of family-facing controls and explanations.
 
 The page calls the admin the “family organiser”. Waiting rows offer a prepared invitation to copy,
 but must not claim that an email was sent: the application authorises the exact address and the

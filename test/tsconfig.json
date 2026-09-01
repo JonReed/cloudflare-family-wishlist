@@ -24,6 +24,7 @@
     "../app/lib/auth/access.ts",
     "../app/lib/bookmarklet.ts",
     "../app/lib/cloudflare/access-membership.ts",
+    "../app/lib/cloudflare/access-public-sharing.ts",
     "../app/lib/context.ts",
     "../app/lib/db/family-members.ts",
     "../app/lib/db/members.ts",
@@ -41,6 +42,7 @@
     "../app/lib/shared-image-request.ts",
     "../app/lib/share-target.ts",
     "../scripts/configure-access-session.ts",
+    "../scripts/configure-access-sharing.ts",
     "../workers/app.ts"
   ]
 }

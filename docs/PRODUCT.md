@@ -100,9 +100,18 @@ relative or friend who does not use the private family space. The link opens wit
 and shows the current wishes, notes, prices, product links and pictures from that one list. It offers
 no editing or gift coordination controls.
 
-The unguessable link is the permission. A family member can replace it or stop sharing at any time;
-old links then stop working immediately. Public-list reads use a separate database query that never
-joins claims, so claim and purchase information cannot enter the public response.
+The unguessable link is the permission. Each wishlist can have up to five independent sharing links.
+The family member gives each link a private, recognisable name such as “Uncle David” when they make
+it. Creating another never changes an existing link. A family member can stop sharing any one link
+from Profile, and that link stops working immediately without affecting the others. Public-list reads
+use a separate database query that never joins claims, so claim and purchase information cannot enter
+the public response.
+
+Profile shows every active link across the family's wishlists, its private name, who made it, when it
+was made and a persistent **Stop sharing this link** control. The list heading keeps its compact
+sharing shortcut for creating and copying links, with a route to Profile for reviewing or stopping
+them. At five links, the creation form is replaced with an explanation and a route to Profile; the
+server also rejects a sixth link until one of the five existing links is removed.
 
 ## Product invariants
 
@@ -116,6 +125,8 @@ joins claims, so claim and purchase information cannot enter the public response
 8. A normal family deployment should fit within Cloudflare's free tier.
 9. The configured initial organiser is an admin; invited members default to the member role.
 10. A link-shared list is read-only and never receives claim or purchase data.
+11. Creating a viewing link first verifies the exact hostname's narrow public Access application; an
+    unusable login-gated link must never be created.
 
 If a proposed feature breaks one of these rules, treat it as a product decision requiring maintainer
 agreement rather than an ordinary implementation detail.
@@ -138,7 +149,8 @@ Working today:
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased;
 - server-enforced claim secrecy for the recipient; and
-- revocable, read-only viewing links for sharing one person's gift ideas outside the family.
+- removable, read-only sharing links for sharing one person's gift ideas outside the family, with
+  their narrow Cloudflare Access exception configured automatically.
 
 Still planned:
 

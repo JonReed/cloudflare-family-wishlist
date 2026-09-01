@@ -49,6 +49,13 @@ paths also expose only the compiled stylesheet under `/shared-assets/*` and the 
 render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
 behind Access.
 
+Before creating a viewing token, the authenticated action calls
+`ensurePublicSharingAccess()` with the request hostname. It lists every Access application, accepts
+only the deterministic application containing exactly those three public destinations and one
+Everyone Bypass policy, or creates that exact application. Configuration drift fails closed before
+D1 changes. The setup command calls the same function, so installation preflight and runtime
+enforcement cannot disagree.
+
 ## Request lifecycle
 
 1. Access rejects identities outside the deployment's exact email allow-list and handles the OTP UI.
@@ -124,6 +131,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/routes/bookmarklet.tsx`                     | Android, Share Sheet Shortcut, clipboard and browser-button setup                  |
 | `app/routes/share-target.ts`                     | Safe Android shared-text/link handoff to the editable add route                    |
 | `app/routes/family.tsx`                          | Organiser-only joined/waiting member administration                                |
+| `app/routes/profile.tsx`                         | Personal details and persistent active viewing-link management                     |
 | `app/routes/product-details.ts`                  | Same-origin progressive-enhancement endpoint for product-link metadata             |
 | `app/lib/bookmarklet.ts`, `public/*.js`          | Deployment-specific add links, installation and progressively enhanced setup tools |
 | `app/lib/cloudflare/access-membership.ts`        | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
@@ -131,7 +139,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/db/members.ts`                          | Identity normalisation and member/list provisioning                                |
 | `app/lib/db/family-members.ts`                   | Admin checks, waiting invitations and family roster reads                          |
 | `app/lib/db/wishlists.ts`                        | Domain validation, reads, mutations, claim ownership and privacy                   |
-| `app/lib/db/shared-wishlists.ts`                 | Hashed viewing links, claim-free public reads and shared-image budgets             |
+| `app/lib/db/shared-wishlists.ts`                 | Hashed viewing links, active-link inventory, public reads and image budgets        |
 | `migrations/`                                    | Append-only persistent schema history                                              |
 | `app/root.tsx`, `app/app.css`, `app/components/` | Document shell, design system and shared presentation                              |
 
@@ -178,9 +186,12 @@ family_invitations
   invited_by_member_id FK -> members
 
 wishlist_share_links
-  wishlist_id PK/FK -> wishlists
+  id (UUID) PK
+  wishlist_id FK -> wishlists (maximum 5 active rows)
+  name (private family-facing label, 1..80 characters)
   token_hash UNIQUE
   created_by_member_id FK -> members
+  created_at
 
 shared_image_fetch_limits
   wishlist_id PK/FK -> wishlists
@@ -222,8 +233,10 @@ current claimant so one member cannot change another member's claim.
 ## Read-only sharing boundary
 
 A sharing URL carries 16 random bytes encoded as a 22-character URL-safe secret. D1 stores only its
-SHA-256 hash, so a database read cannot recover a working link. Creating a new link replaces the hash;
-stopping sharing deletes it. Unknown, replaced and revoked links all return the same not-found result.
+SHA-256 hash, so a database read cannot recover a working link. Each row has a private family-facing
+name and a separate internal UUID; an atomic conditional insert enforces at most five active rows per
+wishlist. Stopping sharing deletes only the selected UUID. Unknown and removed links return the same
+not-found result.
 
 The public query selects the list owner and ordinary item fields directly from `wishlists`, `members`
 and `items`. It neither joins nor selects `claims`. Its TypeScript result has no claim field. Shared
@@ -237,7 +250,7 @@ addresses and reusable cross-link identifiers are never stored.
 Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`, carry a site-wide
 `X-Robots-Tag` no-indexing directive and load no third-party scripts or fonts. Application logs redact
 capability-bearing paths. Cloudflare's edge can necessarily see the requested URL, so families should
-treat the link like an invitation and replace it if it travels beyond the intended people.
+treat each link like an invitation and stop sharing it if it travels beyond the intended people.
 
 ## Server-first user interface
 
@@ -374,15 +387,18 @@ without becoming a new persistence or availability dependency.
 - errors shown to users do not reveal internals;
 - logs omit tokens, private claim surprises and query strings;
 - public viewing secrets are hashed at rest, redacted from application logs and can read only one
-  claim-free wishlist; and
+  claim-free wishlist;
+- public sharing Access applications are hostname-specific, idempotently created from the same
+  bounded implementation used by setup, and rejected if their destinations or policy drift; and
 - format, lint, type, Workers-runtime tests, build and dependency audit gate every push.
 
 ## Deployment boundary
 
 `main` is connected to Cloudflare Builds for the reference deployment. Application deployments are
 automatic after a push; the initial organiser policy, Access-management API token, DNS and D1
-migration changes remain separate Cloudflare operations. Later exact-email additions are deliberately
-performed by the organiser from `/family`.
+migration changes remain separate Cloudflare operations. The setup command and first viewing-link
+action use that scoped token to configure only the documented public paths. Later exact-email
+additions are deliberately performed by the organiser from `/family`.
 
 Public fork setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md). The maintainer checkout may also
 contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context; it must remain private.
