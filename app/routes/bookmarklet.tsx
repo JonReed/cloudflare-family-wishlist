@@ -192,7 +192,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               >
                 Copy your wishlist address
               </button>
-              <a href="/Wishlist.shortcut?v=ceae735b" className="button-secondary">
+              <a href="/Wishlist.shortcut?v=83dbc204" className="button-secondary">
                 Download the Apple Shortcut
               </a>
               <span
@@ -305,7 +305,8 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                       <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>,{' '}
                       <strong>Text</strong>, another <strong>Text</strong>, and{' '}
                       <strong>Open URLs</strong>. Do not choose <strong>Get Contents of URL</strong>
-                      .
+                      . In the first action, tap <strong>Input</strong> and choose{' '}
+                      <strong>Shortcut Input</strong>; do not leave it as the generic Input token.
                     </p>
                   </div>
                 </li>

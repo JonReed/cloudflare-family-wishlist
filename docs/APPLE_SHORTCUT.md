@@ -13,7 +13,7 @@ default Share Sheet name is the intentionally compact **Wishlist**.
 The shortcut:
 
 1. receives only **Safari Web Pages** and **URLs** from the Share Sheet;
-2. gets URLs from the shortcut input;
+2. gets URLs from an explicitly selected **Shortcut Input** variable;
 3. URL-encodes the shared product link;
 4. places the deployment-specific `/add?url=` address supplied during import into a plain **Text**
    action;
@@ -30,19 +30,21 @@ The source of truth for behaviour is the workflow above and the matching manual 
 
 1. rebuild it in Apple Shortcuts using the documented workflow;
 2. keep **Show in Share Sheet** enabled and limit its input to **Safari Web Pages** and **URLs**;
-3. attach the import question only to the first **Text** action containing the deployment address;
-4. use a second **Text** action to join the first **Text** output to **URL Encoded Text**—putting the
+3. explicitly replace the first action's generic **Input** token with **Shortcut Input**; automatic
+   input inference is not preserved reliably in an exported shortcut;
+4. attach the import question only to the first **Text** action containing the deployment address;
+5. use a second **Text** action to join the first **Text** output to **URL Encoded Text**—putting the
    question and variables in one action lets the imported answer erase the shared product URL;
-5. export it **For: Anyone**, allowing Apple to validate the copy;
-6. replace `public/Wishlist.shortcut` and test a fresh import on a current iPhone or
+6. export it **For: Anyone**, allowing Apple to validate the copy;
+7. replace `public/Wishlist.shortcut` and test a fresh import on a current iPhone or
    iPad; and
-7. update the checksum below and the short checksum in the download link's `?v=` query string so
+8. update the checksum below and the short checksum in the download link's `?v=` query string so
    existing members cannot receive a browser-cached copy.
 
 Current SHA-256:
 
 ```text
-ceae735b1a520ec8b7b7383dcd69d57f105135d59c89e559bc577817fe22606d
+83dbc204f0a311cd08f815c7ed23a02437f6de596740d2e1a9b1bb845e899400
 ```
 
 Apple's supported `shortcuts://create-shortcut` URL opens an empty editor; it cannot supply actions.
@@ -50,7 +52,7 @@ The validated file and import question are therefore the smallest supported setu
 iOS does not currently register a web app manifest `share_target`, so the Android install route
 cannot replace this shortcut.
 
-The exported shortcut uses Apple's built-in **Gift** glyph on its **Lime** background. Share Sheet
+The exported shortcut uses Apple's built-in **Gift** glyph on its muted **Grey Green** background. Share Sheet
 Favourites and their order are device-local preferences and cannot be preset in a shared shortcut;
 the member can add **Wishlist** to Favourites once through **Edit Actions**.
 
