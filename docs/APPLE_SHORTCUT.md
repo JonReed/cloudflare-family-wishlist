@@ -5,7 +5,8 @@ have to assemble a Shortcut by hand. Apple validates the exported file for impor
 
 The shortcut contains no account credentials, family data or fixed deployment hostname. Its one-time
 import question asks the member to paste the deployment-specific `/add?url=` address copied from the
-authenticated **Add from anywhere** page. That address is stored locally in Apple Shortcuts.
+authenticated **Add from anywhere** page. That address is stored locally in Apple Shortcuts. Its
+default Share Sheet name is the intentionally compact **Wishlist**.
 
 ## Workflow
 
@@ -39,7 +40,7 @@ The source of truth for behaviour is the workflow above and the matching manual 
 Current SHA-256:
 
 ```text
-a6a6bfdedc1137300c13dc6b78828b56de782ce3295e05bd16f203a004bca81b
+f73479c1f329d05d7906f4b8f9b93dd70ad09e25ceafbad37ab28bb66fc7aa7b
 ```
 
 Apple's supported `shortcuts://create-shortcut` URL opens an empty editor; it cannot supply actions.

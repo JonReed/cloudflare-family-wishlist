@@ -192,7 +192,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               >
                 Copy your wishlist address
               </button>
-              <a href="/add-to-family-wishlist.shortcut?v=a6a6bfde" className="button-secondary">
+              <a href="/add-to-family-wishlist.shortcut?v=f73479c1" className="button-secondary">
                 Download the Apple Shortcut
               </a>
               <span
@@ -229,10 +229,10 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                 <div>
                   <h3>Install the ready-made shortcut</h3>
                   <p>
-                    Tap <strong>Download the Apple Shortcut</strong>. Open the downloaded{' '}
-                    <strong>Add to Family Wishlist</strong> file if Safari does not open it
-                    automatically, then tap <strong>Add Shortcut</strong> in Shortcuts. Apple
-                    validates the shortcut before it can be imported.
+                    Tap <strong>Download the Apple Shortcut</strong>. Open the downloaded Shortcut
+                    file if Safari does not open it automatically, then tap{' '}
+                    <strong>Add Shortcut</strong> in Shortcuts. Apple validates the shortcut before
+                    it can be imported.
                   </p>
                 </div>
               </li>
@@ -252,9 +252,9 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </ol>
 
             <div className="shortcut-use-note">
-              <strong>To use it:</strong> open a product, tap Share, then choose Add to Family
-              Wishlist. If it is hidden, scroll to the bottom of the Share Sheet and tap Edit
-              Actions.
+              <strong>To use it:</strong> open a product, tap Share, then choose{' '}
+              <strong>Wishlist</strong>. If it is hidden, scroll to the bottom of the Share Sheet
+              and tap Edit Actions.
             </div>
 
             <details className="shortcut-manual-setup">
@@ -273,7 +273,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                     <p>
                       Open <strong>Shortcuts</strong>, tap <strong>+</strong> in the top-right
                       corner, tap <strong>New Shortcut</strong> at the top, choose{' '}
-                      <strong>Rename</strong>, and enter <strong>Add to Family Wishlist</strong>.
+                      <strong>Rename</strong>, and enter <strong>Wishlist</strong>.
                     </p>
                   </div>
                 </li>
