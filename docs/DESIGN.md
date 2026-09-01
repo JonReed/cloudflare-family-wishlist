@@ -9,6 +9,12 @@ The interface uses paper, kraft tape, cotton string, gift tags and editorial sti
 quiet design cues. These materials should support the task rather than turn every control into a
 novelty.
 
+<p align="center">
+  <img src="assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist interface with paper, parcel tape, gift tags and an evergreen action panel">
+</p>
+
+<p align="center"><sub>The desktop workspace brings the mark, family gift tags, paper list and taped add form together.</sub></p>
+
 ## Information architecture
 
 The signed-in home has four stable regions:
@@ -86,6 +92,7 @@ from this list, we’ll keep it secret so the surprise isn’t spoiled.”
 Member navigation uses paper gift tags with a visible cotton-string loop through each tag hole and a
 clear active state. The grid always begins at the left edge of the family board, including when it
 contains a single tag, and a single tag stays tag-sized rather than stretching across the page. Tags
+should remain compact enough for at least six to share a typical desktop row when space permits. They
 may wrap into additional rows and must work with long display names. They are navigation, not filter
 chips.
 

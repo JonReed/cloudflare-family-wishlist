@@ -1,11 +1,32 @@
-# Cloudflare Family Wishlist
+<p align="center">
+  <img src="public/favicon.svg" width="88" height="88" alt="Family Wishlist gift mark">
+</p>
 
-A private, self-hosted family wishlist designed to run comfortably on Cloudflare's free tier.
+<h1 align="center">Cloudflare Family Wishlist</h1>
+
+<p align="center">
+  <strong>For your favourite people.</strong><br>
+  A private, self-hosted family wishlist designed to run comfortably on Cloudflare's free tier.
+</p>
+
+<p align="center">
+  <a href="docs/DEPLOYMENT.md"><strong>Set up your own</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="docs/PRODUCT.md">See how it works</a>
+  &nbsp;&middot;&nbsp;
+  <a href="docs/DEVELOPMENT.md">Develop locally</a>
+</p>
 
 Each family member has one wishlist. Everyone in the invited family group can view and edit every list, while claims and purchases are hidden from the owner of the list so surprises stay surprising.
 
 > [!NOTE]
 > The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls, add-from-anywhere tools and private claims are working; release hardening and item reordering remain.
+
+<p align="center">
+  <img src="docs/assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist showing gift-tag family navigation, a paper wishlist and its add form">
+</p>
+
+<p align="center"><sub>The everyday workspace: choose someone, see their wishes and add another without leaving the page.</sub></p>
 
 ## Why this exists
 
@@ -34,11 +55,12 @@ Most wishlist applications are either public, advertising-supported, complicated
 
 ## Documentation
 
+- [Install and deploy](docs/DEPLOYMENT.md) — start with a free Cloudflare account, understand the
+  live allowances, and finish with Access, D1, Workers AI and automatic deployments configured.
 - [Product model](docs/PRODUCT.md) — who the application serves, core workflows and non-goals.
 - [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
 - [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
 - [Design guide](docs/DESIGN.md) — family-first IA, visual language, copy and accessibility.
-- [Deployment guide](docs/DEPLOYMENT.md) — Cloudflare setup for a fork.
 - [Roadmap](docs/ROADMAP.md) — completed phases and remaining release work.
 
 Agents and automated contributors should begin with [AGENTS.md](AGENTS.md).
@@ -75,6 +97,11 @@ Cloudflare configuration.
 ## Deployment model
 
 `main` is the only working and deployment branch for now. The reference deployment is connected to Cloudflare Builds, so each push to `main` deploys the latest version after the repository checks pass. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) to configure a fork.
+
+A normal family installation needs a Cloudflare account but not a paid Cloudflare plan or a custom
+domain. The [installation guide](docs/DEPLOYMENT.md) starts before account setup, links to the current
+Workers, D1, Workers AI, Access and Builds allowances, and explains what happens if a free limit is
+reached.
 
 Do not expose a deployment containing family data until Cloudflare Access is configured with an **exact email allow-list**. Selecting “One-time PIN” as the only Access rule would allow any valid email address and is not sufficient.
 
