@@ -270,9 +270,9 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
                   defaultValue={draft.priority}
                   className="form-control"
                 >
-                  <option value="low">Nice to have</option>
-                  <option value="normal">Would love it</option>
                   <option value="high">Top wish</option>
+                  <option value="normal">Would love it</option>
+                  <option value="low">Nice to have</option>
                 </select>
               </div>
             </div>

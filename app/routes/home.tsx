@@ -221,9 +221,9 @@ function ItemFields({
         defaultValue={item?.priority ?? draft?.priority ?? 'normal'}
         className="form-control"
       >
-        <option value="low">Nice to have</option>
-        <option value="normal">Would love</option>
         <option value="high">Top wish</option>
+        <option value="normal">Would love</option>
+        <option value="low">Nice to have</option>
       </select>
     </div>
   );
