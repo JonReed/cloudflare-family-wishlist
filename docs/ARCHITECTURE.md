@@ -207,7 +207,7 @@ shortcuts.
 The top navigation exposes the **Add from anywhere** setup page. The web app manifest registers an
 installed Android PWA as a GET-only share target; `/share-target` validates a dedicated URL or finds
 one in Android’s shared text before redirecting to `/add`. The Apple-validated shortcut in
-`public/add-to-family-wishlist.shortcut` uses a one-time import question to store the server-generated
+`public/Wishlist.shortcut` uses a one-time import question to store the server-generated
 `/add?url=` prefix locally; the matching manual recipe remains a recovery path. The optional clipboard
 helper validates a credential-free HTTP(S) link before navigating. React does not server-render the
 desktop `javascript:` link; a small nonce-authorised, self-hosted script copies a server-generated,

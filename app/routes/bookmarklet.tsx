@@ -192,7 +192,7 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               >
                 Copy your wishlist address
               </button>
-              <a href="/add-to-family-wishlist.shortcut?v=f73479c1" className="button-secondary">
+              <a href="/Wishlist.shortcut?v=ceae735b" className="button-secondary">
                 Download the Apple Shortcut
               </a>
               <span
@@ -229,10 +229,10 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                 <div>
                   <h3>Install the ready-made shortcut</h3>
                   <p>
-                    Tap <strong>Download the Apple Shortcut</strong>. Open the downloaded Shortcut
-                    file if Safari does not open it automatically, then tap{' '}
-                    <strong>Add Shortcut</strong> in Shortcuts. Apple validates the shortcut before
-                    it can be imported.
+                    Tap <strong>Download the Apple Shortcut</strong>. Open the downloaded{' '}
+                    <strong>Wishlist</strong> file if Safari does not open it automatically, then
+                    tap <strong>Add Shortcut</strong> in Shortcuts. Apple validates the shortcut
+                    before it can be imported.
                   </p>
                 </div>
               </li>
@@ -253,8 +253,9 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
 
             <div className="shortcut-use-note">
               <strong>To use it:</strong> open a product, tap Share, then choose{' '}
-              <strong>Wishlist</strong>. If it is hidden, scroll to the bottom of the Share Sheet
-              and tap Edit Actions.
+              <strong>Wishlist</strong>. Apple does not let a shared shortcut choose its own Share
+              Sheet position. If Wishlist is below Favourites, scroll to the bottom, tap{' '}
+              <strong>Edit Actions</strong>, then add <strong>Wishlist</strong> to Favourites once.
             </div>
 
             <details className="shortcut-manual-setup">
@@ -298,12 +299,13 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                     3
                   </span>
                   <div>
-                    <h3>Add the four actions</h3>
+                    <h3>Add the five actions</h3>
                     <p>
                       Use <strong>Search Actions</strong> at the bottom to add, in order:{' '}
                       <strong>Get URLs from Input</strong>, <strong>URL Encode</strong>,{' '}
-                      <strong>Text</strong>, and <strong>Open URLs</strong>. Do not choose{' '}
-                      <strong>Get Contents of URL</strong>.
+                      <strong>Text</strong>, another <strong>Text</strong>, and{' '}
+                      <strong>Open URLs</strong>. Do not choose <strong>Get Contents of URL</strong>
+                      .
                     </p>
                   </div>
                 </li>
@@ -312,12 +314,14 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                     4
                   </span>
                   <div>
-                    <h3>Fill the Text action</h3>
+                    <h3>Fill the two Text actions</h3>
                     <p>
-                      Paste the copied wishlist address into the <strong>Text</strong> action. Tap
-                      immediately after its final <strong>=</strong>, choose{' '}
-                      <strong>Select Variable</strong>, then choose{' '}
-                      <strong>URL Encoded Text</strong>. Tap <strong>Done</strong> to save.
+                      Paste the copied wishlist address into the first <strong>Text</strong> action;
+                      it should end with <strong>=</strong>. Leave the second Text action empty,
+                      press and hold inside it, then choose <strong>Select Variable</strong> and add{' '}
+                      <strong>Text</strong>. Press and hold immediately after that variable and add{' '}
+                      <strong>URL Encoded Text</strong>. The second action must contain those two
+                      variables in that order. Tap <strong>Done</strong> to save.
                     </p>
                   </div>
                 </li>
