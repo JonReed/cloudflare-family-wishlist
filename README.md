@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>For your favourite people.</strong><br>
-  A private, self-hosted family wishlist designed to run comfortably on Cloudflare's free tier.
+  A private, AI-assisted family wishlist designed to run comfortably on Cloudflare's free tier.
 </p>
 
 <p align="center">
@@ -28,6 +28,18 @@ Each family member has one wishlist. Everyone in the invited family group can vi
 
 <p align="center"><sub>The everyday workspace: choose someone, see their wishes and add another without leaving the page.</sub></p>
 
+## Turn a shopping link into a useful wish
+
+Paste a product link—or share it from a phone or browser—and Family Wishlist can fill in an editable
+product name, picture and GBP price. It reads reliable information published by the shop first; when
+that is incomplete, Cloudflare Workers AI can help recover a missing name or price and choose the
+most likely product picture from the page.
+
+There is no separate AI account, API key or paid AI service to configure. The feature is designed to
+fit within the Workers AI free allocation, quietly falls back to the normal editable form if a shop
+blocks extraction or the allowance is unavailable, and never saves the suggestion until a family
+member confirms it.
+
 ## Why this exists
 
 Most wishlist applications are either public, advertising-supported, complicated to self-host, or built around permissions this use case does not need. This project deliberately has a smaller model:
@@ -37,7 +49,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - one wishlist per family member;
 - shared editing across the family;
 - high, normal and low priorities that keep the most useful wishes at the top;
-- editable names, pictures and GBP prices filled from product links when shops publish them;
+- AI-assisted, editable names, pictures and GBP prices from product links;
 - iPhone/iPad Share Sheet and desktop browser tools for adding something to one or more lists while shopping;
 - private claims that the recipient cannot see;
 - no application-managed passwords;
@@ -49,7 +61,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - [React Router](https://reactrouter.com/) in full-stack framework mode
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) and the Cloudflare Vite plugin
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) for SQLite-compatible storage
-- [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) for an optional product-page extraction fallback
+- [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) for free-tier product-detail assistance when ordinary page metadata is incomplete
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/) with email one-time PINs and an exact email allow-list
 - TypeScript, React and Tailwind CSS
 - Vitest running in the Cloudflare Workers runtime
