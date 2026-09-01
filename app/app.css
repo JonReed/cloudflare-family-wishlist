@@ -411,7 +411,7 @@
 
 .wishlist-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(27rem, 0.9fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(23rem, 0.6fr);
   gap: clamp(1.5rem, 2vw, 2rem);
   align-items: start;
 }
