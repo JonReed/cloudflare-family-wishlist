@@ -36,9 +36,9 @@ that is incomplete, Cloudflare Workers AI can help recover a missing name or pri
 most likely product picture from the page.
 
 There is no separate AI account, API key or paid AI service to configure. The feature is designed to
-fit within the Workers AI free allocation, quietly falls back to the normal editable form if a shop
-blocks extraction or the allowance is unavailable, and never saves the suggestion until a family
-member confirms it.
+fit within the Workers AI free allocation. The normal editable form remains fully usable if a shop
+blocks extraction or the allowance is unavailable, and no suggestion is saved until a family member
+confirms it.
 
 ## Why this exists
 

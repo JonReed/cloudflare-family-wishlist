@@ -27,7 +27,7 @@ guide.
 
 1. **Prepare the account and source** — fork the project, choose a `workers.dev` address and bind
    Wrangler to the right Cloudflare account.
-2. **Create the data and application** — provision D1, keep or disable the included AI fallback, run
+2. **Create the data and application** — provision D1, keep or disable the included AI assistance, run
    the checks and make the first deployment.
 3. **Make it private** — put the whole Worker behind an exact-email Access policy, then configure the
    Worker's own JWT validation.
@@ -40,7 +40,7 @@ guide.
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Workers](https://developers.cloudflare.com/workers/platform/limits/)                        | React Router server rendering, validation and product-page fetch | 100,000 requests per day, 10 ms CPU per request and 50 external subrequests per request                                                                                       |
 | [D1](https://developers.cloudflare.com/d1/platform/pricing/)                                 | Members, wishlists, items, claims and lookup budgets             | 5 million rows read and 100,000 rows written per day; [500 MB per database, 5 GB total and 10 databases](https://developers.cloudflare.com/d1/platform/limits/)               |
-| [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)                 | Optional fallback for poorly marked-up product pages             | 10,000 Neurons per day; the default [Gemma model remains available on Workers Free](https://developers.cloudflare.com/changelog/post/2026-07-28-models-require-workers-paid/) |
+| [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)                 | AI-assisted product-detail enrichment                            | 10,000 Neurons per day; the default [Gemma model remains available on Workers Free](https://developers.cloudflare.com/changelog/post/2026-07-28-models-require-workers-paid/) |
 | [Cloudflare Access](https://www.cloudflare.com/plans/zero-trust-services/)                   | Exact-email admission and email one-time PIN login               | $0 for up to 50 users                                                                                                                                                         |
 | [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/) | Build and deploy each push to `main`                             | 3,000 build minutes per month, one concurrent build and a 20-minute limit per build                                                                                           |
 
@@ -63,7 +63,7 @@ Workers AI is not called for every page. Deterministic retailer rules, JSON-LD, 
 product fields run first; AI receives a reduced excerpt only when a title or GBP price is still
 missing. The default model currently costs 9,091 Neurons per million input tokens and 27,273 per
 million output tokens. An illustrative upper-sized English prompt with 4,000 input tokens plus the
-application's maximum 180-token output is about 41 Neurons, or roughly 240 such fallbacks inside the
+application's maximum 180-token output is about 41 Neurons, or roughly 240 such AI-assisted lookups inside the
 daily free allocation. URLs and languages tokenise differently, so that is a scale estimate rather
 than a guaranteed request count, but it leaves ample room for ordinary family use.
 

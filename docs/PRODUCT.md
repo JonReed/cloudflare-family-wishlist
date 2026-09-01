@@ -141,19 +141,19 @@ Still planned:
 - advertising, affiliate tracking or analytics scripts; and
 - extra Cloudflare services without a demonstrated need.
 
-## AI is an enhancement, not a dependency
+## AI-assisted product details
 
-The link helper reads ordinary product metadata first. If a page is poorly marked up and Workers AI
-is enabled, the application may use it to recover a missing product name or current GBP price from a
-small, cleaned excerpt of the public page. During that same fallback it may also choose the most
-likely product image from a short, validated list of images found on the page. It cannot invent an
-image address or fetch a different page. The result remains an editable draft: AI never adds a wish
-or changes saved family data by itself.
+Family Wishlist combines product information published by the shop with Workers AI enrichment. When
+standard page data leaves gaps, AI can complete a missing product name or current GBP price from a
+small, cleaned excerpt of the public page. During the same enrichment pass it may also choose the
+most likely product image from a short, validated list found on the page. It cannot invent an image
+address or fetch a different page. The result remains an editable draft: AI never adds a wish or
+changes saved family data by itself.
 
 Quota, capacity, model and extraction failures must be indistinguishable from an ordinary page that
 does not share enough information. The reliable metadata result is kept, and the family can always
-finish the form by hand. This graceful fallback is part of the product contract rather than an error
-case to expose as infrastructure jargon.
+finish the form by hand. This resilience is part of the product contract rather than an error case to
+expose as infrastructure jargon.
 
 Forks can choose different boundaries, but the reference project should stay small, private and easy
 for a family to operate.

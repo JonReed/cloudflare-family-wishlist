@@ -27,7 +27,7 @@ JWT verification + security headers + React Router request handler
     |       +--> wishlist service (app/lib/db/wishlists.ts)
     |       +--> bounded public-page metadata fetch (app/lib/product-metadata.ts)
     |                  |
-    |                  +--> optional cleaned-text fallback (Workers AI)
+    |                  +--> cleaned product-detail enrichment (Workers AI)
     |
     +--> organiser-only family route (app/routes/family.tsx)
             |
@@ -241,7 +241,7 @@ Product import is deliberately staged:
    output quietly leave the deterministic result in place.
 
 Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the
-first choice; AI image selection happens only as part of an already-needed text fallback and only
+first choice; AI image selection happens only as part of an already-needed enrichment pass and only
 from the page's bounded candidate list. Browser markup uses the same-origin `/product-image` route,
 not the remote address. That route requires a completed family membership, validates every redirect,
 relies on Workers public-network fetch enforcement, accepts only five raster formats, buffers at most
@@ -276,7 +276,7 @@ environment variable.
 - **Access:** invitation-only authentication using an exact email allow-list and one-time PINs.
 - **Access API:** organiser additions create one exact-email Allow policy using a narrowly scoped
   Worker secret; it does not send invitation email.
-- **Workers AI:** optional fallback extraction for poorly marked-up public product pages.
+- **Workers AI:** product-detail enrichment for incomplete public page metadata.
 - **Workers Logs:** operational logs without assertions, private claims or sensitive query strings.
 
 R2, KV, Queues and application-managed email are intentionally absent. Introduce another service only

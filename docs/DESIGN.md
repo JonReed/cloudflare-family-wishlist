@@ -173,6 +173,10 @@ modelled. Prefer “wish”, “gift”, “family” and “I’m getting this�
 recipient, priority, resource, workspace, role or permission. Empty states should be reassuring and
 specific. Avoid forced whimsy: one human phrase is enough.
 
+Describe Workers AI as product-detail assistance, enrichment or completion—not as a fallback. It is a
+positive capability that turns a link into a better editable draft. Reserve “fallback” for genuine
+resilience behaviour such as a manual form remaining available when another service cannot respond.
+
 ## Accessibility and interaction
 
 - Use semantic headings, regions, lists, navigation and ordinary HTML forms.

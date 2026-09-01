@@ -11,7 +11,7 @@ This guide is the practical handoff for changing the application. Read [PRODUCT.
 
 Cloudflare credentials are not required for ordinary local development or tests. Remote bindings are
 disabled in Vite and Vitest, so local product import exercises deterministic extraction and graceful
-AI fallback without consuming a deployment's allowance.
+AI-unavailable behaviour without consuming a deployment's allowance.
 
 ## First local run
 
@@ -86,7 +86,7 @@ remain optional, receive only reduced public-page text, accept only source-suppo
 save a wish. Add general evidence rules before retailer-specific ones; keep retailer exceptions in a
 hostname-matched adapter, and add a compact regression fixture for every new metadata shape. Challenge
 pages must be rejected before AI is called. Product image rules must return a validated HTTPS draft.
-When the text fallback is already needed, AI may select only an integer index from a bounded list of
+When the AI enrichment pass is already needed, it may select only an integer index from a bounded list of
 validated page-image candidates; never accept a model-provided URL or automatically load
 private/local targets. Inject `ProductAiExtractor` in tests rather than connecting the test pool to
 Workers AI. `ProductImageField` keeps its picture address in the submitted form while presenting a
