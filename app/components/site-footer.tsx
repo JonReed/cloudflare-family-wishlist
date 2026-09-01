@@ -11,6 +11,9 @@ const repositoryUrl = 'https://github.com/JonReed/cloudflare-family-wishlist';
 export function SiteFooter() {
   return (
     <footer className="site-footer">
+      <span aria-hidden="true" className="footer-tape footer-tape-left" />
+      <span aria-hidden="true" className="footer-tape footer-tape-right" />
+
       <div className="site-footer-inner">
         <div>
           <a className="footer-repo" href={repositoryUrl} target="_blank" rel="noreferrer">

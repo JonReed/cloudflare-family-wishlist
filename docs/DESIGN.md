@@ -138,6 +138,8 @@ Colours must retain sufficient contrast without resorting to saturated software-
 - Paper sheets may use grounded offset shadows, faint fibres and small rotations.
 - Tape and string are occasional accents, not borders around every section. A tape piece should
   normally bridge two adjacent surfaces; avoid stacking pieces on the same seam.
+- Two restrained tape pieces bridge the canvas and footer so the final dark paper layer feels held
+  to the page without crowding its links.
 - Wishlist items are rows separated by rules. They are not nested cards.
 - Buttons are rectangular and tactile. Links remain recognisable as links.
 
