@@ -5,7 +5,9 @@ import type { Route } from './+types/root';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
-  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }
+  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+  { rel: 'manifest', href: '/app.webmanifest', crossOrigin: 'use-credentials' },
+  { rel: 'apple-touch-icon', href: '/icons/app-192.png' }
 ];
 
 export function loader({ context }: Route.LoaderArgs) {
@@ -36,6 +38,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
       <script src="/product-import.js" nonce={loaderData.cspNonce} defer />
       <script src="/bookmarklet.js" nonce={loaderData.cspNonce} defer />
       <script src="/family-members.js" nonce={loaderData.cspNonce} defer />
+      <script src="/pwa-install.js" nonce={loaderData.cspNonce} defer />
     </>
   );
 }

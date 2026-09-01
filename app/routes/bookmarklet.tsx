@@ -63,6 +63,75 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
 
+          <section className="android-share-setup" aria-labelledby="android-share-title">
+            <div className="setup-section-heading">
+              <p className="bookmarklet-kicker">Android</p>
+              <h2 id="android-share-title">Add it to your Share menu</h2>
+              <p>
+                Install Family Wishlist once, then send a product here from Chrome or any shopping
+                app that shares web links. You will always get an editable draft before anything is
+                saved.
+              </p>
+            </div>
+
+            <div className="android-install-actions">
+              <button type="button" className="button-primary" data-install-family-wishlist hidden>
+                Install Family Wishlist
+              </button>
+              <span
+                className="android-install-status"
+                data-install-family-wishlist-status
+                role="status"
+                aria-live="polite"
+              />
+            </div>
+
+            <ol className="shortcut-steps android-share-steps">
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  1
+                </span>
+                <div>
+                  <h3>Install the app</h3>
+                  <p>
+                    Tap <strong>Install Family Wishlist</strong> above when it appears. Otherwise,
+                    open Chrome’s menu and choose <strong>Install app</strong> or{' '}
+                    <strong>Add to Home screen</strong>.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  2
+                </span>
+                <div>
+                  <h3>Share a product</h3>
+                  <p>
+                    In Chrome or a shopping app, open a product, tap <strong>Share</strong>, then
+                    choose <strong>Family Wishlist</strong>.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  3
+                </span>
+                <div>
+                  <h3>Check the draft</h3>
+                  <p>
+                    Confirm the product details, choose one or more family lists, then save when
+                    everything looks right.
+                  </p>
+                </div>
+              </li>
+            </ol>
+
+            <div className="shortcut-use-note">
+              Family Wishlist must stay signed in and online while opening a shared link. For
+              privacy, the installed app never stores family pages for offline use.
+            </div>
+          </section>
+
           <section className="shortcut-setup" aria-labelledby="shortcut-title">
             <div className="setup-section-heading">
               <p className="bookmarklet-kicker">iPhone &amp; iPad</p>

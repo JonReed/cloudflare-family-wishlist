@@ -8,6 +8,7 @@ describe('security headers', () => {
 
     expect(response.headers.get('Referrer-Policy')).toBe('same-origin');
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('Content-Security-Policy')).toContain("worker-src 'self'");
   });
 
   it('allows only a marked proxied image to use the private browser cache', () => {

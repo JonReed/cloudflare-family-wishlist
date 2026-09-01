@@ -33,7 +33,7 @@
 }
 
 .bookmarklet-heading {
-  max-width: 48rem;
+  width: 100%;
 }
 
 .bookmarklet-kicker {
@@ -46,7 +46,6 @@
 }
 
 .bookmarklet-heading h1 {
-  max-width: 44rem;
   margin: 0.45rem 0 0;
   font-family: var(--font-display);
   font-size: clamp(2.8rem, 7vw, 5.4rem);
@@ -63,15 +62,21 @@
   line-height: 1.75;
 }
 
+.android-share-setup,
 .shortcut-setup,
 .browser-button-setup {
   margin-top: clamp(2.5rem, 6vw, 5rem);
 }
 
+.android-share-setup,
 .shortcut-setup {
   border-block: 1px solid var(--line);
   background: rgb(135 168 143 / 0.1);
   padding: clamp(1.5rem, 4vw, 2.75rem);
+}
+
+.android-share-setup {
+  background: rgb(187 145 101 / 0.09);
 }
 
 .setup-section-heading {
@@ -104,6 +109,20 @@
 
 .shortcut-actions {
   margin-top: 1.5rem;
+}
+
+.android-install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.android-install-status {
+  color: var(--leaf-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .shortcut-copy-status {
@@ -148,6 +167,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem 2rem;
   list-style: none;
+}
+
+.android-share-steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .shortcut-steps li {
@@ -452,6 +475,7 @@
   }
 
   .shortcut-steps,
+  .android-share-steps,
   .clipboard-fallback,
   .clipboard-form {
     grid-template-columns: 1fr;
@@ -490,9 +514,16 @@
     padding-inline: 1rem;
   }
 
+  .android-share-setup {
+    margin-inline: -0.35rem;
+    padding-inline: 1rem;
+  }
+
+  .android-install-actions > *,
   .shortcut-actions > *,
   .clipboard-actions > *,
-  .clipboard-form > * {
+  .clipboard-form > input,
+  .clipboard-form > button {
     width: 100%;
     justify-content: center;
   }

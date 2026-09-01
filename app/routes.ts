@@ -7,5 +7,6 @@ export default [
   route('family', 'routes/family.tsx'),
   route('profile', 'routes/profile.tsx'),
   route('product-image', 'routes/product-image.ts'),
-  route('product-details', 'routes/product-details.ts')
+  route('product-details', 'routes/product-details.ts'),
+  route('share-target', 'routes/share-target.ts')
 ] satisfies RouteConfig;

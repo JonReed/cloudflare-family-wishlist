@@ -29,6 +29,7 @@
     "../app/lib/product-metadata.ts",
     "../app/lib/product-url.ts",
     "../app/lib/request-security.ts",
-    "../app/lib/security-headers.ts"
+    "../app/lib/security-headers.ts",
+    "../app/lib/share-target.ts"
   ]
 }

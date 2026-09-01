@@ -97,11 +97,14 @@ ordinary and multi-list forms.
 
 The **Add from anywhere** page is presented by `app/routes/bookmarklet.tsx` at the existing
 `/bookmarklet` URL. `app/lib/bookmarklet.ts` derives both the add-page address used by Apple Shortcuts
-and the desktop bookmarklet from the current deployment origin, while `public/bookmarklet.js`
-progressively enables installation, copy and clipboard conveniences. All routes land on
-`app/routes/add.tsx`; they must carry only the public product URL and never identity or family data.
-Clipboard input must remain limited to credential-free HTTP(S) links. Preserve the visual drag
-guidance, no-JavaScript add-form fallback, editable metadata fallbacks and the guarded,
+and the desktop bookmarklet from the current deployment origin. `public/pwa-install.js` registers the
+cache-free service worker and progressively exposes Android installation; `public/bookmarklet.js`
+handles the browser button, copy and clipboard conveniences. The manifest’s GET-only share target
+lands on `app/routes/share-target.ts`, which accepts only a validated public product link before
+redirecting to `app/routes/add.tsx`. All entry points must carry only the product URL and never
+identity or family data. Do not add a service-worker fetch handler or cache authenticated HTML.
+Clipboard and shared input must remain limited to credential-free HTTP(S) links. Preserve the visual
+drag guidance, no-JavaScript add-form fallback, editable metadata fallbacks and the guarded,
 all-or-nothing multi-list service mutation.
 
 ### Database query or mutation
@@ -175,6 +178,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/product-metadata.test.ts`    | bounded public fetches, metadata extraction and optional AI safety |
 | `test/product-url.test.ts`         | safe HTTP(S) links, credential rejection and size limits           |
 | `test/request-security.test.ts`    | mutation origins, content types and request-body boundary          |
+| `test/share-target.test.ts`        | safe Android shared-text and direct-link extraction                |
 | `test/wishlist-service.test.ts`    | CRUD validation, ordering, claims, concurrency and owner privacy   |
 
 `vitest.config.ts` runs tests through the Cloudflare pool. `test/apply-migrations.ts` applies every SQL

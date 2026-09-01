@@ -33,12 +33,12 @@ The product model remains deliberately small: one member, one list. Birthdays, C
 occasions do not create separate list types. A wish can stay useful throughout the year.
 
 **Add from anywhere** is a stable top-level destination rather than a profile-only setting. Its setup
-page puts the iPhone and iPad Share Sheet journey first, with a short numbered Apple Shortcut recipe
-and the deployment-specific address ready to copy. The desktop bookmarklet follows, called the
-“browser button” in family-facing copy, with a visual demonstration of the drag from the real button
-towards a labelled bookmarks bar. Do not assume that a conventional button label alone explains
-either unfamiliar setup interaction. Both must explicitly end at an editable draft, not imply that a
-wish is saved automatically.
+page starts with Android’s install-once Share-menu journey, followed by the iPhone and iPad Share
+Sheet journey with a short numbered Apple Shortcut recipe and the deployment-specific address ready
+to copy. The desktop bookmarklet follows, called the “browser button” in family-facing copy, with a
+visual demonstration of the drag from the real button towards a labelled bookmarks bar. Do not assume
+that a conventional button label alone explains any unfamiliar setup interaction. Every route must
+explicitly end at an editable draft, not imply that a wish is saved automatically.
 
 Household administration lives on the separate, infrequently visited **Your family** page. It shows
 joined people and those waiting for their first login, with an add form kept apart from the everyday

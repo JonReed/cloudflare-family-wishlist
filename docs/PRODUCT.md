@@ -67,11 +67,12 @@ last. Within each group, the newest addition appears first.
 
 ### Save something while browsing
 
-The top-level **Add from anywhere** setup page provides two deployment-specific routes back to Family
-Wishlist. On iPhone and iPad, a member creates an Apple Shortcut that accepts product links from the
-Share Sheet and opens the protected add page. On a laptop or desktop, they drag the “Add to Family
-Wishlist” browser button into their bookmarks bar and click it on a product page. A clipboard helper
-also opens a copied HTTP(S) link when the browser permits clipboard access.
+The top-level **Add from anywhere** setup page provides three routes back to Family Wishlist. On
+Android, a member installs the private web app once; Family Wishlist then appears as a target in the
+system Share menu for web links. On iPhone and iPad, a member creates an Apple Shortcut that accepts
+product links from the Share Sheet and opens the protected add page. On a laptop or desktop, they drag
+the “Add to Family Wishlist” browser button into their bookmarks bar and click it on a product page. A
+clipboard helper also opens a copied HTTP(S) link when the browser permits clipboard access.
 
 Every route opens an editable draft with the product link and any details the shop makes available.
 The member can change the draft and choose one or more family lists before anything is saved. Their
@@ -116,8 +117,8 @@ Working today:
 - adding, editing and deleting items;
 - filling a new wish's name, image and GBP price from a public product link, with optional AI help
   when the page does not publish a reliable name or price;
-- adding a product to one or more family lists from the iPhone/iPad Share Sheet or a desktop browser
-  button;
+- adding a product to one or more family lists from Android’s Share menu, the iPhone/iPad Share Sheet
+  or a desktop browser button;
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased; and
 - server-enforced claim secrecy for the recipient.

@@ -57,9 +57,10 @@ email. Missing or invalid production configuration fails closed.
    form data. React Router repeats its own origin check before the action validates the request shape,
    invokes a service mutation and redirects. The add form can instead request an editable draft from
    a product link without creating an item.
-6. `/add?url=` is the landing route for the iPhone/iPad Share Sheet Shortcut, copied links and the
-   desktop bookmarklet. It loads an editable product draft and all family list choices; its action
-   inserts one independent item per selected list with a guarded D1 statement.
+6. `/share-target` extracts a validated web link from Android share parameters and redirects to
+   `/add?url=`. That add route is also the landing route for the iPhone/iPad Share Sheet Shortcut,
+   copied links and the desktop bookmarklet. It loads an editable product draft and all family list
+   choices; its action inserts one independent item per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
 
 The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
@@ -90,24 +91,25 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 
 ## Source boundaries
 
-| Layer                                             | Responsibility                                                                     |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `workers/app.ts`                                  | Production request boundary, Access enforcement, response headers and router entry |
-| `app/lib/auth/access.ts`                          | Access JWT verification and tightly constrained local identity                     |
-| `app/lib/context.ts`                              | Typed identity and binding handoff to loaders/actions                              |
-| `app/routes/home.tsx`                             | HTTP-level loading, form intent dispatch and page composition                      |
-| `app/routes/add.tsx`                              | Product-link draft landing page, multi-list chooser and save action                |
-| `app/routes/bookmarklet.tsx`                      | Share Sheet Shortcut, clipboard and browser-button setup                           |
-| `app/routes/family.tsx`                           | Organiser-only joined/waiting member administration                                |
-| `app/routes/product-details.ts`                   | Same-origin progressive-enhancement endpoint for product-link metadata             |
-| `app/lib/bookmarklet.ts`, `public/bookmarklet.js` | Deployment-specific add links and progressively enhanced setup tools               |
-| `app/lib/cloudflare/access-membership.ts`         | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
-| `app/lib/product-metadata.ts`                     | Bounded public-page fetching, redirect policy and metadata extraction              |
-| `app/lib/db/members.ts`                           | Identity normalisation and member/list provisioning                                |
-| `app/lib/db/family-members.ts`                    | Admin checks, waiting invitations and family roster reads                          |
-| `app/lib/db/wishlists.ts`                         | Domain validation, reads, mutations, claim ownership and privacy                   |
-| `migrations/`                                     | Append-only persistent schema history                                              |
-| `app/root.tsx`, `app/app.css`, `app/components/`  | Document shell, design system and shared presentation                              |
+| Layer                                            | Responsibility                                                                     |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `workers/app.ts`                                 | Production request boundary, Access enforcement, response headers and router entry |
+| `app/lib/auth/access.ts`                         | Access JWT verification and tightly constrained local identity                     |
+| `app/lib/context.ts`                             | Typed identity and binding handoff to loaders/actions                              |
+| `app/routes/home.tsx`                            | HTTP-level loading, form intent dispatch and page composition                      |
+| `app/routes/add.tsx`                             | Product-link draft landing page, multi-list chooser and save action                |
+| `app/routes/bookmarklet.tsx`                     | Android, Share Sheet Shortcut, clipboard and browser-button setup                  |
+| `app/routes/share-target.ts`                     | Safe Android shared-text/link handoff to the editable add route                    |
+| `app/routes/family.tsx`                          | Organiser-only joined/waiting member administration                                |
+| `app/routes/product-details.ts`                  | Same-origin progressive-enhancement endpoint for product-link metadata             |
+| `app/lib/bookmarklet.ts`, `public/*.js`          | Deployment-specific add links, installation and progressively enhanced setup tools |
+| `app/lib/cloudflare/access-membership.ts`        | Bounded, exact-email Cloudflare Access policy creation and cleanup                 |
+| `app/lib/product-metadata.ts`                    | Bounded public-page fetching, redirect policy and metadata extraction              |
+| `app/lib/db/members.ts`                          | Identity normalisation and member/list provisioning                                |
+| `app/lib/db/family-members.ts`                   | Admin checks, waiting invitations and family roster reads                          |
+| `app/lib/db/wishlists.ts`                        | Domain validation, reads, mutations, claim ownership and privacy                   |
+| `migrations/`                                    | Append-only persistent schema history                                              |
+| `app/root.tsx`, `app/app.css`, `app/components/` | Document shell, design system and shared presentation                              |
 
 Keep security and database rules below the component layer. A visual condition is allowed to explain a
 rule to the user, but it must not be the only enforcement of that rule.
@@ -191,12 +193,19 @@ form action remains the fallback when JavaScript is unavailable, and creating a 
 the script. The server remains authoritative. `unsafe-inline` and `unsafe-eval` are not acceptable
 shortcuts.
 
-The top navigation exposes the **Add from anywhere** setup page. Its Apple Shortcut recipe copies a
+The top navigation exposes the **Add from anywhere** setup page. The web app manifest registers an
+installed Android PWA as a GET-only share target; `/share-target` validates a dedicated URL or finds
+one in Android’s shared text before redirecting to `/add`. Its Apple Shortcut recipe copies a
 server-generated `/add?url=` prefix, while the optional clipboard helper validates a credential-free
 HTTP(S) link before navigating. React does not server-render the desktop `javascript:` link; a small
 nonce-authorised, self-hosted script copies a server-generated, deployment-specific value from a data
 attribute into the draggable link. These entry points carry only the product URL to `/add`;
 authentication, metadata lookup, validation and saving all remain inside the protected Worker.
+
+A minimal service worker enables installation but has no fetch handler and creates no caches. The
+manifest link uses `crossorigin="use-credentials"` because Cloudflare Access protects that resource
+too. Family HTML, identity state and wishlist data therefore remain online-only and continue to
+receive `private, no-store`. CSP permits only same-origin workers.
 
 Multi-list adds use one parameter-bound `INSERT … SELECT` statement. A completeness check inside the
 statement suppresses every insert when any selected wishlist no longer exists, avoiding partial saves.
