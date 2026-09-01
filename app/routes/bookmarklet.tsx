@@ -67,7 +67,30 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
 
-          <section className="android-share-setup" aria-labelledby="android-share-title">
+          <nav className="device-chooser" aria-labelledby="device-chooser-title">
+            <p className="bookmarklet-kicker">Skip the instructions you do not need</p>
+            <h2 id="device-chooser-title">What are you using?</h2>
+            <div className="device-chooser-links">
+              <a href="#android-instructions">
+                <strong>Android phone or tablet</strong>
+                <span>Install it, then use Android’s Share menu</span>
+              </a>
+              <a href="#apple-instructions">
+                <strong>iPhone or iPad</strong>
+                <span>Make an Apple Shortcut for the Share Sheet</span>
+              </a>
+              <a href="#desktop-instructions">
+                <strong>Laptop or desktop</strong>
+                <span>Drag a button into your browser’s bookmarks bar</span>
+              </a>
+            </div>
+          </nav>
+
+          <section
+            id="android-instructions"
+            className="android-share-setup"
+            aria-labelledby="android-share-title"
+          >
             <div className="setup-section-heading">
               <p className="bookmarklet-kicker">Android</p>
               <h2 id="android-share-title">Add it to your Share menu</h2>
@@ -96,11 +119,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   1
                 </span>
                 <div>
-                  <h3>Install the app</h3>
+                  <h3>Open this page in Chrome</h3>
                   <p>
-                    Tap <strong>Install Family Wishlist</strong> above when it appears. Otherwise,
-                    open Chrome’s menu and choose <strong>Install app</strong> or{' '}
-                    <strong>Add to Home screen</strong>.
+                    If you are reading this inside another app, open its menu, choose{' '}
+                    <strong>Open in Chrome</strong>, and return to the Android instructions on this
+                    page.
                   </p>
                 </div>
               </li>
@@ -109,10 +132,12 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   2
                 </span>
                 <div>
-                  <h3>Share a product</h3>
+                  <h3>Install Family Wishlist</h3>
                   <p>
-                    In Chrome or a shopping app, open a product, tap <strong>Share</strong>, then
-                    choose <strong>Family Wishlist</strong>.
+                    Tap <strong>Install Family Wishlist</strong> above if the button appears, then
+                    confirm <strong>Install</strong>. If it does not appear, tap Chrome’s{' '}
+                    <strong>⋮</strong> menu, choose <strong>Add to Home screen</strong> or{' '}
+                    <strong>Install app</strong>, then confirm.
                   </p>
                 </div>
               </li>
@@ -121,10 +146,24 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   3
                 </span>
                 <div>
-                  <h3>Check the draft</h3>
+                  <h3>Share a product</h3>
                   <p>
-                    Confirm the product details, choose one or more family lists, then save when
-                    everything looks right.
+                    Open a product in Chrome or a shopping app and tap its <strong>Share</strong>{' '}
+                    button. Choose <strong>Family Wishlist</strong> in Android’s Share menu. If it
+                    is not visible, tap <strong>More</strong> or scroll through the available apps.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="bookmarklet-step-number" aria-hidden="true">
+                  4
+                </span>
+                <div>
+                  <h3>Check and save the draft</h3>
+                  <p>
+                    Family Wishlist opens with the product link filled in. Sign in if asked, check
+                    the title, image, price and notes, choose one or more family lists, then tap{' '}
+                    <strong>Add to wishlists</strong>.
                   </p>
                 </div>
               </li>
@@ -136,7 +175,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </div>
           </section>
 
-          <section className="shortcut-setup" aria-labelledby="shortcut-title">
+          <section
+            id="apple-instructions"
+            className="shortcut-setup"
+            aria-labelledby="shortcut-title"
+          >
             <div className="setup-section-heading">
               <p className="bookmarklet-kicker">iPhone &amp; iPad</p>
               <h2 id="shortcut-title">Put it in your Share Sheet</h2>
@@ -147,18 +190,18 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </div>
 
             <div className="shortcut-actions">
-              <a href="shortcuts://create-shortcut" className="button-primary">
-                Open a new Shortcut
-              </a>
               <button
                 type="button"
-                className="button-quiet"
+                className="button-primary"
                 data-copy-shortcut-prefix
                 data-shortcut-prefix={`${loaderData.addPageHref}?url=`}
                 hidden
               >
                 Copy your wishlist address
               </button>
+              <a href="shortcuts://create-shortcut" className="button-secondary">
+                Open a new Shortcut
+              </a>
               <span
                 className="shortcut-copy-status"
                 data-shortcut-copy-status
@@ -168,10 +211,8 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </div>
 
             <div className="shortcut-address-wrap">
-              <span>Paste this into the URL action</span>
-              <code className="shortcut-address">
-                {loaderData.addPageHref}?url=<strong>[URL Encoded]</strong>
-              </code>
+              <span>The address to copy — including the final =</span>
+              <code className="shortcut-address">{loaderData.addPageHref}?url=</code>
             </div>
 
             <ol className="shortcut-steps">
@@ -180,10 +221,12 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                   1
                 </span>
                 <div>
-                  <h3>Open and name the shortcut</h3>
+                  <h3>Copy the address and open Shortcuts</h3>
                   <p>
-                    Tap <strong>Open a new Shortcut</strong> above. In Shortcuts, tap{' '}
-                    <strong>New Shortcut</strong>, choose <strong>Rename</strong>, and call it{' '}
+                    Tap <strong>Copy your wishlist address</strong> above. If that button is not
+                    shown, press and hold the address in the box and tap <strong>Copy</strong>. Then
+                    tap <strong>Open a new Shortcut</strong>. Tap <strong>New Shortcut</strong> at
+                    the top, choose <strong>Rename</strong>, and call it{' '}
                     <strong>Add to Family Wishlist</strong>.
                   </p>
                 </div>
@@ -250,10 +293,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                 <div>
                   <h3>Put it in the Share Sheet</h3>
                   <p>
-                    Tap the shortcut’s name at the top, choose <strong>Details</strong>, and turn on{' '}
-                    <strong>Show in Share Sheet</strong>. Tap the input types beside{' '}
-                    <strong>Receive</strong>, turn off everything except <strong>URLs</strong> and{' '}
-                    <strong>Safari Web Pages</strong>, then tap <strong>Done</strong>.
+                    Tap <strong>Add to Family Wishlist</strong> at the top, choose{' '}
+                    <strong>Details</strong>, and turn on <strong>Show in Share Sheet</strong>. A{' '}
+                    <strong>Receive</strong> row appears. Tap its input types, turn off everything
+                    except <strong>URLs</strong> and <strong>Safari Web Pages</strong>, then tap{' '}
+                    <strong>Done</strong> twice to save the shortcut.
                   </p>
                 </div>
               </li>
@@ -267,8 +311,13 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
 
             <div className="clipboard-fallback">
               <div>
-                <h3>Already copied a link?</h3>
-                <p>Open a draft from your clipboard, or paste the link here yourself.</p>
+                <h3>Prefer to copy and paste?</h3>
+                <p>
+                  On the product page, tap <strong>Share</strong>, then <strong>Copy Link</strong>.
+                  Return here and tap <strong>Use copied link</strong>. If that button is not shown
+                  or clipboard access is refused, press and hold the box below, tap{' '}
+                  <strong>Paste</strong>, then tap <strong>Open draft</strong>.
+                </p>
               </div>
               <div className="clipboard-actions">
                 <button
@@ -307,7 +356,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </div>
           </section>
 
-          <section className="browser-button-setup" aria-labelledby="browser-button-title">
+          <section
+            id="desktop-instructions"
+            className="browser-button-setup"
+            aria-labelledby="browser-button-title"
+          >
             <div className="setup-section-heading">
               <p className="bookmarklet-kicker">Laptop &amp; desktop</p>
               <h2 id="browser-button-title">Add the browser button</h2>
@@ -322,9 +375,12 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                 <div>
                   <h2 id="show-bar-title">Show your bookmarks bar</h2>
                   <p>
-                    On a Mac, open your browser’s <strong>View</strong> menu and choose{' '}
-                    <strong>Show Bookmarks Bar</strong> or <strong>Show Favourites Bar</strong>. The
-                    wording varies a little by browser.
+                    In Chrome or Edge, press <strong>⌘ Shift B</strong> on a Mac or{' '}
+                    <strong>Ctrl Shift B</strong> on Windows. In Safari, open the{' '}
+                    <strong>View</strong> menu and choose <strong>Show Favourites Bar</strong>. In
+                    Firefox, choose{' '}
+                    <strong>View → Toolbars → Bookmarks Toolbar → Always Show</strong>. A row for
+                    bookmarks should now appear below the address bar.
                   </p>
                 </div>
               </section>
@@ -336,8 +392,10 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                 <div>
                   <h2 id="drag-button-title">Drag the button upwards</h2>
                   <p>
-                    Press and hold the green button below, then drag it into the bookmarks bar at
-                    the very top of your real browser window.
+                    Move the pointer to the green <strong>Add to Family Wishlist</strong> button
+                    below. Press and keep holding your mouse or trackpad, move the button into the
+                    real bookmarks bar at the top of the window, then release. Do not simply click
+                    it—the browser must see you drag it.
                   </p>
                 </div>
               </section>
@@ -398,9 +456,11 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               <div>
                 <h2 id="use-button-title">Try it on something you like</h2>
                 <p>
-                  Visit a product page and click your new <strong>Add to Family Wishlist</strong>{' '}
-                  bookmark. A new tab will open so you can check the details and choose one or more
-                  family lists.
+                  Open a product page in the same browser, then click the new{' '}
+                  <strong>Add to Family Wishlist</strong> bookmark in the bar. A Family Wishlist tab
+                  opens with the product link filled in. Sign in if asked, check the product
+                  details, choose one or more family lists, then tap{' '}
+                  <strong>Add to wishlists</strong>.
                 </p>
               </div>
             </section>
