@@ -53,6 +53,12 @@ joined people and those waiting for their first login, with an add form kept apa
 wishlist. Cloudflare policy terminology and deployment setup stay out of family-facing copy so the
 normal list never feels like an admin console.
 
+Sharing one person's ideas outside the family stays attached to that active wishlist. A visible
+**Share this list** link belongs in the active list heading beside its wish count; it opens compact
+controls to create, replace or stop a viewing link without turning the normal list into an
+administration page. Show the newly created address with a clear copy control; after a reload, show
+that sharing is active without attempting to recover the secret from storage.
+
 The page calls the admin the “family organiser”. Waiting rows offer a prepared invitation to copy,
 but must not claim that an email was sent: the application authorises the exact address and the
 organiser shares the message through their preferred private channel. Status is plain text rather
@@ -94,6 +100,13 @@ On the recipient's own list, claim data must not merely be hidden with CSS: it m
 the server response. Do not spend permanent page space explaining this invariant. Keep the warm,
 plain-language reassurance in project guidance instead: “If someone decides to get you something
 from this list, we’ll keep it secret so the surprise isn’t spoiled.”
+
+### Sharing ideas with wider family
+
+The link-shared view is a calm, read-only paper list with the Family Wishlist mark, the person's name,
+wish count and ordinary wish details. It has no signed-in navigation, editing, add or claim controls.
+The absence of those controls is sufficient; do not add software-oriented explanations about what a
+public visitor cannot do.
 
 ### Finding the right person
 

@@ -3,6 +3,7 @@ import { RouterContextProvider, createRequestHandler } from 'react-router';
 import { AuthenticationError, authenticateAccessRequest } from '../app/lib/auth/access';
 import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/context';
 import { RequestSecurityError, secureMutationRequest } from '../app/lib/request-security';
+import { isPublicShareRequest, redactedRequestPath } from '../app/lib/public-share-path';
 import { withSecurityHeaders } from '../app/lib/security-headers';
 
 const requestHandler = createRequestHandler(
@@ -36,15 +37,18 @@ export default {
       const securedRequest = await secureMutationRequest(request, {
         allowDevelopmentOrigin: import.meta.env.DEV
       });
-      const identity = await authenticateAccessRequest(securedRequest, runtimeEnv, {
-        allowLocalDevelopmentIdentity: import.meta.env.DEV
-      });
+      const publicShare = isPublicShareRequest(securedRequest);
 
       context.set(cloudflareContext, { env: runtimeEnv, ctx, cspNonce });
-      context.set(identityContext, identity);
+      if (!publicShare) {
+        const identity = await authenticateAccessRequest(securedRequest, runtimeEnv, {
+          allowLocalDevelopmentIdentity: import.meta.env.DEV
+        });
+        context.set(identityContext, identity);
+      }
 
       const response = await requestHandler(securedRequest, context);
-      return withSecurityHeaders(response, cspNonce);
+      return withSecurityHeaders(response, cspNonce, { publicShare });
     } catch (error) {
       if (error instanceof RequestSecurityError) {
         console.warn(
@@ -72,16 +76,19 @@ export default {
       }
 
       const url = new URL(request.url);
+      const publicShare = isPublicShareRequest(request);
       console.error(
         JSON.stringify({
           event: 'request_failed',
           method: request.method,
-          path: url.pathname,
+          path: redactedRequestPath(url.pathname),
           error: error instanceof Error ? error.message : 'Unknown error'
         })
       );
 
-      return withSecurityHeaders(new Response('Internal server error', { status: 500 }), cspNonce);
+      return withSecurityHeaders(new Response('Internal server error', { status: 500 }), cspNonce, {
+        publicShare
+      });
     }
   }
 } satisfies ExportedHandler<Env>;

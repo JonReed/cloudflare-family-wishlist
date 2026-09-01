@@ -25,4 +25,15 @@ describe('security headers', () => {
     expect(response.headers.get('Cache-Control')).toBe('private, max-age=86400');
     expect(response.headers.has('X-Product-Image-Proxy')).toBe(false);
   });
+
+  it('does not cache shared pictures or send their bearer URL as a referrer', () => {
+    const response = withSecurityHeaders(
+      new Response('image', { headers: { 'X-Product-Image-Proxy': '1' } }),
+      'test-nonce',
+      { publicShare: true }
+    );
+
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+  });
 });

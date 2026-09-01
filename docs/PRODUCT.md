@@ -93,6 +93,17 @@ claim as purchased. Other gift-givers can see who has claimed it and its state.
 On the owner's list, claim information is absent—not blurred, redacted or hidden with CSS. This rule
 applies to rendered HTML, loader data, future APIs, logs and error details.
 
+### Share gift ideas outside the family
+
+Any admitted family member can create a viewing link for one person's wishlist and send it to a
+relative or friend who does not use the private family space. The link opens without Cloudflare login
+and shows the current wishes, notes, prices, product links and pictures from that one list. It offers
+no editing or gift coordination controls.
+
+The unguessable link is the permission. A family member can replace it or stop sharing at any time;
+old links then stop working immediately. Public-list reads use a separate database query that never
+joins claims, so claim and purchase information cannot enter the public response.
+
 ## Product invariants
 
 1. One deployment represents one trusted family group.
@@ -104,6 +115,7 @@ applies to rendered HTML, loader data, future APIs, logs and error details.
 7. Core wishlist and claim actions work without browser JavaScript.
 8. A normal family deployment should fit within Cloudflare's free tier.
 9. The configured initial organiser is an admin; invited members default to the member role.
+10. A link-shared list is read-only and never receives claim or purchase data.
 
 If a proposed feature breaks one of these rules, treat it as a product decision requiring maintainer
 agreement rather than an ordinary implementation detail.
@@ -124,8 +136,9 @@ Working today:
 - adding a product to one or more family lists from Android’s Share menu, the iPhone/iPad Share Sheet
   or a desktop browser button;
 - safe product links, notes, prices and priorities;
-- claiming, releasing and marking gifts purchased; and
-- server-enforced claim secrecy for the recipient.
+- claiming, releasing and marking gifts purchased;
+- server-enforced claim secrecy for the recipient; and
+- revocable, read-only viewing links for sharing one person's gift ideas outside the family.
 
 Still planned:
 
@@ -135,7 +148,7 @@ Still planned:
 
 ## Deliberate non-goals
 
-- public or link-shared lists;
+- publicly discoverable lists or editable anonymous access;
 - multiple events or multiple lists per person;
 - application-managed passwords or login email;
 - self-service public registration;

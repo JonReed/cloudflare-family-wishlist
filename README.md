@@ -18,6 +18,8 @@
 </p>
 
 Each family member has one wishlist. Everyone in the invited family group can view and edit every list, while claims and purchases are hidden from the owner of the list so surprises stay surprising.
+When someone outside the family wants ideas, a revocable read-only link can share one person's list
+without giving them access to the private family space.
 
 > [!NOTE]
 > The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls, add-from-anywhere tools and private claims are working; release hardening remains.
@@ -52,6 +54,7 @@ Most wishlist applications are either public, advertising-supported, complicated
 - AI-assisted, editable names, pictures and GBP prices from product links;
 - iPhone/iPad Share Sheet and desktop browser tools for adding something to one or more lists while shopping;
 - private claims that the recipient cannot see;
+- revocable viewing links for relatives and friends outside the signed-in family;
 - no application-managed passwords;
 - no application email service;
 - no paid infrastructure required for a normal family deployment.

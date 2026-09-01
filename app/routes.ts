@@ -8,5 +8,7 @@ export default [
   route('profile', 'routes/profile.tsx'),
   route('product-image', 'routes/product-image.ts'),
   route('product-details', 'routes/product-details.ts'),
-  route('share-target', 'routes/share-target.ts')
+  route('share-target', 'routes/share-target.ts'),
+  route('shared/:token', 'routes/shared-wishlist.tsx'),
+  route('shared/:token/image/:itemId', 'routes/shared-wishlist-image.ts')
 ] satisfies RouteConfig;

@@ -42,6 +42,12 @@ Cloudflare Access is the outer admission boundary. The Worker independently vali
 signature, issuer, application audience, expiry and required identity claims before trusting the
 email. Missing or invalid production configuration fails closed.
 
+The only exception is a deliberately configured, path-specific Access Bypass for revocable viewing
+links. The Worker independently recognises only read-only `/shared/<secret>` list and image paths;
+all neighbouring paths and every mutation still require a valid Access identity. More-specific Access
+paths also expose the compiled stylesheet and inert app icons needed to render that public page. They
+contain no family data.
+
 ## Request lifecycle
 
 1. Access rejects identities outside the deployment's exact email allow-list and handles the OTP UI.
@@ -62,6 +68,10 @@ email. Missing or invalid production configuration fails closed.
    copied links and the desktop bookmarklet. It loads an editable product draft and all family list
    choices; its action inserts one independent item per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
+8. A read-only shared-list request skips identity validation only when its method and path exactly
+   match the public route boundary. It hashes the URL secret and runs a separate D1 query that does
+   not reference `claims`. Shared pictures require the same secret plus an item belonging to that
+   list, pass through the bounded raster proxy and consume a per-link image budget.
 
 The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
 validates the organiser role and proposed name/email and writes a non-admitting `pending` invitation
@@ -118,6 +128,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/db/members.ts`                          | Identity normalisation and member/list provisioning                                |
 | `app/lib/db/family-members.ts`                   | Admin checks, waiting invitations and family roster reads                          |
 | `app/lib/db/wishlists.ts`                        | Domain validation, reads, mutations, claim ownership and privacy                   |
+| `app/lib/db/shared-wishlists.ts`                 | Hashed viewing links, claim-free public reads and shared-image budgets             |
 | `migrations/`                                    | Append-only persistent schema history                                              |
 | `app/root.tsx`, `app/app.css`, `app/components/` | Document shell, design system and shared presentation                              |
 
@@ -162,6 +173,15 @@ family_invitations
   access_policy_id UNIQUE, nullable while pending
   status: pending | active | cleanup_required | revocation_required | revoked
   invited_by_member_id FK -> members
+
+wishlist_share_links
+  wishlist_id PK/FK -> wishlists
+  token_hash UNIQUE
+  created_by_member_id FK -> members
+
+shared_image_fetch_limits
+  wishlist_id PK/FK -> wishlists
+  minute/day counters
 ```
 
 Tables are SQLite `STRICT` tables with foreign keys, length/state checks and indexes for wishlist
@@ -191,6 +211,23 @@ shape gains claim data.
 Claims also use `item_id` as their primary key. The database, rather than a check-then-write sequence,
 ensures two family members cannot both hold the same item. Release and purchase mutations verify the
 current claimant so one member cannot change another member's claim.
+
+## Read-only sharing boundary
+
+A sharing URL carries 16 random bytes encoded as a 22-character URL-safe secret. D1 stores only its
+SHA-256 hash, so a database read cannot recover a working link. Creating a new link replaces the hash;
+stopping sharing deletes it. Unknown, replaced and revoked links all return the same not-found result.
+
+The public query selects the list owner and ordinary item fields directly from `wishlists`, `members`
+and `items`. It neither joins nor selects `claims`. Its TypeScript result has no claim field. Shared
+image routes look up the stored image only when both the hashed secret and item membership match,
+then reuse the public-network, redirect, type and size checks of the signed-in image proxy. A D1-backed
+60-per-minute and 500-per-day budget bounds image egress for each shared list.
+
+Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`, carry a site-wide
+`X-Robots-Tag` no-indexing directive and load no third-party scripts or fonts. Application logs redact
+capability-bearing paths. Cloudflare's edge can necessarily see the requested URL, so families should
+treat the link like an invitation and replace it if it travels beyond the intended people.
 
 ## Server-first user interface
 
@@ -325,7 +362,9 @@ without becoming a new persistence or availability dependency.
   provision any member after the first organiser;
 - mutations validate type, length, UUID, ownership and allowed state at the server boundary;
 - errors shown to users do not reveal internals;
-- logs omit tokens, private claim surprises and query strings; and
+- logs omit tokens, private claim surprises and query strings;
+- public viewing secrets are hashed at rest, redacted from application logs and can read only one
+  claim-free wishlist; and
 - format, lint, type, Workers-runtime tests, build and dependency audit gate every push.
 
 ## Deployment boundary

@@ -11,7 +11,11 @@ const SECURITY_HEADERS = {
   'X-Robots-Tag': 'noindex, nofollow, noarchive'
 } as const;
 
-export function withSecurityHeaders(response: Response, cspNonce: string): Response {
+export function withSecurityHeaders(
+  response: Response,
+  cspNonce: string,
+  options: { publicShare?: boolean } = {}
+): Response {
   const headers = new Headers(response.headers);
   const isProductImage = headers.get('X-Product-Image-Proxy') === '1';
   headers.delete('X-Product-Image-Proxy');
@@ -19,7 +23,11 @@ export function withSecurityHeaders(response: Response, cspNonce: string): Respo
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(
       name,
-      name === 'Cache-Control' && isProductImage ? 'private, max-age=86400' : value
+      name === 'Cache-Control' && isProductImage && !options.publicShare
+        ? 'private, max-age=86400'
+        : name === 'Referrer-Policy' && options.publicShare
+          ? 'no-referrer'
+          : value
     );
   }
 

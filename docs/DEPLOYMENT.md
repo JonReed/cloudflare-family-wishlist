@@ -45,8 +45,8 @@ guide.
 | [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/) | Build and deploy each push to `main`                             | 3,000 build minutes per month, one concurrent build and a 20-minute limit per build                                                                                           |
 
 The application does not need R2, Cloudflare Images, KV, Queues, a paid email service or a separate
-AI account. Product pictures remain remote HTTPS resources and are delivered to signed-in family
-members through the bounded same-origin Worker proxy.
+AI account. Product pictures remain remote HTTPS resources and are delivered through the bounded
+same-origin Worker proxy. Read-only viewing links use a separate per-link image budget.
 
 Most allowances in the table are shared by all projects in one Cloudflare account. The CPU limit is
 per Worker request and the 500 MB D1 limit is per database. If the account already runs busy Workers,
@@ -310,6 +310,44 @@ A mistaken broader Access policy therefore cannot decide who becomes organiser.
 Every request is checked twice: Access validates its policy at the edge, then the Worker validates the
 JWT signature, issuer, audience, expiry, subject and email before touching D1.
 
+## 9a. Enable read-only viewing links
+
+Family Wishlist can make a revocable viewing link for one person's list. Those links are intended for
+relatives and friends who should not need a family login. They need one narrow exception to the
+Worker-level Access rule.
+
+In **Zero Trust → Access controls → Applications**, add path-specific public applications (or path
+destinations in one application where the dashboard offers that) for the production hostname. Give
+each one a **Bypass** policy with **Include → Everyone**:
+
+| Path                           | Why it is public                                  |
+| ------------------------------ | ------------------------------------------------- |
+| `/shared/*`                    | Hashed, revocable list and picture routes         |
+| `/assets/*`                    | Compiled stylesheet used by the shared page       |
+| `/favicon.svg`                 | Data-free application mark                        |
+| `/app.webmanifest`, `/icons/*` | Data-free browser metadata referenced by the page |
+
+Use the complete production hostname, for example
+`cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev/shared/*`. If the family also uses a custom
+domain, add the same paths for that hostname; a link is built from whichever hostname the signed-in
+family member is currently visiting.
+
+Path-based Access rules take precedence over the broader Worker rule. Cloudflare documents that
+hierarchy in [Cloudflare Access for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/#understand-access-hierarchy)
+and the narrow public-endpoint pattern in
+[Common Access policies](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/common-policies/#bypass-a-public-endpoint).
+Cloudflare cautions that Bypass disables Access enforcement and Access request logging, which is why
+these paths must not be widened.
+
+The Worker remains a second boundary. It skips JWT validation only for GET or HEAD requests matching
+the exact shared-list or shared-picture shapes. A POST, a neighbouring path or any other dynamic route
+still requires Access. Static asset paths contain no family data. Shared secrets are 128-bit random
+values stored only as SHA-256 hashes in D1; public queries never join claims; responses are not cached
+or indexed; and replacing or stopping a link invalidates it immediately.
+
+Do not add a Bypass for `/product-image`, `/`, `/*` or the Worker as a whole. The general image proxy,
+all forms and every authenticated page must remain behind Access.
+
 ## 10. Allow the organiser to invite family members
 
 This step is required for a multi-person family. Without it, the first organiser can use the wishlist
@@ -410,7 +448,7 @@ npm run db:migrate:remote
 
 Apply all pending migrations before the matching application code reaches production. Existing
 migrations include family roles, invitation admission and revocation state, item images, product
-lookup limits and product-image budgets.
+lookup limits, product-image budgets and hashed viewing links.
 
 ## 12. Add a custom domain (optional)
 
@@ -438,6 +476,9 @@ Before relying on the installation, verify all of these:
 - **Fill from link** only prefills an editable draft and manual entry still works;
 - an optional product picture is served from the application's `/product-image` address;
 - one family member can claim an item and the wishlist owner cannot see that claim or purchase state;
+- a viewing link opens in a signed-out private browser, contains no edit or claim controls, and stops
+  working after **Stop sharing**;
+- a signed-out request to `/`, `/product-image` or a POST beneath `/shared/` still requires Access;
 - removing an ordinary member denies their next request and signs existing application sessions out;
 - `/family` is available only to the organiser; and
 - a push to `main` completes one Cloudflare build and deployment.

@@ -61,6 +61,11 @@ Run `npm run quality` and `npm run audit` before every commit or push. CI repeat
 6. React Router renders the response through `app/root.tsx`; the current UI and forms are in
    `app/routes/home.tsx` with reusable brand/footer pieces in `app/components/`.
 
+Read-only viewing links are the narrow exception to the authenticated request flow. `workers/app.ts`
+admits only exact GET/HEAD shared-list paths without an identity. `app/lib/db/shared-wishlists.ts`
+hashes capability tokens and owns the claim-free public queries; shared routes must never call the
+authenticated family-list query or accept mutations.
+
 The route is intentionally server-first. Prefer a loader/action and an ordinary form over adding a
 client state/API layer. Add browser JavaScript only when it materially improves an interaction and
 the no-JavaScript path remains sound.
@@ -170,6 +175,12 @@ after reading the account-specific private handoff and verifying the active Wran
 - Preserve the bounded response reader, timeout and compensating policy deletion around Access API
   calls. Inject `fetch` in tests; never call the live API from the test suite.
 - Cloudflare Access policy/DNS changes are external mutations and require explicit maintainer authority.
+- Keep the unauthenticated Worker exception limited to exact read-only shared-list and shared-image
+  paths. A route under the same prefix must not inherit public access accidentally.
+- Never store, log or put a raw sharing token in a query string. Public D1 reads must not join claims,
+  and shared images must prove both the token and item-to-list relationship before fetching.
+- Preserve the `X-Robots-Tag` header on every response. Do not make `/robots.txt` public merely for
+  link-shared lists; keeping the Access bypass as narrow as possible is the stronger boundary.
 
 ### Visual or copy change
 
@@ -200,6 +211,8 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/product-url.test.ts`              | safe HTTP(S) links, credential rejection and size limits           |
 | `test/request-security.test.ts`         | mutation origins, content types and request-body boundary          |
 | `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                |
+| `test/shared-wishlists.test.ts`         | hashed/revocable links, claim-free reads and public image budgets  |
+| `test/public-share-path.test.ts`        | exact read-only authentication exception and log redaction         |
 | `test/wishlist-service.test.ts`         | CRUD validation, ordering, claims, concurrency and owner privacy   |
 
 `vitest.config.ts` runs tests through the Cloudflare pool. `test/apply-migrations.ts` applies every SQL

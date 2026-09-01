@@ -1,6 +1,7 @@
 import { isRouteErrorResponse, Link, Links, Meta, Outlet } from 'react-router';
 
 import { cloudflareContext } from './lib/context';
+import { isPublicSharePath } from './lib/public-share-path';
 import type { Route } from './+types/root';
 import './app.css';
 
@@ -10,9 +11,9 @@ export const links: Route.LinksFunction = () => [
   { rel: 'apple-touch-icon', href: '/icons/app-192.png' }
 ];
 
-export function loader({ context }: Route.LoaderArgs) {
+export function loader({ context, request }: Route.LoaderArgs) {
   const { cspNonce } = context.get(cloudflareContext);
-  return { cspNonce };
+  return { cspNonce, isPublicShare: isPublicSharePath(new URL(request.url).pathname) };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -35,10 +36,15 @@ export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <Outlet />
-      <script src="/product-import.js" nonce={loaderData.cspNonce} defer />
-      <script src="/bookmarklet.js" nonce={loaderData.cspNonce} defer />
-      <script src="/family-members.js" nonce={loaderData.cspNonce} defer />
-      <script src="/pwa-install.js" nonce={loaderData.cspNonce} defer />
+      {loaderData.isPublicShare ? null : (
+        <>
+          <script src="/product-import.js" nonce={loaderData.cspNonce} defer />
+          <script src="/bookmarklet.js" nonce={loaderData.cspNonce} defer />
+          <script src="/family-members.js" nonce={loaderData.cspNonce} defer />
+          <script src="/share-links.js" nonce={loaderData.cspNonce} defer />
+          <script src="/pwa-install.js" nonce={loaderData.cspNonce} defer />
+        </>
+      )}
     </>
   );
 }
