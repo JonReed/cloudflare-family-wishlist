@@ -17,12 +17,14 @@
   "include": [
     "./**/*.ts",
     "./**/*.tsx",
+    "../.react-router/types/+server-build.d.ts",
     "../app/components/brand.tsx",
     "../app/components/product-image-field.tsx",
     "../app/components/site-header.tsx",
     "../app/lib/auth/access.ts",
     "../app/lib/bookmarklet.ts",
     "../app/lib/cloudflare/access-membership.ts",
+    "../app/lib/context.ts",
     "../app/lib/db/family-members.ts",
     "../app/lib/db/members.ts",
     "../app/lib/db/product-lookups.ts",
@@ -36,7 +38,9 @@
     "../app/lib/public-share-path.ts",
     "../app/lib/request-security.ts",
     "../app/lib/security-headers.ts",
+    "../app/lib/shared-image-request.ts",
     "../app/lib/share-target.ts",
-    "../scripts/configure-access-session.ts"
+    "../scripts/configure-access-session.ts",
+    "../workers/app.ts"
   ]
 }

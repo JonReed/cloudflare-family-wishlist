@@ -20,6 +20,8 @@ const requestHandler = createRequestHandler(
   import.meta.env.MODE
 );
 
+type RouterRequestHandler = (request: Request, context: RouterContextProvider) => Promise<Response>;
+
 function createCspNonce(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   let binary = '';
@@ -27,68 +29,81 @@ function createCspNonce(): string {
   return btoa(binary);
 }
 
-export default {
-  async fetch(request, env, ctx): Promise<Response> {
-    const context = new RouterContextProvider();
-    const cspNonce = createCspNonce();
+export function createAppWorker(
+  routerRequestHandler: RouterRequestHandler = requestHandler
+): ExportedHandler<Env> {
+  return {
+    async fetch(request, env, ctx): Promise<Response> {
+      const context = new RouterContextProvider();
+      const cspNonce = createCspNonce();
 
-    try {
-      const runtimeEnv = env as RuntimeEnv;
-      const securedRequest = await secureMutationRequest(request, {
-        allowDevelopmentOrigin: import.meta.env.DEV
-      });
-      const publicShare = isPublicShareRequest(securedRequest);
-
-      context.set(cloudflareContext, { env: runtimeEnv, ctx, cspNonce });
-      if (!publicShare) {
-        const identity = await authenticateAccessRequest(securedRequest, runtimeEnv, {
-          allowLocalDevelopmentIdentity: import.meta.env.DEV
+      try {
+        const runtimeEnv = env as RuntimeEnv;
+        const securedRequest = await secureMutationRequest(request, {
+          allowDevelopmentOrigin: import.meta.env.DEV
         });
-        context.set(identityContext, identity);
-      }
+        const publicShare = isPublicShareRequest(securedRequest);
 
-      const response = await requestHandler(securedRequest, context);
-      return withSecurityHeaders(response, cspNonce, { publicShare });
-    } catch (error) {
-      if (error instanceof RequestSecurityError) {
-        console.warn(
+        context.set(cloudflareContext, { env: runtimeEnv, ctx, cspNonce });
+        if (!publicShare) {
+          const identity = await authenticateAccessRequest(securedRequest, runtimeEnv, {
+            allowLocalDevelopmentIdentity: import.meta.env.DEV
+          });
+          context.set(identityContext, identity);
+        }
+
+        const response = await routerRequestHandler(securedRequest, context);
+        return withSecurityHeaders(response, cspNonce, { publicShare });
+      } catch (error) {
+        if (error instanceof RequestSecurityError) {
+          console.warn(
+            JSON.stringify({
+              event: 'request_rejected',
+              code: error.code,
+              status: error.status
+            })
+          );
+          return withSecurityHeaders(
+            new Response(error.message, { status: error.status }),
+            cspNonce
+          );
+        }
+
+        if (error instanceof AuthenticationError) {
+          console.warn(
+            JSON.stringify({
+              event: 'authentication_failed',
+              code: error.code,
+              status: error.status
+            })
+          );
+
+          const message =
+            error.status === 503 ? 'Authentication is not configured.' : 'Authentication required.';
+          return withSecurityHeaders(new Response(message, { status: error.status }), cspNonce);
+        }
+
+        const url = new URL(request.url);
+        const publicShare = isPublicShareRequest(request);
+        console.error(
           JSON.stringify({
-            event: 'request_rejected',
-            code: error.code,
-            status: error.status
+            event: 'request_failed',
+            method: request.method,
+            path: redactedRequestPath(url.pathname),
+            error: error instanceof Error ? error.message : 'Unknown error'
           })
         );
-        return withSecurityHeaders(new Response(error.message, { status: error.status }), cspNonce);
-      }
 
-      if (error instanceof AuthenticationError) {
-        console.warn(
-          JSON.stringify({
-            event: 'authentication_failed',
-            code: error.code,
-            status: error.status
-          })
+        return withSecurityHeaders(
+          new Response('Internal server error', { status: 500 }),
+          cspNonce,
+          {
+            publicShare
+          }
         );
-
-        const message =
-          error.status === 503 ? 'Authentication is not configured.' : 'Authentication required.';
-        return withSecurityHeaders(new Response(message, { status: error.status }), cspNonce);
       }
-
-      const url = new URL(request.url);
-      const publicShare = isPublicShareRequest(request);
-      console.error(
-        JSON.stringify({
-          event: 'request_failed',
-          method: request.method,
-          path: redactedRequestPath(url.pathname),
-          error: error instanceof Error ? error.message : 'Unknown error'
-        })
-      );
-
-      return withSecurityHeaders(new Response('Internal server error', { status: 500 }), cspNonce, {
-        publicShare
-      });
     }
-  }
-} satisfies ExportedHandler<Env>;
+  } satisfies ExportedHandler<Env>;
+}
+
+export default createAppWorker();

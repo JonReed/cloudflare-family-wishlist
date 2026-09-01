@@ -47,6 +47,8 @@ guide.
 The application does not need R2, Cloudflare Images, KV, Queues, a paid email service or a separate
 AI account. Product pictures remain remote HTTPS resources and are delivered through the bounded
 same-origin Worker proxy. Read-only viewing links use a separate per-link image budget.
+Their picture route also applies a lower capability-holder budget so one recipient cannot normally
+consume the list-wide allowance for everyone else.
 
 Most allowances in the table are shared by all projects in one Cloudflare account. The CPU limit is
 per Worker request and the 500 MB D1 limit is per database. If the account already runs busy Workers,
@@ -320,12 +322,11 @@ In **Zero Trust → Access controls → Applications**, add path-specific public
 destinations in one application where the dashboard offers that) for the production hostname. Give
 each one a **Bypass** policy with **Include → Everyone**:
 
-| Path                           | Why it is public                                  |
-| ------------------------------ | ------------------------------------------------- |
-| `/shared/*`                    | Hashed, revocable list and picture routes         |
-| `/assets/*`                    | Compiled stylesheet used by the shared page       |
-| `/favicon.svg`                 | Data-free application mark                        |
-| `/app.webmanifest`, `/icons/*` | Data-free browser metadata referenced by the page |
+| Path               | Why it is public                          |
+| ------------------ | ----------------------------------------- |
+| `/shared/*`        | Hashed, revocable list and picture routes |
+| `/shared-assets/*` | Compiled stylesheets only                 |
+| `/favicon.svg`     | Data-free application mark                |
 
 Use the complete production hostname, for example
 `cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev/shared/*`. If the family also uses a custom
@@ -347,6 +348,11 @@ or indexed; and replacing or stopping a link invalidates it immediately.
 
 Do not add a Bypass for `/product-image`, `/`, `/*` or the Worker as a whole. The general image proxy,
 all forms and every authenticated page must remain behind Access.
+
+When upgrading an installation that previously followed this guide, add `/shared-assets/*`, deploy
+and verify a signed-out viewing link, then remove the old `/assets/*`, `/app.webmanifest` and
+`/icons/*` Bypass destinations. Those older paths are no longer needed publicly; in particular,
+`/assets/*` also contains authenticated browser JavaScript and should not remain bypassed.
 
 ## 10. Allow the organiser to invite family members
 
@@ -449,6 +455,7 @@ npm run db:migrate:remote
 Apply all pending migrations before the matching application code reaches production. Existing
 migrations include family roles, invitation admission and revocation state, item images, product
 lookup limits, product-image budgets and hashed viewing links.
+The shared-image requester-limit migration is also required before deploying its matching code.
 
 ## 12. Add a custom domain (optional)
 

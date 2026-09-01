@@ -179,6 +179,9 @@ after reading the account-specific private handoff and verifying the active Wran
   paths. A route under the same prefix must not inherit public access accidentally.
 - Never store, log or put a raw sharing token in a query string. Public D1 reads must not join claims,
   and shared images must prove both the token and item-to-list relationship before fetching.
+- Keep generated CSS under `/shared-assets/*`; do not move JavaScript bundles into that public Access
+  bypass. Shared-image HEAD requests must remain upstream-free, and GET budgets must retain both the
+  capability-scoped requester ceiling and the higher list-wide emergency ceiling.
 - Preserve the `X-Robots-Tag` header on every response. Do not make `/robots.txt` public merely for
   link-shared lists; keeping the Access bypass as narrow as possible is the stronger boundary.
 
@@ -213,6 +216,8 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                |
 | `test/shared-wishlists.test.ts`         | hashed/revocable links, claim-free reads and public image budgets  |
 | `test/public-share-path.test.ts`        | exact read-only authentication exception and log redaction         |
+| `test/public-share-worker.test.ts`      | Worker auth boundary, public privacy and token invalidation        |
+| `test/shared-image-request.test.ts`     | upstream-free, budget-free shared-image HEAD requests              |
 | `test/wishlist-service.test.ts`         | CRUD validation, ordering, claims, concurrency and owner privacy   |
 
 `vitest.config.ts` runs tests through the Cloudflare pool. `test/apply-migrations.ts` applies every SQL

@@ -7,6 +7,8 @@ declare global {
       TEST_MIGRATIONS: D1Migration[];
     }
   }
+
+  type Env = Cloudflare.Env;
 }
 
 export {};

@@ -6,9 +6,7 @@ import type { Route } from './+types/root';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
-  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-  { rel: 'manifest', href: '/app.webmanifest', crossOrigin: 'use-credentials' },
-  { rel: 'apple-touch-icon', href: '/icons/app-192.png' }
+  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }
 ];
 
 export function loader({ context, request }: Route.LoaderArgs) {

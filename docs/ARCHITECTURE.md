@@ -45,8 +45,9 @@ email. Missing or invalid production configuration fails closed.
 The only exception is a deliberately configured, path-specific Access Bypass for revocable viewing
 links. The Worker independently recognises only read-only `/shared/<secret>` list and image paths;
 all neighbouring paths and every mutation still require a valid Access identity. More-specific Access
-paths also expose the compiled stylesheet and inert app icons needed to render that public page. They
-contain no family data.
+paths also expose only the compiled stylesheet under `/shared-assets/*` and the favicon needed to
+render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
+behind Access.
 
 ## Request lifecycle
 
@@ -71,7 +72,9 @@ contain no family data.
 8. A read-only shared-list request skips identity validation only when its method and path exactly
    match the public route boundary. It hashes the URL secret and runs a separate D1 query that does
    not reference `claims`. Shared pictures require the same secret plus an item belonging to that
-   list, pass through the bounded raster proxy and consume a per-link image budget.
+   list, pass through the bounded raster proxy and consume both a capability-holder budget and a
+   higher list-wide emergency budget. A HEAD request verifies membership but does not fetch or count
+   the upstream picture.
 
 The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
 validates the organiser role and proposed name/email and writes a non-admitting `pending` invitation
@@ -181,7 +184,11 @@ wishlist_share_links
 
 shared_image_fetch_limits
   wishlist_id PK/FK -> wishlists
-  minute/day counters
+  list-wide minute/day counters
+
+shared_image_requester_limits
+  wishlist_id + capability-scoped requester hash PK
+  requester minute/day counters
 ```
 
 Tables are SQLite `STRICT` tables with foreign keys, length/state checks and indexes for wishlist
@@ -222,7 +229,10 @@ The public query selects the list owner and ordinary item fields directly from `
 and `items`. It neither joins nor selects `claims`. Its TypeScript result has no claim field. Shared
 image routes look up the stored image only when both the hashed secret and item membership match,
 then reuse the public-network, redirect, type and size checks of the signed-in image proxy. A D1-backed
-60-per-minute and 500-per-day budget bounds image egress for each shared list.
+20-per-minute and 100-per-day capability-holder budget prevents one recipient from consuming the
+whole allowance. A higher 60-per-minute and 500-per-day list-wide ceiling remains as an emergency
+cost bound. The requester key is a SHA-256 derivation salted by the bearer capability; raw network
+addresses and reusable cross-link identifiers are never stored.
 
 Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`, carry a site-wide
 `X-Robots-Tag` no-indexing directive and load no third-party scripts or fonts. Application logs redact

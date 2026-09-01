@@ -11,5 +11,17 @@ export default defineConfig({
   ],
   resolve: {
     tsconfigPaths: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        assetFileNames(assetInfo) {
+          const isStylesheet = assetInfo.names.some((name) => name.endsWith('.css'));
+          return isStylesheet
+            ? 'shared-assets/[name]-[hash][extname]'
+            : 'assets/[name]-[hash][extname]';
+        }
+      }
+    }
   }
 });

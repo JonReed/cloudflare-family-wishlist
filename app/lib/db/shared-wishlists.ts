@@ -64,13 +64,26 @@ function makeShareToken(): string {
   return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
 }
 
-async function hashShareToken(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function hashShareToken(token: string): Promise<string> {
+  return sha256Hex(token);
 }
 
 async function tokenHash(value: unknown): Promise<string> {
   return hashShareToken(requireToken(value));
+}
+
+export async function makeSharedImageRequesterKey(
+  token: unknown,
+  requesterAddress: string | null
+): Promise<string> {
+  const capability = requireToken(token);
+  const address = requesterAddress?.trim().toLowerCase().slice(0, 128) || 'unknown';
+  return sha256Hex(`${capability}\n${address}`);
 }
 
 export async function hasWishlistShareLink(db: D1Database, wishlistId: string): Promise<boolean> {
@@ -223,12 +236,86 @@ export async function getSharedWishlistImageUrl(
 export async function consumeSharedImageBudget(
   db: D1Database,
   wishlistId: string,
+  requesterHash: string,
   now = Date.now()
 ): Promise<void> {
   const targetWishlistId = requireUuid(wishlistId, 'The wishlist');
+  if (!/^[0-9a-f]{64}$/.test(requesterHash)) {
+    throw new SharedWishlistInputError('The picture request is invalid.');
+  }
   const nowSeconds = Math.floor(now / 1000);
   const minuteStartedAt = nowSeconds - (nowSeconds % 60);
   const dayStartedAt = nowSeconds - (nowSeconds % 86_400);
+  const cleanupResult = await db
+    .prepare(
+      `DELETE FROM shared_image_requester_limits
+       WHERE wishlist_id = ?1 AND day_started_at < ?2`
+    )
+    .bind(targetWishlistId, dayStartedAt)
+    .run();
+  if (!cleanupResult.success) {
+    throw new SharedWishlistInputError('That picture could not be loaded.');
+  }
+  const requesterResult = await db
+    .prepare(
+      `INSERT INTO shared_image_requester_limits (
+         wishlist_id, requester_hash, minute_started_at, minute_request_count,
+         day_started_at, day_request_count
+       ) VALUES (?1, ?2, ?3, 1, ?4, 1)
+       ON CONFLICT (wishlist_id, requester_hash) DO UPDATE SET
+         minute_started_at = CASE
+           WHEN shared_image_requester_limits.minute_started_at = excluded.minute_started_at
+             THEN shared_image_requester_limits.minute_started_at
+           ELSE excluded.minute_started_at
+         END,
+         minute_request_count = CASE
+           WHEN shared_image_requester_limits.minute_started_at = excluded.minute_started_at
+             THEN shared_image_requester_limits.minute_request_count + 1
+           ELSE 1
+         END,
+         day_started_at = CASE
+           WHEN shared_image_requester_limits.day_started_at = excluded.day_started_at
+             THEN shared_image_requester_limits.day_started_at
+           ELSE excluded.day_started_at
+         END,
+         day_request_count = CASE
+           WHEN shared_image_requester_limits.day_started_at = excluded.day_started_at
+             THEN shared_image_requester_limits.day_request_count + 1
+           ELSE 1
+         END
+       WHERE
+         (shared_image_requester_limits.minute_started_at <> excluded.minute_started_at
+           OR shared_image_requester_limits.minute_request_count < 20)
+         AND
+         (shared_image_requester_limits.day_started_at <> excluded.day_started_at
+           OR shared_image_requester_limits.day_request_count < 100)`
+    )
+    .bind(targetWishlistId, requesterHash, minuteStartedAt, dayStartedAt)
+    .run();
+
+  if (!requesterResult.success) {
+    throw new SharedWishlistInputError('That picture could not be loaded.');
+  }
+  if (requesterResult.meta.changes !== 1) {
+    const limit = await db
+      .prepare(
+        `SELECT minute_started_at, minute_request_count, day_started_at, day_request_count
+         FROM shared_image_requester_limits
+         WHERE wishlist_id = ?1 AND requester_hash = ?2`
+      )
+      .bind(targetWishlistId, requesterHash)
+      .first<{
+        minute_started_at: number;
+        minute_request_count: number;
+        day_started_at: number;
+        day_request_count: number;
+      }>();
+    const dayLimited =
+      limit?.day_started_at === dayStartedAt && (limit?.day_request_count ?? 0) >= 100;
+    const retryAt = dayLimited ? dayStartedAt + 86_400 : minuteStartedAt + 60;
+    throw new SharedImageRateLimitError(Math.max(1, retryAt - nowSeconds));
+  }
+
   const result = await db
     .prepare(
       `INSERT INTO shared_image_fetch_limits (

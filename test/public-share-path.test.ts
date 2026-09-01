@@ -18,6 +18,17 @@ describe('public share request boundary', () => {
     }
   );
 
+  it.each(['GET', 'HEAD'])('allows %s for exact shared list and image paths', (method) => {
+    expect(
+      isPublicShareRequest(new Request(`https://wishlist.example/shared/${token}`, { method }))
+    ).toBe(true);
+    expect(
+      isPublicShareRequest(
+        new Request(`https://wishlist.example/shared/${token}/image/${itemId}`, { method })
+      )
+    ).toBe(true);
+  });
+
   it.each([
     '/shared',
     '/shared/not-a-secret',
@@ -28,12 +39,13 @@ describe('public share request boundary', () => {
     expect(isPublicSharePath(path)).toBe(false);
   });
 
-  it('does not allow mutations and redacts capability paths from application logs', () => {
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])('does not allow %s', (method) => {
     expect(
-      isPublicShareRequest(
-        new Request(`https://wishlist.example/shared/${token}`, { method: 'POST' })
-      )
+      isPublicShareRequest(new Request(`https://wishlist.example/shared/${token}`, { method }))
     ).toBe(false);
+  });
+
+  it('redacts capability paths from application logs', () => {
     expect(redactedRequestPath(`/shared/${token}`)).toBe('/shared/:secret');
     expect(redactedRequestPath(`/shared/${token}/image/${itemId}`)).toBe(
       '/shared/:secret/image/:item'
