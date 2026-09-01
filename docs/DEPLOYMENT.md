@@ -275,6 +275,8 @@ are the admission list.
 
 In the Access application's advanced cookie settings, keep `HttpOnly` enabled and set the application
 cookie's `SameSite` attribute to **Lax**. The Worker independently rejects cross-origin mutations.
+The setup command in step 10 applies the intended **30-day** application session after the scoped
+Access API token exists; member policies inherit that value rather than defining shorter sessions.
 
 At this point an unauthenticated request should redirect to Cloudflare's login page:
 
@@ -339,6 +341,23 @@ npx wrangler secret put ACCESS_MANAGEMENT_API_TOKEN
 
 Do not pipe or pass the token as a command argument. The deployment command uses `--keep-vars`, so
 later source deployments preserve dashboard-managed variables and secrets.
+
+Apply and verify the 30-day Access application session from this checkout. Export the two public
+identifiers, then read the API token privately so it does not enter shell history:
+
+```sh
+export ACCESS_MANAGEMENT_ACCOUNT_ID="YOUR-ACCOUNT-ID"
+export ACCESS_MANAGEMENT_APPLICATION_ID="YOUR-ACCESS-APPLICATION-UUID"
+read -s ACCESS_MANAGEMENT_API_TOKEN
+export ACCESS_MANAGEMENT_API_TOKEN
+npm run access:configure-session
+unset ACCESS_MANAGEMENT_API_TOKEN
+```
+
+The command reads the application before changing it, retains its destinations, attached policies,
+identity providers and cookie controls, and reads it again afterward. It is idempotent: rerunning it
+reports the existing 30-day value without writing. Cloudflare policy durations should remain **Same
+as application session duration** so organiser and invited-member policies inherit the same value.
 
 Open **Your family**, add one test address and confirm that:
 
@@ -413,6 +432,7 @@ Before relying on the installation, verify all of these:
 - an Access-authenticated email other than `INITIAL_ORGANISER_EMAIL` cannot bootstrap an empty
   deployment;
 - only exact email addresses added by the organiser receive a usable OTP;
+- the main Access application has a 30-day session and its family policies inherit that duration;
 - the organiser and invited member each receive exactly one wishlist;
 - an ordinary wish can be added, edited and deleted;
 - **Fill from link** only prefills an editable draft and manual entry still works;

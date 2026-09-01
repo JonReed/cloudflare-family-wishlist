@@ -34,6 +34,7 @@
     "../app/lib/product-url.ts",
     "../app/lib/request-security.ts",
     "../app/lib/security-headers.ts",
-    "../app/lib/share-target.ts"
+    "../app/lib/share-target.ts",
+    "../scripts/configure-access-session.ts"
   ]
 }

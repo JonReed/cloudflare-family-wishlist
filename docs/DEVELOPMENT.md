@@ -30,19 +30,20 @@ to production. If a migration is added, rerun `npm run db:migrate:local` before 
 
 ## Commands
 
-| Command                    | Purpose                                              |
-| -------------------------- | ---------------------------------------------------- |
-| `npm run dev`              | Start React Router in the local Workers runtime      |
-| `npm run db:migrate:local` | Apply pending migrations to local D1                 |
-| `npm run format`           | Write Prettier formatting                            |
-| `npm run lint`             | Generate route types and run zero-warning ESLint     |
-| `npm run typecheck`        | Check Wrangler bindings, route types and TypeScript  |
-| `npm run test`             | Run Vitest in the Cloudflare Workers runtime         |
-| `npm run test:watch`       | Run focused tests while developing                   |
-| `npm run build`            | Produce the production Worker build                  |
-| `npm run quality`          | Required format, lint, type, test and build gate     |
-| `npm run audit`            | Required dependency vulnerability gate               |
-| `npm run cf-typegen`       | Regenerate Worker binding types after config changes |
+| Command                            | Purpose                                               |
+| ---------------------------------- | ----------------------------------------------------- |
+| `npm run dev`                      | Start React Router in the local Workers runtime       |
+| `npm run db:migrate:local`         | Apply pending migrations to local D1                  |
+| `npm run access:configure-session` | Apply and verify the setup-time 30-day Access session |
+| `npm run format`                   | Write Prettier formatting                             |
+| `npm run lint`                     | Generate route types and run zero-warning ESLint      |
+| `npm run typecheck`                | Check Wrangler bindings, route types and TypeScript   |
+| `npm run test`                     | Run Vitest in the Cloudflare Workers runtime          |
+| `npm run test:watch`               | Run focused tests while developing                    |
+| `npm run build`                    | Produce the production Worker build                   |
+| `npm run quality`                  | Required format, lint, type, test and build gate      |
+| `npm run audit`                    | Required dependency vulnerability gate                |
+| `npm run cf-typegen`               | Regenerate Worker binding types after config changes  |
 
 Run `npm run quality` and `npm run audit` before every commit or push. CI repeats those checks.
 
@@ -162,6 +163,10 @@ after reading the account-specific private handoff and verifying the active Wran
   and preserve their wishlist and history. Keep interrupted invitations and removals repairable.
 - Treat `ACCESS_MANAGEMENT_API_TOKEN` as a secret. Keep the account and application identifiers in
   deployment configuration, not family-facing output.
+- Keep the Access application at the setup-enforced 30-day duration. Run
+  `npm run access:configure-session` with the three Access management environment values after
+  creating the application or when repairing configuration drift. The command must preserve and
+  verify the application audience, destinations, policies, login methods and cookie settings.
 - Preserve the bounded response reader, timeout and compensating policy deletion around Access API
   calls. Inject `fetch` in tests; never call the live API from the test suite.
 - Cloudflare Access policy/DNS changes are external mutations and require explicit maintainer authority.
@@ -179,22 +184,23 @@ after reading the account-specific private handoff and verifying the active Wran
 
 ## Testing map
 
-| Test                               | Protects                                                           |
-| ---------------------------------- | ------------------------------------------------------------------ |
-| `test/access-auth.test.ts`         | JWT signature/issuer/audience/expiry and local identity boundaries |
-| `test/access-membership.test.ts`   | exact-email policy shape, bounded API handling and cleanup         |
-| `test/add-route.test.ts`           | multi-list product drafts preserve edits and fill missing pictures |
-| `test/bookmarklet.test.ts`         | safe, deployment-specific add-page and bookmarklet construction    |
-| `test/family-members.test.ts`      | roles, admin checks, invitation state and first-login conversion   |
-| `test/member-provisioning.test.ts` | email validation, idempotent first login and one-list constraint   |
-| `test/product-image.test.ts`       | same-origin proxy types, redirects and response-byte boundary      |
-| `test/product-images.test.ts`      | member-scoped image burst/day budgets and reset boundaries         |
-| `test/product-lookups.test.ts`     | member lookup budget, reset and concurrent enforcement             |
-| `test/product-metadata.test.ts`    | bounded public fetches, metadata extraction and optional AI safety |
-| `test/product-url.test.ts`         | safe HTTP(S) links, credential rejection and size limits           |
-| `test/request-security.test.ts`    | mutation origins, content types and request-body boundary          |
-| `test/share-target.test.ts`        | safe Android shared-text and direct-link extraction                |
-| `test/wishlist-service.test.ts`    | CRUD validation, ordering, claims, concurrency and owner privacy   |
+| Test                                    | Protects                                                           |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| `test/access-auth.test.ts`              | JWT signature/issuer/audience/expiry and local identity boundaries |
+| `test/access-membership.test.ts`        | exact-email policy shape, bounded API handling and cleanup         |
+| `test/configure-access-session.test.ts` | idempotent 30-day session setup without Access configuration drift |
+| `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures |
+| `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction    |
+| `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion   |
+| `test/member-provisioning.test.ts`      | email validation, idempotent first login and one-list constraint   |
+| `test/product-image.test.ts`            | same-origin proxy types, redirects and response-byte boundary      |
+| `test/product-images.test.ts`           | member-scoped image burst/day budgets and reset boundaries         |
+| `test/product-lookups.test.ts`          | member lookup budget, reset and concurrent enforcement             |
+| `test/product-metadata.test.ts`         | bounded public fetches, metadata extraction and optional AI safety |
+| `test/product-url.test.ts`              | safe HTTP(S) links, credential rejection and size limits           |
+| `test/request-security.test.ts`         | mutation origins, content types and request-body boundary          |
+| `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                |
+| `test/wishlist-service.test.ts`         | CRUD validation, ordering, claims, concurrency and owner privacy   |
 
 `vitest.config.ts` runs tests through the Cloudflare pool. `test/apply-migrations.ts` applies every SQL
 migration to the isolated test database, so migration and application code are tested together.

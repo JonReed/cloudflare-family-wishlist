@@ -112,7 +112,7 @@ agreement rather than an ordinary implementation detail.
 
 Working today:
 
-- Access OTP authentication and exact-email admission;
+- Access OTP authentication, exact-email admission and 30-day application sessions;
 - first-login member and wishlist provisioning;
 - self-service display-name editing from a personal profile page;
 - organiser-only family admission with joined and waiting-to-join states;

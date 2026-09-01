@@ -290,7 +290,8 @@ environment variable.
 
 - **Workers:** application compute and server rendering.
 - **D1:** relational application data and migrations.
-- **Access:** invitation-only authentication using an exact email allow-list and one-time PINs.
+- **Access:** invitation-only authentication using an exact email allow-list, one-time PINs and a
+  setup-enforced 30-day application session.
 - **Access API:** organiser additions create one exact-email Allow policy using a narrowly scoped
   Worker secret; it does not send invitation email.
 - **Workers AI:** product-detail enrichment for incomplete public page metadata.
