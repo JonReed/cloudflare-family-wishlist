@@ -17,7 +17,7 @@
         'You’re invited to our Family Wishlist.',
         '',
         `Open ${invitationUrl}`,
-        `Sign in with ${invitationEmail} and Cloudflare will email you a one-time code.`
+        `Sign in with ${invitationEmail}. You’ll get a one-time code by email.`
       ].join('\n');
 
       try {
