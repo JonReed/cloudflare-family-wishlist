@@ -25,6 +25,11 @@ export type AccessSessionResult = {
   sessionDuration: typeof TARGET_SESSION_DURATION;
 };
 
+export type AccessSessionCheckResult = {
+  applicationName: string;
+  sessionDuration: typeof TARGET_SESSION_DURATION;
+};
+
 const WRITABLE_APPLICATION_FIELDS = [
   'allow_authenticate_via_warp',
   'allow_iframe',
@@ -246,6 +251,25 @@ export async function configureAccessSession(
   return {
     applicationName: applicationName(verified),
     changed: true,
+    sessionDuration: TARGET_SESSION_DURATION
+  };
+}
+
+export async function checkAccessSession(
+  configuration: AccessSessionConfiguration,
+  client: Pick<AccessApplicationsClient, 'get'> = createAccessApplicationsClient(
+    configuration.apiToken
+  )
+): Promise<AccessSessionCheckResult> {
+  const application = await client.get(configuration.applicationId, configuration.accountId);
+  assertExpectedApplication(application, configuration);
+
+  if (application.session_duration !== TARGET_SESSION_DURATION) {
+    throw new Error('The Access application session duration is not the required 30 days (720h).');
+  }
+
+  return {
+    applicationName: applicationName(application),
     sessionDuration: TARGET_SESSION_DURATION
   };
 }

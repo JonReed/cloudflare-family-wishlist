@@ -47,6 +47,7 @@
     "../app/lib/share-target.ts",
     "../scripts/configure-access-session.ts",
     "../scripts/configure-access-sharing.ts",
+    "../scripts/check-setup.ts",
     "../workers/app.ts"
   ]
 }

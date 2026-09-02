@@ -79,6 +79,8 @@ Most wishlist applications are either public, advertising-supported, complicated
 - [Product model](docs/PRODUCT.md) — who the application serves, core workflows and non-goals.
 - [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
 - [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
+- [Fresh-deployment acceptance](docs/FRESH_DEPLOYMENT_ACCEPTANCE.md) — validate the installation
+  guide safely in disposable Cloudflare resources.
 - [Design guide](docs/DESIGN.md) — family-first IA, visual language, copy and accessibility.
 - [Roadmap](docs/ROADMAP.md) — completed phases and remaining release work.
 - [Project stewardship and support](docs/STEWARDSHIP.md) — maintainer, funding, review provenance and

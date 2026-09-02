@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  checkAccessSession,
   configureAccessSession,
   readAccessSessionConfiguration
 } from '../scripts/configure-access-session';
@@ -68,6 +69,23 @@ describe('Access session setup', () => {
     });
     expect(client.get).toHaveBeenCalledOnce();
     expect(client.update).not.toHaveBeenCalled();
+  });
+
+  it('checks the 30-day session without attempting an update', async () => {
+    const client = { get: vi.fn().mockResolvedValue(accessApplication('720h')) };
+
+    await expect(checkAccessSession(configuration, client)).resolves.toEqual({
+      applicationName: 'Family Wishlist',
+      sessionDuration: '720h'
+    });
+    expect(client.get).toHaveBeenCalledOnce();
+  });
+
+  it('fails the read-only check when the session duration has drifted', async () => {
+    const client = { get: vi.fn().mockResolvedValue(accessApplication('24h')) };
+
+    await expect(checkAccessSession(configuration, client)).rejects.toThrow('720h');
+    expect(client.get).toHaveBeenCalledOnce();
   });
 
   it('sets 30-day sessions while preserving destinations, authentication, cookies and policies', async () => {

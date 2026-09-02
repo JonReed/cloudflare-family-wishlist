@@ -335,3 +335,32 @@ export async function ensurePublicSharingAccess(
     'request_failed'
   );
 }
+
+export async function checkPublicSharingAccess(
+  env: PublicSharingAccessEnv,
+  requestedHostname: string,
+  fetcher: typeof fetch = fetch
+): Promise<PublicSharingAccessResult> {
+  const configuration = readConfiguration(env);
+  const hostname = normaliseHostname(requestedHostname);
+  const name = applicationName(hostname);
+  const existing = managedApplication(
+    await listApplications(configuration, fetcher),
+    name,
+    hostname
+  );
+
+  if (!existing) {
+    throw new PublicSharingAccessError(
+      `The expected Access application for ${hostname} does not exist. Run the public-sharing setup command first.`,
+      'configuration_drift'
+    );
+  }
+
+  return {
+    applicationId: assertManagedApplication(existing, hostname),
+    applicationName: name,
+    created: false,
+    hostname
+  };
+}

@@ -36,6 +36,7 @@ to production. If a migration is added, rerun `npm run db:migrate:local` before 
 | `npm run db:migrate:local`                 | Apply pending migrations to local D1                  |
 | `npm run access:configure-session`         | Apply and verify the setup-time 30-day Access session |
 | `npm run access:configure-sharing -- HOST` | Create/verify one hostname's narrow public paths      |
+| `npm run setup:check`                      | Read-only check of a configured deployment            |
 | `npm run format`                           | Write Prettier formatting                             |
 | `npm run lint`                             | Generate route types and run zero-warning ESLint      |
 | `npm run typecheck`                        | Check Wrangler bindings, route types and TypeScript   |
@@ -142,8 +143,10 @@ device. Keep the manual current-UI recipe as a recovery route and follow
    shared database.
 2. Update query/service types and test fixtures.
 3. Apply it locally with `npm run db:migrate:local`.
-4. Run the complete quality gate.
-5. Update architecture, deployment or product docs if the persistent model changed.
+4. If the migration adds an index, finish it with `PRAGMA optimize;` so SQLite refreshes planner
+   statistics after applying it.
+5. Run the complete quality gate.
+6. Update architecture, deployment or product docs if the persistent model changed.
 
 `npm run db:migrate:remote` mutates production data. Run it only when explicitly authorised and only
 after reading the account-specific private handoff and verifying the active Wrangler profile.
@@ -221,6 +224,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/access-membership.test.ts`        | exact-email policy shape, bounded API handling and cleanup         |
 | `test/access-public-sharing.test.ts`    | narrow, idempotent public-path setup and drift detection           |
 | `test/configure-access-session.test.ts` | idempotent 30-day session setup without Access configuration drift |
+| `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks    |
 | `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts   |
 | `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback  |
 | `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures |

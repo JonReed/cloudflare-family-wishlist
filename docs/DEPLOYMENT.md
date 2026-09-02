@@ -195,7 +195,9 @@ npm run db:migrate:remote
 
 Applying remote migrations changes the production database. On a new empty database this is expected.
 For later upgrades, migration files are append-only: never edit a migration that a deployment may
-already have applied.
+already have applied. A fresh installation and an existing installation both use the same single
+command above: Wrangler records and applies each pending numbered file in order. Do not squash or
+rename the checked-in history; doing so would break upgrades for databases that already recorded it.
 
 Local development is optional during installation. To test against an isolated local D1 database:
 
@@ -410,6 +412,7 @@ read -s ACCESS_MANAGEMENT_API_TOKEN
 export ACCESS_MANAGEMENT_API_TOKEN
 npm run access:configure-session
 npm run access:configure-sharing
+npm run setup:check
 unset ACCESS_MANAGEMENT_API_TOKEN
 ```
 
@@ -417,6 +420,12 @@ If a custom hostname already exists, include it in the comma-separated value, fo
 `cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev,wishlist.example.com`. The sharing command is
 idempotent: it confirms an exact existing application without writing. It never prints the token.
 First-time concurrent runs converge by re-reading Cloudflare after a create conflict.
+
+`npm run setup:check` is read-only. It checks the authenticated account, generated binding types,
+remote D1 identity and migration state, deployed binding names, the 30-day session and the exact
+public-sharing applications. It never prints binding values or the API token. Run it before unsetting
+the four setup environment variables to include the deeper Access API checks; without them it still
+checks Wrangler, D1 and the deployed Worker.
 
 The session command reads the application before changing it, retains its destinations, attached policies,
 identity providers and cookie controls, and reads it again afterward. It is idempotent: rerunning it
@@ -450,10 +459,13 @@ First commit the installation-specific `wrangler.jsonc` changes to your fork so 
 build with the upstream reference account and database IDs:
 
 ```sh
-git add wrangler.jsonc worker-configuration.d.ts
+git add wrangler.jsonc
 git commit -m "Configure family deployment"
 git push origin main
 ```
+
+`worker-configuration.d.ts` is generated and intentionally ignored, so it must not be added to the
+commit.
 
 Account and database IDs are identifiers, not credentials. Never commit Access API tokens, `.env`,
 `.dev.vars`, database exports or other secrets.
@@ -486,7 +498,8 @@ lookup limits, product-image budgets and hashed sharing links. Migration `0010` 
 single-link table with the named, five-link structure. Existing experimental sharing addresses stop
 working when it is applied and must be made again; the application does not carry those early links
 forward under invented names. The shared-image requester-limit migration is also required before
-deploying its matching code.
+deploying its matching code. Migration `0011` refreshes SQLite planner statistics after the indexes
+introduced by the earlier migrations.
 
 ## 12. Add a custom domain (optional)
 
@@ -533,8 +546,12 @@ Before relying on the installation, verify all of these:
 Check D1 migrations at any time with:
 
 ```sh
-npx wrangler d1 migrations list DB --remote
+npm run setup:check
 ```
+
+For release-level validation of the guide itself, follow the isolated
+[fresh-deployment acceptance procedure](FRESH_DEPLOYMENT_ACCEPTANCE.md). It records evidence against
+a disposable Cloudflare account and must never be run against the reference family deployment.
 
 Usage is visible in **Workers & Pages → your Worker**, **D1 → your database**, **Browser Run**,
 **Workers AI**, and **Workers Builds**. These dashboards are the source of truth for the account's

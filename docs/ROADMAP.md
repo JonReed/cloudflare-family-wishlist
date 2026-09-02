@@ -68,5 +68,6 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] Product, architecture and developer handoff documentation.
 - [ ] Backup, restore and upgrade documentation.
 - [x] Abuse-case and privacy review.
-- [ ] Fresh-deployment walkthrough.
+- [x] Publish an isolated fresh-deployment acceptance procedure.
+- [ ] Execute and record the fresh-deployment walkthrough for the first release.
 - [ ] First tagged release.

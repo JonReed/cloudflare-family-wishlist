@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  checkPublicSharingAccess,
   ensurePublicSharingAccess,
   PublicSharingAccessError,
   type PublicSharingAccessResult
@@ -112,6 +113,28 @@ describe('public sharing Access setup', () => {
     await expect(ensurePublicSharingAccess(env, hostname, fetcher)).resolves.toMatchObject({
       applicationId,
       created: false
+    });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('checks an exact managed application without creating anything', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(applicationList([application()]));
+
+    await expect(checkPublicSharingAccess(env, hostname, fetcher)).resolves.toEqual({
+      applicationId,
+      applicationName: name,
+      created: false,
+      hostname
+    });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0][1]?.method).toBe('GET');
+  });
+
+  it('fails the read-only check when the managed application is missing', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(applicationList([]));
+
+    await expect(checkPublicSharingAccess(env, hostname, fetcher)).rejects.toMatchObject({
+      code: 'configuration_drift'
     });
     expect(fetcher).toHaveBeenCalledOnce();
   });
