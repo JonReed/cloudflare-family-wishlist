@@ -2,13 +2,15 @@
 
 Thank you for taking an interest in Cloudflare Family Wishlist.
 
-This is an open-source, maintainer-led project. The source is available so families can inspect it, deploy it and fork it—not as a promise that every proposed feature or pull request will be merged.
+This is an open-source, maintainer-led project. Families can inspect it, deploy it and freely adapt
+their own fork, while the upstream project follows a deliberately focused product direction.
 
-## Before writing code
+## Shape a successful contribution
 
-Please open an issue before starting a substantial change. Unsolicited pull requests may be closed when they do not match the project's deliberately small scope or current direction. The maintainer may decline a change for any reason, including ongoing maintenance cost, added setup or a preference for a simpler product.
-
-That is not a judgement on the quality of the contribution. Forks are welcome and encouraged when a different direction is useful.
+Please open an issue before starting a substantial change. Early discussion helps match ideas to the
+project's small scope, simple setup and sustainable maintenance model. Contributions that fit that
+direction are especially welcome; forks are encouraged for equally good ideas with a different
+product vision.
 
 ## Project principles
 
@@ -17,7 +19,7 @@ That is not a judgement on the quality of the contribution. Forks are welcome an
 - Keep claim information secret from the recipient at the server boundary.
 - Prefer fewer services, dependencies and configuration steps.
 - Keep the core experience accessible and usable without JavaScript.
-- Do not add advertising, tracking or affiliate links.
+- Preserve the calm, advertising-free experience and its freedom from tracking or affiliate links.
 
 ## Development
 
@@ -29,4 +31,5 @@ npm run quality
 npm run audit
 ```
 
-Never commit credentials, `.dev.vars`, Access tokens, database exports containing personal data or production identifiers that should remain private.
+Keep credentials, `.dev.vars`, Access tokens, personal database exports and private production
+identifiers safely outside commits.

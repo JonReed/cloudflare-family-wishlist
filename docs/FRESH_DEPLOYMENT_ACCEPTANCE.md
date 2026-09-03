@@ -1,17 +1,17 @@
 # Fresh-deployment acceptance
 
-Use this procedure to prove that the installation guide works from an empty Cloudflare account. It
-is a release acceptance exercise, not a shortcut for configuring the reference deployment.
+Use this procedure to demonstrate the complete installation journey from an empty Cloudflare account
+to a release-ready family wishlist. It gives every tagged release clear, repeatable deployment
+evidence.
 
 ## Safety boundary
 
-Use a disposable Cloudflare account or a dedicated non-production account with no family data. Use a
-disposable repository fork and a test hostname. Before creating or removing anything, record and
-compare the Cloudflare account ID with the account under test.
+Use a disposable Cloudflare account or a dedicated non-production account with empty test data,
+together with a disposable repository fork and test hostname. Record the account ID before every
+create or cleanup step so all activity stays confidently isolated from the reference deployment.
 
-Never run cleanup commands against the reference account, database, Worker, Access applications or
-repository. Do not copy real family email addresses, tokens or database exports into the evidence
-log.
+Use dedicated test email addresses and keep tokens, OTPs and database exports out of the evidence
+log. These clear boundaries make the resulting record safe to share with a release review.
 
 ## Test identities and prerequisites
 
@@ -39,8 +39,8 @@ record.
    ```
 
    Save the pass/fail lines, but never shell history or environment output. The command is read-only
-   and must report no pending D1 migrations, all required deployed bindings, the 30-day Access
-   session and exact narrow public-sharing applications.
+   and must report no pending D1 migrations, all required bindings on every traffic-bearing Worker
+   version, the 30-day Access session and exact narrow public-sharing applications.
 
 4. Exercise every item in the installation guide's final acceptance checklist using the three test
    identities. In particular, verify that the unrelated address cannot enter and that a wishlist
@@ -51,9 +51,9 @@ record.
    deployed-binding checks still pass and that the output explicitly says the deep Access checks were
    skipped.
 
-Treat any undocumented manual repair, ambiguous instruction, failed assertion or secret printed to
-the terminal as a failed walkthrough. Fix the source or documentation, start again with empty
-resources and record a new run rather than editing the evidence from the failed attempt.
+Any undocumented repair, ambiguous instruction, failed assertion or exposed secret becomes a useful
+release finding. Improve the source or documentation, restart with empty resources and record a fresh
+run so a passing record always represents the complete journey.
 
 ## Evidence record
 
@@ -92,4 +92,4 @@ signed into the disposable account:
 7. archive or delete the disposable fork and evidence after retaining the release result required by
    the project.
 
-If any displayed identifier differs from the evidence record, stop instead of deleting it.
+Proceed with each cleanup only when its displayed identifier matches the evidence record exactly.

@@ -28,11 +28,14 @@ export type PublicSharingAccessResult = {
 };
 
 export class PublicSharingAccessError extends Error {
+  readonly code: 'not_configured' | 'invalid_hostname' | 'request_failed' | 'configuration_drift';
+
   constructor(
     message: string,
-    readonly code: 'not_configured' | 'invalid_hostname' | 'request_failed' | 'configuration_drift'
+    code: 'not_configured' | 'invalid_hostname' | 'request_failed' | 'configuration_drift'
   ) {
     super(message);
+    this.code = code;
     this.name = 'PublicSharingAccessError';
   }
 }

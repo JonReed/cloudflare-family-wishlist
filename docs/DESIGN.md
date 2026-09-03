@@ -3,7 +3,8 @@
 ## The feeling
 
 Family Wishlist should feel like opening a parcel on the kitchen table: warm, useful, slightly
-imperfect and unmistakably personal. It is a family tool, not a team dashboard or an online shop.
+imperfect and unmistakably personal. Every choice should feel at home in a family tool, with the
+warmth and clarity of a handwritten list.
 
 The interface uses paper, kraft tape, cotton string, gift tags and editorial still-life imagery as
 quiet design cues. These materials should support the task rather than turn every control into a
@@ -194,21 +195,19 @@ New imagery should be natural, asymmetrical and materially believable. Avoid rea
 Christmas-only motifs, glossy catalogue lighting and perfect 3D-rendered parcels. Optimise assets to
 WebP before committing them.
 
-## Avoiding generic generated UI
+## A distinctive family identity
 
-Do not drift towards the common visual shorthand of generated SaaS pages:
+Keep the visual language recognisably Family Wishlist:
 
-- no purple or aurora gradients;
-- no glowing blurred background orbs;
-- no glass panels or backdrop-blur decoration;
-- no centred marketing hero followed by three identical feature cards;
-- no rows of pills or rounded filter chips;
-- no nested rounded cards for every piece of content;
-- no generic “streamline”, “unlock” or “revolutionise” copy;
-- no fabricated testimonials, metrics or decorative analytics;
-- no icon next to every heading simply to fill space.
+- warm paper, kraft, evergreen, sage and brick tones;
+- crisp, grounded layers instead of glowing or glassy effects;
+- editorial compositions with varied rhythm rather than repeated feature-card grids;
+- gift tags, ruled rows and rectangular controls in place of generic pills;
+- plain family language grounded in real actions;
+- honest product evidence and imagery; and
+- icons used only when they add recognition or orientation.
 
-Asymmetry must still be intentional, and tactile detail must never reduce legibility or keyboard use.
+Intentional asymmetry and tactile detail should always strengthen legibility and keyboard use.
 
 ## Content voice
 
@@ -216,6 +215,11 @@ Copy is plain, warm British English. Describe what the family is doing, not how 
 modelled. Prefer “wish”, “gift”, “family” and “I’m getting this” to system language such as claim,
 recipient, priority, resource, workspace, role or permission. Empty states should be reassuring and
 specific. Avoid forced whimsy: one human phrase is enough.
+
+Project and product documentation uses the same confident voice. Lead with what works, the benefit
+to a family and the clear route forward. Frame boundaries as purposeful focus, safeguards as trust
+features and resilience as continuity. Keep warnings direct where an action can affect data or
+privacy, while pairing each one with the safe action the reader can take.
 
 Describe Workers AI as product-detail assistance, enrichment or completion—not as a fallback. It is a
 positive capability that turns a link into a better editable draft. Reserve “fallback” for genuine

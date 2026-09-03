@@ -21,6 +21,7 @@
     "access:configure-session": "node scripts/configure-access-session.ts",
     "access:configure-sharing": "node scripts/configure-access-sharing.ts",
     "setup:check": "node scripts/check-setup.ts",
+    "scripts:check": "node scripts/check-script-imports.ts",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
@@ -30,7 +31,7 @@
     "lint": "react-router typegen && eslint . --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run scripts:check && npm run test && npm run build",
     "audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {

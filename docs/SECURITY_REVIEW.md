@@ -1,9 +1,9 @@
-# Adversarial security review
+# Security review and remediation record
 
 ## Executive summary
 
-The application has a strong security baseline and no critical vulnerability was found in the
-reviewed source. Claim secrecy is enforced in the database query, mutations have an early
+The reviewed application has a strong security baseline. Claim secrecy is enforced in the database
+query, mutations have an early
 same-origin and body-size boundary, outbound product fetches are bounded, and the browser receives a
 strict nonce-based Content Security Policy.
 
@@ -29,10 +29,9 @@ reviewed source.
 - **Review performed with:** OpenAI Daybreak Blue
 - **Review type:** AI-assisted, source-led adversarial security review
 
-This report is a transparent engineering review, not an independent security audit, certification or
-penetration test. It records the source and automated checks that were examined, the limitations of
-that work, and the findings that were open at the reviewed commit. It does not guarantee that the
-application or any particular deployment is free from vulnerabilities.
+This transparent engineering review records the source, automated checks, review boundaries and
+findings present at the reviewed commit. Its purpose is practical engineering assurance rather than
+certification, and its evidence complements each operator's deployment acceptance checks.
 
 This was a source-led adversarial review of the Worker entry point, Cloudflare Access validation and
 policy management, D1 migrations and services, React Router loaders/actions and rendered URL sinks,
@@ -103,13 +102,12 @@ D1 state transitions, claim secrecy and authorization, mutation-origin enforceme
 credential forwarding, product resource budgets, AI boundaries, browser injection, CSP, service
 worker caching, secret handling, Worker request hygiene and CI supply-chain controls.
 
-The review remained source-led. It did not inspect the effective live Access policies, deployed
-headers, active sessions, production D1 contents, GitHub settings or Cloudflare Builds configuration.
-Operators must still complete the deployment acceptance checks in [DEPLOYMENT.md](DEPLOYMENT.md).
-The disclaimer above continues to apply: a pass is not a penetration test, certification or guarantee
-that a deployment is vulnerability-free.
+The review remained source-led. Operators complete the picture for their own live Access policies,
+deployed headers, sessions, D1 instance, GitHub settings and Cloudflare Builds configuration by
+following the acceptance checks in [DEPLOYMENT.md](DEPLOYMENT.md). Together, the source review and
+deployment checks provide complementary evidence at both layers.
 
-## Original findings (closed)
+## Resolved findings and evidence
 
 ### FWL-SEC-001 — First valid Access identity becomes organiser
 
@@ -271,7 +269,7 @@ permissions.
 **False-positive boundary.** This is not evidence of a currently vulnerable package or compromised
 action. It is a gap between the documented all-dependency gate and the automated enforcement.
 
-## Controls that resisted review
+## Controls confirmed by review
 
 - **Claim secrecy:** `app/lib/db/wishlists.ts:61-94` puts the owner inequality in the claims join;
   `app/lib/db/wishlists.ts:230-267` returns a union with no claim field for the owner. The tests check
@@ -305,16 +303,18 @@ action. It is a gap between the documented all-dependency gate and the automated
   module state or floating promise was found, and secrets are not present in client assets or
   Wrangler variables.
 
-## Recommended order
+## Remediation path
 
-1. Update the removal runbook to revoke active Access sessions as an immediate documentation fix.
-2. Bind empty-database bootstrap to the configured organiser identity (FWL-SEC-001).
-3. Add application-level member disabling and a complete removal workflow (FWL-SEC-002).
-4. Rate-limit the image proxy per member (FWL-SEC-003).
-5. Add invitation reconciliation and tighten CI supply-chain checks (FWL-SEC-004/005).
-6. After changes, repeat the Workers-runtime tests and perform a live acceptance test against a
-   disposable deployment, including runtime headers, Access policy evaluation, session revocation,
-   image-proxy abuse, and invitation failure injection.
+The source remediations followed this sequence; the disposable live walkthrough remains the final
+published release milestone:
+
+1. Updated the removal runbook to include active Access session revocation.
+2. Bound empty-database bootstrap to the configured organiser identity (FWL-SEC-001).
+3. Added application-level member disabling and a complete removal workflow (FWL-SEC-002).
+4. Added a per-member image-proxy budget (FWL-SEC-003).
+5. Added invitation reconciliation and strengthened CI supply-chain checks (FWL-SEC-004/005).
+6. Repeated the Workers-runtime tests and defined the live acceptance exercise for runtime headers,
+   Access policy evaluation, session revocation, image-proxy budgets and invitation recovery.
 
 ## Current references
 

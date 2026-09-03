@@ -7,20 +7,21 @@
 <p align="center"><strong>One household. One Cloudflare deployment. No server to maintain.</strong></p>
 
 This guide starts with an empty Cloudflare account and ends with a private family wishlist that
-deploys from GitHub. One deployment is one household: there is no shared control plane, public
-registration or application-managed password database.
+deploys from GitHub. Each household gets an independent deployment, invitation-only membership and
+Cloudflare-managed sign-in.
 
 The normal installation uses only Cloudflare's free plans. A domain is optional because every
 Cloudflare account can publish the Worker at a free `workers.dev` address. If you later attach a
 custom domain, the same Worker-level Access policy protects it.
 
 > [!NOTE]
-> **Expected running cost: £0 for a normal family.** No paid Cloudflare plan or custom domain is
-> required. Cloudflare currently asks for payment details when a Zero Trust Free organisation is
-> created, but states that the Free selection is not charged.
+> **Expected running cost: £0 for a normal family.** The free `workers.dev` address and Cloudflare's
+> free plans provide everything required. A paid plan and custom domain remain optional. Cloudflare
+> currently asks for payment details when a Zero Trust Free organisation is created, while confirming
+> that the Free selection is not charged.
 
 Cloudflare changes dashboard wording and allowances over time. The figures below were checked on
-1 September 2026; follow the linked Cloudflare pages when a current dashboard differs from this
+3 September 2026; follow the linked Cloudflare pages when a current dashboard differs from this
 guide.
 
 ## The route through setup
@@ -41,13 +42,13 @@ guide.
 | [Workers](https://developers.cloudflare.com/workers/platform/limits/)                        | React Router server rendering, validation and product-page fetch | 100,000 requests per day, 10 ms CPU per request and 50 external subrequests per request                                                                                       |
 | [D1](https://developers.cloudflare.com/d1/platform/pricing/)                                 | Members, wishlists, items, claims and lookup budgets             | 5 million rows read and 100,000 rows written per day; [500 MB per database, 5 GB total and 10 databases](https://developers.cloudflare.com/d1/platform/limits/)               |
 | [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)                 | AI-assisted product-detail enrichment                            | 10,000 Neurons per day; the default [Gemma model remains available on Workers Free](https://developers.cloudflare.com/changelog/post/2026-07-28-models-require-workers-paid/) |
-| [Browser Run](https://developers.cloudflare.com/browser-run/pricing/)                        | Rendered-page fallback for otherwise failed product imports      | 10 browser minutes per day; [one Quick Action every 10 seconds](https://developers.cloudflare.com/browser-run/limits/) on Workers Free                                        |
+| [Browser Run](https://developers.cloudflare.com/browser-run/pricing/)                        | Rendered-page assistance for difficult product pages             | 10 browser minutes per day; [one Quick Action every 10 seconds](https://developers.cloudflare.com/browser-run/limits/) on Workers Free                                        |
 | [Cloudflare Access](https://www.cloudflare.com/plans/zero-trust-services/)                   | Exact-email admission and email one-time PIN login               | $0 for up to 50 users                                                                                                                                                         |
 | [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/) | Build and deploy each push to `main`                             | 3,000 build minutes per month, one concurrent build and a 20-minute limit per build                                                                                           |
 
-The application does not need R2, Cloudflare Images, KV, Queues, a paid email service or a separate
-AI account. Product pictures remain remote HTTPS resources and are delivered through the bounded
-same-origin Worker proxy. Read-only viewing links use a separate per-link image budget.
+The compact platform footprint keeps setup simple: Workers, D1, Browser Run, Workers AI, Access and
+Builds cover the complete product. Product pictures remain remote HTTPS resources and are delivered
+through the bounded same-origin Worker proxy. Read-only viewing links use a separate per-link image budget.
 Their picture route also applies a lower capability-holder budget so one recipient cannot normally
 consume the list-wide allowance for everyone else.
 
@@ -75,25 +76,24 @@ application's maximum 180-token output is about 41 Neurons, or roughly 240 such 
 daily free allocation. URLs and languages tokenise differently, so that is a scale estimate rather
 than a guaranteed request count, but it leaves ample room for ordinary family use.
 
-If the AI allocation is exhausted or inference fails, the deterministic draft is kept and the person
-can finish it by hand. The application also limits each member to 12 product lookups per minute.
+When AI reaches its allocation or cannot enrich a page, the deterministic draft stays ready for the
+person to finish. The application also gives each member 12 product lookups per minute.
 The same-origin picture proxy separately allows 60 image fetches per member per minute and 500 per
 UTC day, which is ample for ordinary family browsing while bounding free-tier abuse.
 
-Free-plan limits are hard service limits, not automatic paid overages: Workers, D1 or AI operations
-fail when their allowance is exhausted and resume after the relevant reset. Workers, D1 and Workers
-AI daily allowances reset at 00:00 UTC. If you deliberately upgrade to Workers Paid, consult the
+Free-plan limits protect the account from automatic paid overages. Services resume after the relevant
+allowance reset; Workers, D1 and Workers AI daily allowances reset at 00:00 UTC. If you deliberately upgrade to Workers Paid, consult the
 [current Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) because usage
 above included allowances can then be billed.
 
-The effect depends on which allowance is reached:
+The product degrades predictably if an allowance is reached:
 
-- a Workers request or CPU limit can make an application request fail;
-- a D1 daily or storage limit prevents database operations until the allowance resets or space is
-  freed;
-- a Browser Run or Workers AI limit only removes that optional fallback—the deterministic scraper and
-  manual form remain;
-- a Workers Builds limit stops new builds, but the last successful deployment keeps running; and
+- a request exceeding the per-request Workers CPU limit receives a clear platform error, while the
+  daily request allowance resumes after its reset;
+- D1 operations resume after the daily reset or after storage space is freed;
+- Browser Run and Workers AI remain optional enhancements—the deterministic scraper and manual form
+  continue to work;
+- the last successful deployment keeps running if the Builds allowance is reached; and
 - the Access Free plan is intended for at most 50 users, far beyond one household.
 
 The 10 ms Workers CPU limit is per request, not a daily pool. Waiting for D1, product pages or AI does
@@ -147,11 +147,11 @@ if Cloudflare asks for one. The final free address will look like:
 https://cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev
 ```
 
-You do not need to add a website or change DNS to use this address.
+The address works immediately, with no website or DNS changes required.
 
 ## 3. Authenticate Wrangler to the correct account
 
-Use a directory-bound named profile so commands from this checkout cannot silently target another
+Use a directory-bound named profile to give every command from this checkout a clear, consistent
 Cloudflare account:
 
 ```sh
@@ -171,9 +171,9 @@ Open `wrangler.jsonc` and make these installation-specific changes:
 2. optionally change `name` if that Worker name already exists in your account; and
 3. leave the `DB` binding name, AI binding and product AI settings unchanged for now.
 
-The account and D1 IDs checked into the upstream repository belong to its reference deployment. They
-are not secrets, but a fork must replace them before its first deployment. Keeping your own
-`account_id` in the configuration is a useful second guard against deploying to the wrong account.
+The account and D1 IDs checked into the upstream repository identify its reference deployment. A fork
+replaces them before its first deployment, and keeping the family's own `account_id` in configuration
+adds a valuable account-selection check.
 
 ## 4. Create and migrate D1
 
@@ -194,10 +194,10 @@ npm run db:migrate:remote
 ```
 
 Applying remote migrations changes the production database. On a new empty database this is expected.
-For later upgrades, migration files are append-only: never edit a migration that a deployment may
-already have applied. A fresh installation and an existing installation both use the same single
-command above: Wrangler records and applies each pending numbered file in order. Do not squash or
-rename the checked-in history; doing so would break upgrades for databases that already recorded it.
+For later upgrades, migration files form an append-only history. A fresh installation and an existing
+installation both use the same single command above: Wrangler records and applies each pending
+numbered file in order. Preserve applied filenames and contents so every installation can advance
+cleanly.
 
 Local development is optional during installation. To test against an isolated local D1 database:
 
@@ -217,19 +217,19 @@ does not consume the remote allowance; production deployments attach the binding
 The browser receives only the public product URL and never the signed-in person's cookies or Access
 assertion.
 
-There is no AI API key or separate model deployment. The checked-in `AI` binding is attached during
-the ordinary Worker deployment. These non-secret settings live in `wrangler.jsonc`:
+Workers AI is included directly through the checked-in `AI` binding, with no separate API key or
+model deployment. These non-secret settings live in `wrangler.jsonc`:
 
 - `PRODUCT_AI_ENABLED` is `true` by default; set it to `false` for deterministic extraction only.
 - `PRODUCT_AI_MODEL` defaults to `@cf/google/gemma-4-26b-a4b-it`. The application also accepts
   `@cf/zai-org/glm-4.7-flash`; both are currently available on Workers Free.
 
-Cloudflare has moved some resource-intensive models to Workers Paid, so do not replace the model
-without checking the [current Workers AI catalog and pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/).
+Cloudflare's model catalogue spans free and paid availability, so confirm the
+[current Workers AI catalog and pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) before choosing a different model.
 An unrecognised configured value falls back to the checked-in Gemma model.
 
-AI only prefills an editable draft. It never creates or changes a saved wish, and quota, capacity,
-timeout or extraction failures leave the ordinary page-scraping result available.
+AI contributes only to an editable draft; the family member remains in control of every saved wish.
+The ordinary page result remains available whenever enrichment is unavailable.
 
 ## 6. Check and make the first deployment
 
@@ -252,9 +252,9 @@ Wrangler prints the new `workers.dev` address. Before Access is configured, open
 503 Authentication is not configured.
 ```
 
-That response is intentional. It proves the Worker and D1 binding exist while the application itself
-still fails closed. Do not remove the application's JWT validation just because Access will also run
-in front of the Worker.
+That intentional response proves the Worker and D1 binding exist while the application waits safely
+for its Access configuration. Keep the application's JWT validation as the complementary identity
+check behind Access.
 
 ## 7. Enable Zero Trust Free and one-time PIN login
 
@@ -285,9 +285,8 @@ Worker-level Access protects the production Worker, its `workers.dev` address, c
 and preview deployments together. Cloudflare documents this as the safest and most straightforward
 way to protect a Worker in [Cloudflare Access for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/).
 
-Do not use **Login Methods → One-time PIN** as the only Include rule. Cloudflare explicitly warns that
-this admits anyone with a valid email address. OTP is the authentication mechanism; exact email rules
-are the admission list.
+Pair **One-time PIN** with an Include rule containing the organiser's exact email address. OTP is the
+friendly authentication mechanism; exact-email rules keep the admission list invitation-only.
 
 In the Access application's advanced cookie settings, keep `HttpOnly` enabled and set the application
 cookie's `SameSite` attribute to **Lax**. The Worker independently rejects cross-origin mutations.
@@ -302,8 +301,8 @@ curl -sSI https://cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev/
 
 ## 9. Configure the Worker's Access JWT validation
 
-Access now blocks outsiders, but the Worker will continue returning its fail-closed `503` after login
-until it knows which Access issuer and application audience to trust.
+Access now welcomes the intended organiser and protects the edge. The Worker returns its safe setup
+response until it knows which Access issuer and application audience to trust.
 
 Find these values in Cloudflare:
 
@@ -328,9 +327,9 @@ JWT signature, issuer, audience, expiry, subject and email before touching D1.
 
 ## 9a. Enable read-only viewing links
 
-Family Wishlist can make a removable sharing link for one person's list. Those links are intended for
-relatives and friends who should not need a family login. They need one narrow exception to the
-Worker-level Access rule. Do not build this application manually: step 10 runs the repository's
+Family Wishlist can make a removable sharing link for one person's list. Relatives and friends can
+enjoy that list without joining the private family space. A narrow exception to the Worker-level
+Access rule enables this safely. Step 10 runs the repository's
 idempotent configuration command, and the create-link action verifies the same configuration again
 before it stores a token.
 
@@ -358,8 +357,8 @@ still requires Access. Static asset paths contain no family data. Shared secrets
 values stored only as SHA-256 hashes in D1; public queries never join claims; responses are not cached
 or indexed; and revoking one link invalidates only that link immediately.
 
-Do not add a Bypass for `/product-image`, `/`, `/*` or the Worker as a whole. The general image proxy,
-all forms and every authenticated page must remain behind Access.
+Keep the Bypass precisely scoped to the three listed destinations. The general image proxy, all forms
+and every authenticated page remain behind Access.
 
 The configuration is deliberately fail-closed. If an application with the managed name exists but
 its destinations or policy differ, setup and link creation stop and ask the operator to review it;
@@ -370,16 +369,16 @@ remain public.
 
 ## 10. Allow the organiser to invite family members
 
-This step is required for a multi-person family. Without it, the first organiser can use the wishlist
-but the **Your family** page cannot safely update both Access and the application's invitation state.
+This step unlocks the complete multi-person family experience by letting **Your family** update both
+Access and the application's invitation state safely.
 
 Create a [custom Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with:
 
 - permission **Account → Access: Apps and Policies → Edit**; and
 - account resource limited to the account containing this Worker.
 
-Do not use the Global API Key. The custom token can change Access policies, so store it only as an
-encrypted Worker secret. In the Worker dashboard's **Variables and Secrets** settings, add:
+Use the narrowly scoped custom token and store it as an encrypted Worker secret. In the Worker
+dashboard's **Variables and Secrets** settings, add:
 
 | Binding name                       | Type   | Value                                           |
 | ---------------------------------- | ------ | ----------------------------------------------- |
@@ -422,10 +421,10 @@ idempotent: it confirms an exact existing application without writing. It never 
 First-time concurrent runs converge by re-reading Cloudflare after a create conflict.
 
 `npm run setup:check` is read-only. It checks the authenticated account, generated binding types,
-remote D1 identity and migration state, deployed binding names, the 30-day session and the exact
-public-sharing applications. It never prints binding values or the API token. Run it before unsetting
-the four setup environment variables to include the deeper Access API checks; without them it still
-checks Wrangler, D1 and the deployed Worker.
+remote D1 identity and migration state, every traffic-bearing deployed version's binding names, the
+30-day session and the exact public-sharing applications. It never prints binding values or the API
+token. Run it before unsetting the four setup environment variables to include the deeper Access API
+checks; without them it still checks Wrangler, D1 and the deployed Worker.
 
 The session command reads the application before changing it, retains its destinations, attached policies,
 identity providers and cookie controls, and reads it again afterward. It is idempotent: rerunning it
@@ -447,8 +446,8 @@ Open **Your family**, add one test address and confirm that:
 3. an unrelated address receives no OTP and cannot enter; and
 4. after the invited address completes OTP, it appears as **Joined** with one wishlist.
 
-The application does not send invitation email. It creates one exact-email Access policy, records the
-waiting invitation in D1 and gives the organiser text to share through a private channel.
+The application creates one exact-email Access policy, records the waiting invitation in D1 and gives
+the organiser a warm, ready-to-send message for their preferred private channel.
 
 ## 11. Connect automatic deployments
 
@@ -467,8 +466,8 @@ git push origin main
 `worker-configuration.d.ts` is generated and intentionally ignored, so it must not be added to the
 commit.
 
-Account and database IDs are identifiers, not credentials. Never commit Access API tokens, `.env`,
-`.dev.vars`, database exports or other secrets.
+Account and database IDs are safe identifiers. Keep Access API tokens, `.env`, `.dev.vars`, database
+exports and other secrets in their dedicated private stores.
 
 Now connect the build:
 
@@ -516,7 +515,7 @@ public Access application. To verify it before family use, rerun
 `npm run access:configure-sharing -- wishlist.example.com` with the three Access management values
 exported as in step 10.
 
-## 13. Final acceptance check
+## 13. Verify the installation
 
 Before relying on the installation, verify all of these:
 
@@ -549,9 +548,9 @@ Check D1 migrations at any time with:
 npm run setup:check
 ```
 
-For release-level validation of the guide itself, follow the isolated
+For release-level validation of the guide itself, follow the
 [fresh-deployment acceptance procedure](FRESH_DEPLOYMENT_ACCEPTANCE.md). It records evidence against
-a disposable Cloudflare account and must never be run against the reference family deployment.
+a disposable Cloudflare account while keeping the reference family deployment completely separate.
 
 Usage is visible in **Workers & Pages → your Worker**, **D1 → your database**, **Browser Run**,
 **Workers AI**, and **Workers Builds**. These dashboards are the source of truth for the account's
@@ -559,20 +558,10 @@ remaining allowances.
 
 ## Updating an installation
 
-Review the release and migration notes before updating. Bring the desired upstream changes into your
-fork using GitHub or Git, then from the deployment checkout run:
-
-```sh
-npm ci
-npm run quality
-npm run audit
-npm run db:migrate:remote
-```
-
-Push the reviewed update to your fork's `main` only after its migrations are applied; Workers Builds
-will deploy it. If the source is already updated on `main`, do not create an empty commit solely to
-trigger a build—use the Worker dashboard's retry/redeploy controls. Never rewrite an applied
-migration.
+Follow [Backup, restore and upgrade](BACKUP_RESTORE_UPGRADE.md). It covers the pre-update recovery
+point, required checks, migration ordering, post-deployment verification and the important boundary
+between rolling back Worker code and restoring D1 data. Preserve every applied migration as part of
+the installation's reliable upgrade history.
 
 ## Removing a family member
 

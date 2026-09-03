@@ -32,7 +32,9 @@ function runner(overrides: Record<string, string> = {}): WranglerRunner {
         name: configuration.databaseName
       }),
       'd1 migrations list DB --remote': '✅ No migrations to apply!',
-      'versions list --json': JSON.stringify([{ id: 'version-one', number: 1 }]),
+      'deployments status --json': JSON.stringify({
+        versions: [{ version_id: 'version-one', percentage: 100 }]
+      }),
       'versions view version-one --json': JSON.stringify({
         resources: { bindings: requiredBindings.map((name) => ({ name, type: 'test' })) }
       }),
@@ -103,6 +105,27 @@ describe('setup checker', () => {
         {}
       )
     ).rejects.toThrow('INITIAL_ORGANISER_EMAIL');
+  });
+
+  it('checks every version receiving traffic during a gradual deployment', async () => {
+    const bindings = requiredBindings.filter((name) => name !== 'BROWSER');
+    await expect(
+      checkSetup(
+        configuration,
+        runner({
+          'deployments status --json': JSON.stringify({
+            versions: [
+              { version_id: 'version-one', percentage: 90 },
+              { version_id: 'version-two', percentage: 10 }
+            ]
+          }),
+          'versions view version-two --json': JSON.stringify({
+            resources: { bindings: bindings.map((name) => ({ name })) }
+          })
+        }),
+        {}
+      )
+    ).rejects.toThrow('version-two is missing bindings: BROWSER');
   });
 
   it('fails when only some deep-check environment variables are supplied', async () => {

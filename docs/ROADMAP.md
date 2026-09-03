@@ -1,6 +1,7 @@
 # Roadmap
 
-Work happens directly on `main` for the initial build. Each phase should leave the application deployable and the quality gate green.
+Family Wishlist is approaching its first tagged release with every product phase complete. Work
+happens directly on `main`, and each step keeps the application deployable with a green quality gate.
 
 ## Phase 0 — Foundation
 
@@ -62,11 +63,11 @@ Work happens directly on `main` for the initial build. Each phase should leave t
 - [x] Prove through query-level tests that owners never receive their own claim information.
 - [x] Handle competing claims safely.
 
-## Phase 7 — Release readiness
+## Phase 7 — First release
 
 - [x] Accessibility and mobile QA.
 - [x] Product, architecture and developer handoff documentation.
-- [ ] Backup, restore and upgrade documentation.
+- [x] Backup, restore and upgrade documentation.
 - [x] Abuse-case and privacy review.
 - [x] Publish an isolated fresh-deployment acceptance procedure.
 - [ ] Execute and record the fresh-deployment walkthrough for the first release.

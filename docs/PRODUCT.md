@@ -6,10 +6,9 @@ Cloudflare Family Wishlist gives one invited family a private place to share gif
 has one wishlist, everyone in the family can help maintain every list, and gift-givers can coordinate
 without revealing surprises to the recipient.
 
-The intended unit is **one household or trusted family group per deployment**. It is not a hosted
-multi-tenant service and does not need organisations, billing or a public directory. It has one
-narrow household role: one explicitly configured member is the family organiser and can admit other
-people.
+The product gives **one household or trusted family group its own deployment**. That focused model
+keeps setup, privacy and day-to-day use refreshingly simple. One explicitly configured member is the
+family organiser and welcomes everyone else.
 
 ## People and trust
 
@@ -24,10 +23,10 @@ On every admitted person's first successful request, the application creates:
 - one member record for that email; and
 - one wishlist owned by that member.
 
-The application records who is waiting to join but does not send an invitation email. The organiser
-copies a prepared message and shares it through email, WhatsApp or any other private channel. There
-is no application-managed password, password reset or public registration flow. Removing someone
-from Access prevents future entry, but does not silently delete their wishlist or history from D1.
+The application records who is waiting to join and prepares a friendly invitation for the organiser
+to share through email, WhatsApp or any preferred private channel. Cloudflare handles sign-in, so
+the family gets one-time PIN access without an application password or reset flow. Removing access
+preserves the person's wishlist and history in D1 for the family.
 Cloudflare Access also owns sign-out: ending a session signs that email out on all of their devices,
 so Profile labels the account-wide effect before linking to the Access logout endpoint. Other family
 members use separate identities and remain signed in.
@@ -49,8 +48,8 @@ members use separate identities and remain signed in.
 5. The Worker validates the signed Access assertion.
 6. The application idempotently creates their member and wishlist, using the invited display name.
 
-An arbitrary email address must never be able to create an account merely by possessing a working
-mailbox. The exact Access allow-list is the invitation boundary.
+The exact Access allow-list makes every membership intentional: a working mailbox becomes a family
+identity only after the organiser has invited that precise address.
 
 ### Maintain a wishlist
 
@@ -134,9 +133,7 @@ server also rejects a sixth link until one of the five existing links is removed
 If a proposed feature breaks one of these rules, treat it as a product decision requiring maintainer
 agreement rather than an ordinary implementation detail.
 
-## Current scope
-
-Working today:
+## Available today
 
 - Access OTP authentication, exact-email admission and 30-day application sessions;
 - first-login member and wishlist provisioning;
@@ -157,23 +154,23 @@ Working today:
 - removable, read-only sharing links for sharing one person's gift ideas outside the family, with
   their narrow Cloudflare Access exception configured automatically.
 
-Still planned:
+Next milestones:
 
-- backup, restore and upgrade guidance;
-- final abuse-case/privacy review; and
-- a repeatable fresh-deployment acceptance test and tagged release.
+- executing and recording the published fresh-deployment acceptance walkthrough; and
+- the first tagged release.
 
-## Deliberate non-goals
+## Focused product scope
 
-- publicly discoverable lists or editable anonymous access;
-- multiple events or multiple lists per person;
-- application-managed passwords or login email;
-- self-service public registration;
-- granular per-list permissions or wishlist editing roles;
-- manual item ordering beyond the existing high, normal and low priorities;
-- a multi-family SaaS control plane;
-- advertising, affiliate tracking or analytics scripts; and
-- extra Cloudflare services without a demonstrated need.
+The reference project stays delightfully small and family-centred:
+
+- private, invitation-only family spaces with optional read-only sharing links;
+- one useful year-round wishlist per person;
+- Cloudflare-managed one-time PIN sign-in;
+- shared family editing with a single organiser role for admission;
+- clear high, normal and low priorities;
+- one independent deployment per family;
+- a calm, ad-free experience without affiliate tracking or analytics scripts; and
+- a compact Cloudflare footprint chosen for genuine product value.
 
 ## AI-assisted product details
 
@@ -184,10 +181,9 @@ most likely product image from a short, validated list found on the page. It can
 address or fetch a different page. The result remains an editable draft: AI never adds a wish or
 changes saved family data by itself.
 
-Quota, capacity, model and extraction failures must be indistinguishable from an ordinary page that
-does not share enough information. The reliable metadata result is kept, and the family can always
-finish the form by hand. This resilience is part of the product contract rather than an error case to
-expose as infrastructure jargon.
+When a shop or optional service shares limited information, Family Wishlist keeps every reliable
+detail it found and presents the familiar editable form. This graceful resilience is part of the
+product experience, with infrastructure details kept out of the family's way.
 
 Forks can choose different boundaries, but the reference project should stay small, private and easy
 for a family to operate.

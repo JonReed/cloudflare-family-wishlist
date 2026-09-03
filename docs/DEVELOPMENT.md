@@ -1,7 +1,8 @@
 # Development guide
 
-This guide is the practical handoff for changing the application. Read [PRODUCT.md](PRODUCT.md) and
-[ARCHITECTURE.md](ARCHITECTURE.md) first if the product or privacy model is unfamiliar.
+This guide is the practical route for extending Family Wishlist while preserving its warm product
+experience and strong privacy model. [PRODUCT.md](PRODUCT.md) and [ARCHITECTURE.md](ARCHITECTURE.md)
+provide the useful context behind each recipe.
 
 ## Prerequisites
 
@@ -9,9 +10,9 @@ This guide is the practical handoff for changing the application. Read [PRODUCT.
 - npm 11 or newer
 - a checkout of the repository
 
-Cloudflare credentials are not required for ordinary local development or tests. Remote bindings are
-disabled in Vite and Vitest, so local product import exercises deterministic extraction and graceful
-browser/AI-unavailable behaviour without consuming a deployment's allowance.
+Ordinary local development and tests run without Cloudflare credentials. Vite and Vitest keep remote
+bindings isolated, giving contributors fast deterministic product-import coverage while preserving a
+deployment's Browser Run and Workers AI allowances.
 
 ## First local run
 
@@ -30,24 +31,27 @@ to production. If a migration is added, rerun `npm run db:migrate:local` before 
 
 ## Commands
 
-| Command                                    | Purpose                                               |
-| ------------------------------------------ | ----------------------------------------------------- |
-| `npm run dev`                              | Start React Router in the local Workers runtime       |
-| `npm run db:migrate:local`                 | Apply pending migrations to local D1                  |
-| `npm run access:configure-session`         | Apply and verify the setup-time 30-day Access session |
-| `npm run access:configure-sharing -- HOST` | Create/verify one hostname's narrow public paths      |
-| `npm run setup:check`                      | Read-only check of a configured deployment            |
-| `npm run format`                           | Write Prettier formatting                             |
-| `npm run lint`                             | Generate route types and run zero-warning ESLint      |
-| `npm run typecheck`                        | Check Wrangler bindings, route types and TypeScript   |
-| `npm run test`                             | Run Vitest in the Cloudflare Workers runtime          |
-| `npm run test:watch`                       | Run focused tests while developing                    |
-| `npm run build`                            | Produce the production Worker build                   |
-| `npm run quality`                          | Required format, lint, type, test and build gate      |
-| `npm run audit`                            | Required dependency vulnerability gate                |
-| `npm run cf-typegen`                       | Regenerate Worker binding types after config changes  |
+| Command                                    | Purpose                                                |
+| ------------------------------------------ | ------------------------------------------------------ |
+| `npm run dev`                              | Start React Router in the local Workers runtime        |
+| `npm run db:migrate:local`                 | Apply pending migrations to local D1                   |
+| `npm run access:configure-session`         | Apply and verify the setup-time 30-day Access session  |
+| `npm run access:configure-sharing -- HOST` | Create/verify one hostname's narrow public paths       |
+| `npm run setup:check`                      | Read-only check of a configured deployment             |
+| `npm run scripts:check`                    | Prove setup scripts load in the supported Node runtime |
+| `npm run format`                           | Write Prettier formatting                              |
+| `npm run lint`                             | Generate route types and run zero-warning ESLint       |
+| `npm run typecheck`                        | Check Wrangler bindings, route types and TypeScript    |
+| `npm run test`                             | Run Vitest in the Cloudflare Workers runtime           |
+| `npm run test:watch`                       | Run focused tests while developing                     |
+| `npm run build`                            | Produce the production Worker build                    |
+| `npm run quality`                          | Required format, lint, type, test and build gate       |
+| `npm run audit`                            | Required dependency vulnerability gate                 |
+| `npm run cf-typegen`                       | Regenerate Worker binding types after config changes   |
 
 Run `npm run quality` and `npm run audit` before every commit or push. CI repeats those checks.
+The quality gate includes `scripts:check`, keeping native Node compatibility verified for every setup
+tool.
 
 ## How a request moves through the code
 
@@ -82,8 +86,8 @@ the no-JavaScript path remains sound.
 - Test malformed and missing `FormData`, ownership constraints, stale IDs and the successful path.
 - Check the family-facing wording against [DESIGN.md](DESIGN.md).
 
-The home route is currently large. When adding another substantial interaction, prefer extracting a
-cohesive component or server helper rather than growing one more unrelated block in the route.
+The home route contains the core family workspace. New substantial interactions are best expressed as
+a cohesive component or server helper, keeping that central route welcoming and easy to navigate.
 
 Product metadata lookup is progressive enhancement. Keep the ordinary `fetch-product` form intent
 working without JavaScript, and keep `public/product-import.js` limited to the same-origin convenience
@@ -252,19 +256,19 @@ Keep that profile central in `app/lib/product-metadata.ts` so initial requests, 
 retries cannot drift apart. Never derive it from the incoming family request or add cookies,
 authorisation, a referrer, client IP headers or an explicit compression header.
 
-There are not yet automated browser tests. UI verification is therefore a deliberate manual step,
-not something the unit suite proves.
+The current test suite provides extensive Workers-runtime coverage, complemented by deliberate manual
+UI verification on desktop and mobile for complete interaction and visual confidence.
 
-## Generated and private files
+## Keep generated and private files in their right place
 
-Do not commit local/build state such as `.wrangler/`, `build/`, `.react-router/`, `.dev.vars`, database
-exports or credentials. `worker-configuration.d.ts` is generated by Wrangler and should change only
-through `npm run cf-typegen` when bindings change.
+Keep local/build state such as `.wrangler/`, `build/`, `.react-router/`, `.dev.vars`, database exports
+and credentials outside commits. Wrangler owns `worker-configuration.d.ts`; regenerate it with
+`npm run cf-typegen` whenever bindings change.
 
 The reference maintainer checkout may have `.private/WRANGLER_PROFILE.md`. It exists to prevent use of
 the wrong Cloudflare account, is ignored by Git, and must stay private.
 
-## Before handing work back
+## Finish with confidence
 
 - Read the complete diff, including generated or documentation changes.
 - Confirm the product and claim-privacy invariants still hold.

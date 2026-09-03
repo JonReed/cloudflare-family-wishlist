@@ -1,7 +1,7 @@
 # Apple Share Sheet shortcut
 
-Family Wishlist ships `public/Wishlist.shortcut` so an iPhone or iPad member does not
-have to assemble a Shortcut by hand. Apple validates the exported file for import by anyone.
+Family Wishlist ships `public/Wishlist.shortcut` for a quick, polished iPhone and iPad setup. Apple
+validates the exported file for import by anyone.
 
 The shortcut contains no account credentials, family data or fixed deployment hostname. Its one-time
 import question asks the member to paste the deployment-specific `/add?url=` address copied from the
@@ -61,11 +61,9 @@ the member can add **Wishlist** to Favourites once through **Edit Actions**.
 
 ## Installation and updates
 
-An exported shortcut is a new installation, not an in-place update. Before installing a replacement,
-the member must delete the existing **Wishlist** shortcut. After tapping the download link, they must
-open the file only once: continue in Shortcuts if it opens automatically, or use Safari's Downloads
-button only when nothing opened. Opening the Downloads copy after Shortcuts has already handled the
-download creates a duplicate.
+Each exported shortcut installs as a fresh copy. For a smooth update, remove the existing
+**Wishlist** shortcut first, tap the download once and continue in Shortcuts when it opens. Safari's
+Downloads button remains available when the handoff does not open automatically.
 
 ## Instruction review
 

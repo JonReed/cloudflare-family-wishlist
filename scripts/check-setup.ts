@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-import { checkPublicSharingAccess } from '../app/lib/cloudflare/access-public-sharing';
-import { checkAccessSession, readAccessSessionConfiguration } from './configure-access-session';
+import { checkPublicSharingAccess } from '../app/lib/cloudflare/access-public-sharing.ts';
+import { checkAccessSession, readAccessSessionConfiguration } from './configure-access-session.ts';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -213,6 +213,29 @@ function bindingsFromVersion(value: unknown): JsonRecord[] {
   return value.resources.bindings.filter(isRecord);
 }
 
+function trafficVersionIds(value: unknown): string[] {
+  if (!isRecord(value) || !Array.isArray(value.versions)) {
+    throw new Error('Wrangler returned no readable current Worker deployment.');
+  }
+
+  const versionIds = value.versions.flatMap((version) => {
+    if (
+      !isRecord(version) ||
+      typeof version.version_id !== 'string' ||
+      typeof version.percentage !== 'number' ||
+      !Number.isFinite(version.percentage)
+    ) {
+      throw new Error('Wrangler returned an unreadable traffic-bearing Worker version.');
+    }
+    return version.percentage > 0 ? [version.version_id] : [];
+  });
+
+  if (versionIds.length === 0) {
+    throw new Error('The Worker has no traffic-bearing deployed versions.');
+  }
+  return [...new Set(versionIds)];
+}
+
 export async function checkSetup(
   configuration: SetupConfiguration,
   runner: WranglerRunner = runWrangler,
@@ -253,27 +276,25 @@ export async function checkSetup(
   }
   messages.push('The remote D1 database has no pending migrations.');
 
-  const versions = jsonOutput(runner, ['versions', 'list', '--json']);
-  if (!Array.isArray(versions) || versions.length === 0) {
-    throw new Error('The Worker has no deployed versions.');
+  const deployment = jsonOutput(runner, ['deployments', 'status', '--json']);
+  const versionIds = trafficVersionIds(deployment);
+  for (const versionId of versionIds) {
+    const bindings = bindingsFromVersion(
+      jsonOutput(runner, ['versions', 'view', versionId, '--json'])
+    );
+    const bindingNames = new Set(
+      bindings.flatMap((binding) => (typeof binding.name === 'string' ? [binding.name] : []))
+    );
+    const missingBindings = REQUIRED_BINDINGS.filter((name) => !bindingNames.has(name));
+    if (missingBindings.length > 0) {
+      throw new Error(
+        `Traffic-bearing Worker version ${versionId} is missing bindings: ${missingBindings.join(', ')}.`
+      );
+    }
   }
-  const current = versions
-    .filter(isRecord)
-    .sort((left, right) => Number(right.number ?? 0) - Number(left.number ?? 0))[0];
-  if (!current || typeof current.id !== 'string') {
-    throw new Error('Wrangler returned no readable current Worker version.');
-  }
-  const bindings = bindingsFromVersion(
-    jsonOutput(runner, ['versions', 'view', current.id, '--json'])
+  messages.push(
+    'Every traffic-bearing Worker version has the required D1, AI, Browser and Access bindings.'
   );
-  const bindingNames = new Set(
-    bindings.flatMap((binding) => (typeof binding.name === 'string' ? [binding.name] : []))
-  );
-  const missingBindings = REQUIRED_BINDINGS.filter((name) => !bindingNames.has(name));
-  if (missingBindings.length > 0) {
-    throw new Error(`The deployed Worker is missing bindings: ${missingBindings.join(', ')}.`);
-  }
-  messages.push('The deployed Worker has every required D1, AI, Browser and Access binding.');
 
   const supplied = ACCESS_CHECK_ENVIRONMENT.filter((name) => Boolean(env[name]?.trim()));
   if (supplied.length === 0) {

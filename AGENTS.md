@@ -65,6 +65,7 @@ Retrieve current Cloudflare and React Router documentation before relying on API
 - `npm run dev` — local development in the Workers runtime
 - `npm run access:configure-session` — create or verify the 30-day Access session
 - `npm run access:configure-sharing -- HOST` — create or verify narrow public viewing paths
+- `npm run setup:check` — read-only validation of account, D1, deployed bindings and optional Access configuration
 - `npm run format` / `npm run format:check` — formatting
 - `npm run lint` — zero-warning ESLint
 - `npm run typecheck` — generated bindings, route types and TypeScript

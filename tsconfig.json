@@ -6,6 +6,7 @@
     { "path": "./test/tsconfig.json" }
   ],
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "checkJs": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,

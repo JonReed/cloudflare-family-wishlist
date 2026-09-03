@@ -2,9 +2,9 @@
 
 ## Goals
 
-The application should be secure, private, inexpensive and straightforward for a family to operate.
-A normal family deployment should remain within Cloudflare's free allowances without a separate
-server, database, identity store or email provider.
+The architecture gives each family a secure, private and straightforward deployment that fits
+comfortably within Cloudflare's free allowances. Workers, D1 and Access provide the complete runtime,
+data and identity foundation in one coherent platform.
 
 The product rules that shape this architecture are recorded in [PRODUCT.md](PRODUCT.md).
 
@@ -27,7 +27,7 @@ JWT verification + security headers + React Router request handler
     |       +--> wishlist service (app/lib/db/wishlists.ts)
     |       +--> bounded public-page metadata fetch (app/lib/product-metadata.ts)
     |                  |
-    |                  +--> fallback rendered page (Browser Run)
+    |                  +--> rendered-page completion (Browser Run)
     |                  |
     |                  +--> cleaned product-detail enrichment (Workers AI)
     |
@@ -42,10 +42,10 @@ members, pending family invitations, wishlists, items and private claims
 
 Cloudflare Access is the outer admission boundary. The Worker independently validates the Access JWT
 signature, issuer, application audience, expiry and required identity claims before trusting the
-email. Missing or invalid production configuration fails closed.
+email, giving every production request two complementary identity checks.
 
-The only exception is a deliberately configured, path-specific Access Bypass for revocable viewing
-links. The Worker independently recognises only read-only `/shared/<secret>` list and image paths;
+Revocable viewing links use a deliberately configured, path-specific Access Bypass. The Worker
+independently recognises only read-only `/shared/<secret>` list and image paths;
 all neighbouring paths and every mutation still require a valid Access identity. More-specific Access
 paths also expose only the compiled stylesheet under `/shared-assets/*` and the favicon needed to
 render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain

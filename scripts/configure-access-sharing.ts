@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 import {
   ensurePublicSharingAccess,
   type PublicSharingAccessResult
-} from '../app/lib/cloudflare/access-public-sharing';
+} from '../app/lib/cloudflare/access-public-sharing.ts';
 
 function configuredHostnames(env: NodeJS.ProcessEnv = process.env, args = process.argv.slice(2)) {
   const values = args.length > 0 ? args : (env.WISHLIST_PUBLIC_HOSTNAMES ?? '').split(',');

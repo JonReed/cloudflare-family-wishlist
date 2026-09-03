@@ -22,7 +22,9 @@ When someone outside the family wants ideas, a revocable read-only link can shar
 without giving them access to the private family space.
 
 > [!NOTE]
-> The project is in active development. Foundation, Cloudflare deployment, Access OTP, the family dashboard, item controls, add-from-anywhere tools and private claims are working; release hardening remains.
+> Family Wishlist is feature-complete for everyday family use: private sign-in, the family dashboard,
+> wish editing, add-from-anywhere tools, surprise-preserving claims and read-only sharing are all in
+> place. The next milestone is the recorded release walkthrough and first tagged release.
 
 <p align="center">
   <img src="docs/assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist showing gift-tag family navigation, a paper wishlist and its add form">
@@ -38,14 +40,14 @@ an ordinary request is blocked or returns only an empty application shell, Cloud
 can make one rendered-page attempt. When the resulting page is still incomplete, Cloudflare Workers
 AI can help recover a missing name or price and choose the most likely product picture from the page.
 
-There is no separate browser or AI account, API key or paid service to configure. The feature is
-designed to fit within the Browser Run and Workers AI free allocations. The normal editable form
-remains fully usable if a shop blocks extraction or an allowance is unavailable, and no suggestion
-is saved until a family member confirms it.
+Browser Run and Workers AI arrive through the same Cloudflare deployment, with no separate account,
+API key or paid service to configure. The feature is designed to fit within their free allocations.
+Every result remains an editable suggestion, and the dependable manual form is always ready when a
+shop shares only limited product information.
 
-## Why this exists
+## Made for families
 
-Most wishlist applications are either public, advertising-supported, complicated to self-host, or built around permissions this use case does not need. This project deliberately has a smaller model:
+Family Wishlist is purpose-built around the way a trusted family actually shares gift ideas:
 
 - invitation-only access;
 - a family-organiser page showing who has joined and who is still waiting;
@@ -56,16 +58,16 @@ Most wishlist applications are either public, advertising-supported, complicated
 - iPhone/iPad Share Sheet and desktop browser tools for adding something to one or more lists while shopping;
 - private claims that the recipient cannot see;
 - revocable viewing links for relatives and friends outside the signed-in family;
-- no application-managed passwords;
-- no application email service;
-- no paid infrastructure required for a normal family deployment.
+- Cloudflare-managed sign-in, with no application password database;
+- personal invitations shared through the family's preferred private channel; and
+- a normal family deployment designed for Cloudflare's free tier.
 
 ## Stack
 
 - [React Router](https://reactrouter.com/) in full-stack framework mode
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) and the Cloudflare Vite plugin
 - [Cloudflare D1](https://developers.cloudflare.com/d1/) for SQLite-compatible storage
-- [Cloudflare Browser Run](https://developers.cloudflare.com/browser-run/) for a free-tier rendered-page fallback after an ordinary product fetch fails
+- [Cloudflare Browser Run](https://developers.cloudflare.com/browser-run/) for free-tier rendered-page assistance on difficult product pages
 - [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) for free-tier product-detail assistance when ordinary page metadata is incomplete
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/) with email one-time PINs and an exact email allow-list
 - TypeScript, React and Tailwind CSS
@@ -76,11 +78,13 @@ Most wishlist applications are either public, advertising-supported, complicated
 - [Install and deploy](docs/DEPLOYMENT.md) — start with a free Cloudflare account, understand the
   live allowances, and finish with Access, D1, Browser Run, Workers AI and automatic deployments
   configured.
-- [Product model](docs/PRODUCT.md) — who the application serves, core workflows and non-goals.
+- [Product model](docs/PRODUCT.md) — who the application serves, core workflows and focused scope.
 - [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
 - [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
 - [Fresh-deployment acceptance](docs/FRESH_DEPLOYMENT_ACCEPTANCE.md) — validate the installation
   guide safely in disposable Cloudflare resources.
+- [Backup, restore and upgrade](docs/BACKUP_RESTORE_UPGRADE.md) — protect family data, practise
+  recovery and update an installation safely.
 - [Design guide](docs/DESIGN.md) — family-first IA, visual language, copy and accessibility.
 - [Roadmap](docs/ROADMAP.md) — completed phases and remaining release work.
 - [Project stewardship and support](docs/STEWARDSHIP.md) — maintainer, funding, review provenance and
@@ -107,6 +111,7 @@ Useful commands:
 npm run format       # format the repository
 npm run lint         # ESLint, with warnings treated as failures
 npm run typecheck    # Worker bindings, route types and TypeScript
+npm run setup:check  # read-only validation of a configured deployment
 npm run test         # tests inside the Workers runtime
 npm run build        # production Worker build
 npm run quality      # complete local/CI quality gate
@@ -121,25 +126,28 @@ Cloudflare configuration.
 
 `main` is the only working and deployment branch for now. The reference deployment is connected to Cloudflare Builds, so each push to `main` deploys the latest version after the repository checks pass. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) to configure a fork.
 
-A normal family installation needs a Cloudflare account but not a paid Cloudflare plan or a custom
-domain. The [installation guide](docs/DEPLOYMENT.md) starts before account setup, links to the current
+A normal family installation runs with a free Cloudflare account and the included `workers.dev`
+address; a paid plan and custom domain are optional. The [installation guide](docs/DEPLOYMENT.md) starts before account setup, links to the current
 Workers, D1, Browser Run, Workers AI, Access and Builds allowances, and explains what happens if a
 free limit is reached.
 
-Do not expose a deployment containing family data until Cloudflare Access is configured with an **exact email allow-list**. Selecting “One-time PIN” as the only Access rule would allow any valid email address and is not sufficient.
+Configure Cloudflare Access with an **exact email allow-list** before adding family data. One-time PIN
+provides the friendly sign-in method, while exact-email rules keep admission invitation-only.
 
 The Worker also verifies Access JWTs itself and fails closed if the team domain, application audience or assertion is absent or invalid. Only the explicitly configured initial organiser can create the first member; after one
 additional scoped Cloudflare API token is configured, they can add exact sign-in addresses from the
 **Your family** page without using the Cloudflare dashboard. The application prepares an invitation
 to copy but does not send email itself.
 
-## Project status
+## Release progress
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased implementation plan.
 
 ## Open source and contributions
 
-This project is MIT licensed and intentionally fork-friendly. It is also maintainer-led: issues and ideas are welcome, but there is no promise that feature requests or pull requests will be accepted. See [CONTRIBUTING.md](CONTRIBUTING.md).
+This project is MIT licensed, intentionally fork-friendly and guided by a focused maintainer-led
+roadmap. Issues and ideas are welcome, and [CONTRIBUTING.md](CONTRIBUTING.md) explains how to shape a
+proposal for the best fit.
 
 Development tooling was supported by Furls Digital Ltd. See
 [project stewardship and support](docs/STEWARDSHIP.md) for the precise relationship, development
@@ -148,9 +156,8 @@ process and optional Buy Me a Coffee link.
 ## Security
 
 An [AI-assisted adversarial security review](docs/SECURITY_REVIEW.md) was performed with OpenAI
-Daybreak Blue on 1 September 2026. The original review found five actionable issues; all were fixed,
-and a final review of commit `ad9571c` found no remaining actionable findings in the reviewed source.
-The report preserves the original evidence, remediation record, exact commits, scope and limitations.
-It is not an independent audit, certification or penetration test.
+Daybreak Blue on 1 September 2026. All five original findings were fixed, and the final review of
+commit `ad9571c` found no remaining actionable findings in the reviewed source. The transparent
+report preserves the evidence, remediation record, exact commits, scope and review boundaries.
 
-Please do not open a public issue for a suspected vulnerability. Follow [SECURITY.md](SECURITY.md) instead.
+Suspected vulnerabilities have a dedicated private reporting route in [SECURITY.md](SECURITY.md).
