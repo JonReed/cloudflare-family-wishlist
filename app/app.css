@@ -1624,7 +1624,12 @@ button:disabled {
   display: flex;
   flex: none;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.65rem;
+}
+
+.profile-share-actions .mutation-submit-error {
+  color: var(--rust);
 }
 
 .profile-shares-empty {

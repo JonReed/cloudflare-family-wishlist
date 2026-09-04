@@ -285,6 +285,14 @@ its summary and shows a confirmation there; an unenhanced edit continues through
 Removal uses the same marker and returns structured success for loader revalidation. The wishlist
 sheet restores focus after the deleted editor unmounts; rows are never optimistically removed.
 
+Sharing-link creation uses a wishlist-keyed fetcher with local pending and error feedback. The same
+server action returns the new address for both document and enhanced submissions. Revalidation
+updates the count while the panel selects the new address; delegated copy and close handlers also
+work for results inserted after hydration and after switching wishlists.
+Profile revocation uses a link-keyed fetcher and a browser-only submission marker to preserve the
+native redirect. The parent sharing list restores focus after revalidation removes a row. Link
+revocation remains server-confirmed and never optimistically hides a still-active viewing link.
+
 The product-link helper is another progressively enhanced interaction: a small nonce-authorised,
 self-hosted script starts the lookup after a link is pasted or changed. The ordinary “Fill from link”
 form action remains the fallback when JavaScript is unavailable, and creating a wish never depends on

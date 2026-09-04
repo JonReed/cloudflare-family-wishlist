@@ -66,11 +66,21 @@ recover their secrets from storage. Include a small link to Profile for reviewin
 links; do not duplicate the removal action in this popup. When five links are active, replace the
 creation form with a clear explanation that one must first be stopped from Profile.
 
+Creating a sharing link stays in the open panel when JavaScript is available. Show “Creating link…”
+and disable repeat submissions while waiting, then select the new address ready to copy and refresh
+the active-link count. Keep failures beside the sharing form and preserve unfinished wish drafts.
+The ordinary server form remains available without JavaScript.
+
 Profile is the persistent management surface for sharing links. Below personal details, show every
 active link as a plain list with its private name, wishlist owner, the family member who made it, its
 creation date, a route back to the wishlist and an explicit **Stop sharing this link** action. Explain
 that each wishlist can have up to five active links and that each readable address is shown only when
 made. Keep technical terms such as “revoke” out of family-facing controls and explanations.
+
+Stopping sharing updates the row in place after server confirmation and preserves unfinished profile
+edits. Show pending feedback and errors beside that link. Move focus to the next link's stop-sharing
+button, the previous one if necessary, or the empty message when none remain; leave focus alone if
+the person moved elsewhere while waiting. Without JavaScript, retain the normal form redirect.
 
 Access sign-out affects the same email on every device, so it does not belong in the everyday header.
 Keep **Sign out on all devices** with the signed-in email on Profile, behind a native disclosure that

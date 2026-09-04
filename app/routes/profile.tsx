@@ -1,8 +1,10 @@
+import { useCallback, useEffect, useRef } from 'react';
 import { data, Form, redirect, useNavigation } from 'react-router';
 
 import { AccessSignOut } from '../components/access-sign-out';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
+import { StopSharingForm } from '../components/stop-sharing-form';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail, MemberInputError, updateMemberDisplayName } from '../lib/db/members';
 import {
@@ -60,6 +62,9 @@ export async function action({ request, context }: Route.ActionArgs) {
         throw new SharedWishlistInputError('This page is out of date. Refresh it and try again.');
       }
       await revokeWishlistShareLink(env.DB, member.id, shareLinkId);
+      if (formData.get('enhancedRemoval') === 'true') {
+        return { saved: false, error: null, removedShareLinkId: shareLinkId };
+      }
       return redirect('/profile#shared-lists');
     }
 
@@ -79,10 +84,33 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
   const navigation = useNavigation();
   const pendingIntent = navigation.formData?.get('intent');
   const isSaving = navigation.state === 'submitting' && pendingIntent === 'save-profile';
-  const pendingShareLinkId =
-    navigation.state === 'submitting' && pendingIntent === 'revoke-share-link'
-      ? navigation.formData?.get('shareLinkId')
-      : null;
+  const sharesRef = useRef<HTMLElement>(null);
+  const removalRef = useRef<{ id: string; candidates: string[] } | null>(null);
+  const handleRemovalStart = (id: string) => {
+    const ids = sharedLists.map((link) => link.id);
+    const index = ids.indexOf(id);
+    removalRef.current = {
+      id,
+      candidates: [...ids.slice(index + 1), ...ids.slice(0, index).reverse()]
+    };
+  };
+  const handleRemovalError = useCallback(() => {
+    removalRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    const removal = removalRef.current;
+    const shares = sharesRef.current;
+    if (!removal || !shares || sharedLists.some((link) => link.id === removal.id)) return;
+    removalRef.current = null;
+    if (document.activeElement !== document.body) return;
+    const nextId = removal.candidates.find((id) => sharedLists.some((link) => link.id === id));
+    const target = nextId
+      ? shares.querySelector<HTMLElement>(`[data-share-id="${nextId}"] button`)
+      : (shares.querySelector<HTMLElement>('.profile-shares-empty') ??
+        shares.querySelector<HTMLElement>('#shared-lists-title'));
+    target?.focus({ preventScroll: true });
+  }, [sharedLists]);
 
   return (
     <div className="site-shell">
@@ -152,13 +180,16 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
           </div>
 
           <section
+            ref={sharesRef}
             className="profile-shares"
             id="shared-lists"
             aria-labelledby="shared-lists-title"
           >
             <div className="profile-shares-heading">
               <p className="profile-kicker">Shared outside your family</p>
-              <h2 id="shared-lists-title">Sharing links</h2>
+              <h2 id="shared-lists-title" tabIndex={-1}>
+                Sharing links
+              </h2>
               <p>
                 Each wishlist can have up to five active sharing links. Anyone with one of those
                 links can see the list without signing in.
@@ -168,7 +199,11 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
             {sharedLists.length > 0 ? (
               <ul className="profile-share-list">
                 {sharedLists.map((sharedList) => (
-                  <li key={sharedList.id} className="profile-share-item">
+                  <li
+                    key={sharedList.id}
+                    className="profile-share-item"
+                    data-share-id={sharedList.id}
+                  >
                     <div>
                       <h3>{sharedList.name}</h3>
                       <p>
@@ -190,25 +225,17 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                       >
                         View wishlist
                       </a>
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="revoke-share-link" />
-                        <input type="hidden" name="shareLinkId" value={sharedList.id} />
-                        <button
-                          type="submit"
-                          className="button-danger"
-                          disabled={pendingShareLinkId === sharedList.id}
-                        >
-                          {pendingShareLinkId === sharedList.id
-                            ? 'Stopping sharing…'
-                            : 'Stop sharing this link'}
-                        </button>
-                      </Form>
+                      <StopSharingForm
+                        shareLinkId={sharedList.id}
+                        onRemovalStart={handleRemovalStart}
+                        onRemovalError={handleRemovalError}
+                      />
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="profile-shares-empty">
+              <p className="profile-shares-empty" tabIndex={-1}>
                 No wishlists are currently shared outside your family.
               </p>
             )}
