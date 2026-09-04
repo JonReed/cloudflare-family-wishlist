@@ -280,8 +280,10 @@ browser; an unenhanced document submission follows the existing post-redirect-ge
 call the same route action and wishlist service validation.
 
 Expanded item editors use the same marked-fetcher boundary for a local pending state, validation
-feedback and successful loader revalidation. The saved editor stays open and restores focus to its
-summary; an unenhanced edit continues through post-redirect-get.
+feedback and successful loader revalidation. A successful save closes the editor, restores focus to
+its summary and shows a confirmation there; an unenhanced edit continues through post-redirect-get.
+Removal uses the same marker and returns structured success for loader revalidation. The wishlist
+sheet restores focus after the deleted editor unmounts; rows are never optimistically removed.
 
 The product-link helper is another progressively enhanced interaction: a small nonce-authorised,
 self-hosted script starts the lookup after a link is pasted or changed. The ordinary “Fill from link”

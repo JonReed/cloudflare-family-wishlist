@@ -216,8 +216,9 @@ after reading the account-specific private handoff and verifying the active Wran
   redirect. Clear the draft only after structured success data and keep the product-image helper in
   sync by emitting the same input events as a person clearing the link and picture fields.
 - Expanded wish editors use the same browser-marker pattern. Keep each fetcher keyed by item ID,
-  leave the editor open after a successful revalidation, and restore focus to its summary so a
-  priority change can safely move the keyed row without losing the keyboard position.
+  close the editor after a successful revalidation, and restore focus to its summary with visible
+  success feedback so a priority change can safely move the keyed row without losing the keyboard
+  position. Failed saves keep the editor open and preserve the draft.
 - Keep authenticated hydration and every generated script on the per-response CSP nonce. Public
   sharing pages must continue to omit `<Scripts>` and authenticated JavaScript bundles. Preserve the
   `meta[property="csp-nonce"]`, `ServerRouter`, render-stream and CSP wiring together: Vite uses that

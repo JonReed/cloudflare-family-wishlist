@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, redirect } from 'react-router';
 
 import { AddWishForm } from '../components/add-wish-form';
@@ -188,9 +188,14 @@ export async function action({ request, context }: Route.ActionArgs) {
         }
         break;
       }
-      case 'delete-item':
-        await deleteWishlistItem(env.DB, formString(formData, 'itemId'));
+      case 'delete-item': {
+        const itemId = formString(formData, 'itemId');
+        await deleteWishlistItem(env.DB, itemId);
+        if (formData.get('enhancedEdit') === 'true') {
+          return { wishlistId, itemId, updated: 'delete' as const };
+        }
         break;
+      }
       case 'claim-item':
         await claimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         return { wishlistId, updated: 'claim' as const };
@@ -473,7 +478,9 @@ const priorityLabels = {
 } as const;
 
 function focusEditedWishSummary(form: HTMLFormElement): void {
-  const summary = form.closest('details')?.querySelector('summary');
+  const editor = form.closest('details');
+  if (editor) editor.open = false;
+  const summary = editor?.querySelector('summary');
   if (summary instanceof HTMLElement) summary.focus({ preventScroll: true });
 }
 
@@ -486,12 +493,18 @@ function WishlistItemRow({
   wishlist,
   item,
   wasJustEdited,
-  onItemEdited
+  onItemEdited,
+  onEditorOpened,
+  onRemovalStart,
+  onEditError
 }: {
   wishlist: FamilyWishlist;
   item: WishlistItem;
   wasJustEdited: boolean;
   onItemEdited: (itemId: string, form: HTMLFormElement) => void;
+  onEditorOpened: () => void;
+  onRemovalStart: (itemId: string) => void;
+  onEditError: (form: HTMLFormElement) => void;
 }) {
   const formId = `edit-${item.id}`;
   const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
@@ -503,6 +516,7 @@ function WishlistItemRow({
 
   return (
     <li
+      data-wish-id={item.id}
       className={[
         'wish-row',
         `wish-row-${item.priority}`,
@@ -556,17 +570,33 @@ function WishlistItemRow({
         </div>
       ) : null}
 
-      <details className="edit-panel">
-        <summary>Edit this wish</summary>
+      <details
+        className="edit-panel"
+        onToggle={(event) => {
+          if (event.currentTarget.open) onEditorOpened();
+        }}
+      >
+        <summary>
+          <span className="edit-summary-label">Edit this wish</span>
+          <span className="edit-saved-status" role="status" aria-live="polite">
+            {wasJustEdited ? 'Changes saved.' : ''}
+          </span>
+        </summary>
         <EditWishForm
           actionKey={`edit-wish:${item.id}`}
           method="post"
           action={wishlistFormAction(wishlist.id)}
           className="edit-form"
-          onSubmissionError={focusEditError}
+          onSubmissionError={onEditError}
           onSuccess={handleEditSuccess}
+          onSubmit={(event) => {
+            const submitter = event.nativeEvent.submitter;
+            if (submitter instanceof HTMLButtonElement && submitter.value === 'delete-item') {
+              onRemovalStart(item.id);
+            }
+          }}
         >
-          {({ error, isPending, submittedIntent, succeeded }) => {
+          {({ error, isPending, submittedIntent }) => {
             const isSaving = isPending && submittedIntent === 'edit-item';
             const isRemoving = isPending && submittedIntent === 'delete-item';
 
@@ -579,7 +609,12 @@ function WishlistItemRow({
                     <button name="intent" value="edit-item" className="button-primary">
                       {isSaving ? 'Saving…' : 'Save changes'}
                     </button>
-                    <button name="intent" value="delete-item" className="button-danger">
+                    <button
+                      name="intent"
+                      value="delete-item"
+                      className="button-danger"
+                      formNoValidate
+                    >
                       {isRemoving ? 'Removing…' : 'Remove from the list'}
                     </button>
                   </div>
@@ -594,7 +629,7 @@ function WishlistItemRow({
                   aria-live="polite"
                   tabIndex={error ? -1 : undefined}
                 >
-                  {error ?? (!isPending && (succeeded || wasJustEdited) ? 'Changes saved.' : '')}
+                  {error}
                 </p>
               </>
             );
@@ -724,20 +759,52 @@ function WishlistSheet({
   shareUrl?: string;
 }) {
   const [lastEditedItemId, setLastEditedItemId] = useState<string | null>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  const removalRef = useRef<{ itemId: string; candidates: string[] } | null>(null);
   const possessiveName = wishlist.isOwn ? 'Your' : `${wishlist.owner.displayName}’s`;
   const handleItemEdited = useCallback((itemId: string, form: HTMLFormElement) => {
     setLastEditedItemId(itemId);
     focusEditedWishSummary(form);
   }, []);
+  const handleEditorOpened = useCallback(() => setLastEditedItemId(null), []);
+  const handleRemovalStart = (itemId: string) => {
+    const ids = wishlist.items.map((item) => item.id);
+    const index = ids.indexOf(itemId);
+    removalRef.current = {
+      itemId,
+      candidates: [...ids.slice(index + 1), ...ids.slice(0, index).reverse()]
+    };
+  };
+  const handleEditError = useCallback((form: HTMLFormElement) => {
+    removalRef.current = null;
+    focusEditError(form);
+  }, []);
+
+  useEffect(() => {
+    const removal = removalRef.current;
+    const sheet = sheetRef.current;
+    if (!removal || !sheet || wishlist.items.some((item) => item.id === removal.itemId)) return;
+    removalRef.current = null;
+
+    // The removed editor unmounts during revalidation, so its parent restores focus.
+    // Do not interrupt someone who moved to another control while the request was pending.
+    if (document.activeElement !== document.body) return;
+    const nextId = removal.candidates.find((id) => wishlist.items.some((item) => item.id === id));
+    const target = nextId
+      ? sheet.querySelector<HTMLElement>(`[data-wish-id="${nextId}"] .edit-panel > summary`)
+      : (sheet.querySelector<HTMLElement>('.empty-list') ??
+        sheet.querySelector<HTMLElement>('.wishlist-heading h2'));
+    target?.focus({ preventScroll: true });
+  }, [wishlist.items]);
 
   return (
-    <article id="wishlist" className="wishlist-sheet">
+    <article ref={sheetRef} id="wishlist" className="wishlist-sheet">
       <span aria-hidden="true" className="paper-tape paper-tape-left" />
       <span aria-hidden="true" className="paper-tape paper-tape-right" />
 
       <header className="wishlist-heading">
         <div>
-          <h2>{possessiveName} wishlist</h2>
+          <h2 tabIndex={-1}>{possessiveName} wishlist</h2>
         </div>
         <div className="wishlist-heading-tools">
           <p className="wish-count">
@@ -768,11 +835,16 @@ function WishlistSheet({
               item={item}
               wasJustEdited={lastEditedItemId === item.id}
               onItemEdited={handleItemEdited}
+              onEditorOpened={handleEditorOpened}
+              onRemovalStart={handleRemovalStart}
+              onEditError={handleEditError}
             />
           ))}
         </ul>
       ) : (
-        <p className="empty-list">Nothing added to this wishlist</p>
+        <p className="empty-list" tabIndex={-1}>
+          Nothing added to this wishlist
+        </p>
       )}
     </article>
   );

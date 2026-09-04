@@ -102,11 +102,18 @@ approximate price and a human description of priority are enough.
 
 In the saved list, put “Edit this wish” on its own line below the item content. Opening the editor must
 not change the position or width of the image, metadata or claim controls above it. With JavaScript,
-saving keeps the editor open, updates the wish in place, reports the local result and returns keyboard
-focus to the editor summary. A failed save keeps the draft and moves focus to its local error; an
+saving closes the editor, updates the wish in place, shows “Changes saved.” beside “Edit this wish”,
+and returns keyboard focus to that summary. Opening an editor clears the previous confirmation.
+A failed save keeps the editor open with its draft and moves focus to its local error; an
 unenhanced save retains the ordinary form redirect. Label only the exceptional **Top wish** and
 **Nice to have** priorities; ordinary wishes need no “Would love” marker. Present top wishes first,
 ordinary wishes second and nice-to-have wishes last, with newer additions first inside each group.
+
+Removing a wish shows a local pending state and waits for the server before removing its row and
+updating the count. Focus moves to the next wish, the previous wish when removing the last row, or
+the empty-list message when no wishes remain. If the person moves focus elsewhere while waiting,
+leave it there. Failed removals keep the editor and show its local error. Removal ignores unfinished
+edit-field validation and retains the ordinary form redirect without JavaScript.
 
 When a shop publishes a product image, show it as a modest square preview rather than turning the
 wishlist into a catalogue grid. The picture is an editable convenience: it may be removed or replaced

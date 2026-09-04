@@ -902,6 +902,9 @@
   cursor: pointer;
   color: var(--muted);
   line-height: 1.5;
+}
+
+.edit-summary-label {
   text-decoration: underline;
   text-decoration-style: dotted;
   text-underline-offset: 0.25rem;
@@ -909,6 +912,17 @@
 
 .edit-panel summary:hover {
   color: var(--leaf);
+}
+
+.edit-saved-status {
+  margin-left: 0.75rem;
+  color: var(--leaf);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.edit-saved-status:empty {
+  display: none;
 }
 
 .edit-form {

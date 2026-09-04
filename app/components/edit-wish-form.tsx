@@ -29,6 +29,7 @@ export function EditWishForm({
   children,
   onSubmissionError,
   onSuccess,
+  onSubmit,
   ...formProps
 }: EditWishFormProps) {
   const fetcher = useFetcher<EditWishResult>({ key: actionKey });
@@ -67,7 +68,16 @@ export function EditWishForm({
   }, [fetcher.data, fetcher.state, onSubmissionError, onSuccess]);
 
   return (
-    <fetcher.Form {...formProps} ref={formRef} aria-busy={state.isPending || undefined}>
+    <fetcher.Form
+      {...formProps}
+      ref={formRef}
+      aria-busy={state.isPending || undefined}
+      onSubmit={(event) => {
+        // React can reset this field before the next effect after a successful save.
+        if (enhancementMarkerRef.current) enhancementMarkerRef.current.value = 'true';
+        onSubmit?.(event);
+      }}
+    >
       <input ref={enhancementMarkerRef} type="hidden" name="enhancedEdit" defaultValue="false" />
       {children(state)}
     </fetcher.Form>
