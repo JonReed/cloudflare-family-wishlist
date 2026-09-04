@@ -92,8 +92,13 @@ forms are disclosed beside the item they change. A new wish asks for its optiona
 so the page can fill the name and GBP price when a shop shares them; the person checks that draft and
 can change every value before adding it. A visible “Fill from link” control keeps this useful without
 JavaScript, while pasting or leaving the link field triggers the same lookup when enhancement is
-available. Adding a wish without a link remains supported. Titles, useful buying notes, an approximate
-price and a human description of priority are enough.
+available. When JavaScript is available, adding stays on the working page with a local pending state,
+an error beside the form or a short success confirmation; the successful form clears only after the
+updated list has arrived, then returns keyboard focus to the title for another quick add. Submitting
+also dismisses any earlier product-lookup feedback so it cannot duplicate the authoritative add
+result. The same add remains an ordinary server form and redirect without JavaScript. Adding a wish
+without a link remains supported. Titles, useful buying notes, an
+approximate price and a human description of priority are enough.
 
 In the saved list, put “Edit this wish” on its own line below the item content. Opening the editor must
 not change the position or width of the image, metadata or claim controls above it. Label only the

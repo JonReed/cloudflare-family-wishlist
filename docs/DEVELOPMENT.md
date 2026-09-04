@@ -211,6 +211,10 @@ after reading the account-specific private handoff and verifying the active Wran
   resource-specific `actionKey`, show its local pending state, return structured action data so
   React Router revalidates loaders, and render its local error. Keep larger form journeys as ordinary
   navigation forms unless their validation and focus behaviour are designed explicitly.
+- The home-page add form is the deliberate middle case: its keyed fetcher keeps the frequent add on
+  the working page, while a browser-added form marker lets an unenhanced document post retain its
+  redirect. Clear the draft only after structured success data and keep the product-image helper in
+  sync by emitting the same input events as a person clearing the link and picture fields.
 - Keep authenticated hydration and every generated script on the per-response CSP nonce. Public
   sharing pages must continue to omit `<Scripts>` and authenticated JavaScript bundles. Preserve the
   `meta[property="csp-nonce"]`, `ServerRouter`, render-stream and CSP wiring together: Vite uses that
@@ -231,6 +235,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks    |
 | `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts   |
 | `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback  |
+| `test/add-wish-form.test.tsx`           | frequent adds retain a native server-submittable form fallback     |
 | `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures |
 | `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction    |
 | `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion   |

@@ -19,6 +19,7 @@
     "./**/*.tsx",
     "../.react-router/types/+server-build.d.ts",
     "../app/components/access-sign-out.tsx",
+    "../app/components/add-wish-form.tsx",
     "../app/components/brand.tsx",
     "../app/components/client-runtime.tsx",
     "../app/components/family-member-removal.tsx",

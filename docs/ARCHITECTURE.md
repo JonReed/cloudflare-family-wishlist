@@ -153,6 +153,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/db/shared-wishlists.ts`          | Hashed viewing links, active-link inventory, public reads and image budgets        |
 | `migrations/`                             | Append-only persistent schema history                                              |
 | `app/root.tsx`, `app/entry.server.tsx`    | Document shell, authenticated hydration and CSP nonce propagation                  |
+| `app/components/add-wish-form.tsx`        | Progressive frequent-add submission, local state and native form fallback          |
 | `app/components/in-place-action-form.tsx` | Reusable progressive form, local pending state and action errors                   |
 | `app/app.css`, `app/components/`          | Design system and shared presentation                                              |
 
@@ -271,7 +272,13 @@ The application uses progressively enhanced server-rendered pages and ordinary H
 wishlist and claim operations work without browser JavaScript. This keeps the payload small, gives a
 strong accessibility baseline and permits a strict Content Security Policy.
 
-The product-link helper is the one progressively enhanced interaction: a small nonce-authorised,
+The home-page add form uses a React Router fetcher after hydration so a successful insert can
+revalidate the active wishlist, clear the completed draft and report local pending, success or error
+state without a document navigation. Its server-rendered form marks itself as enhanced only in the
+browser; an unenhanced document submission follows the existing post-redirect-get path. Both paths
+call the same route action and wishlist service validation.
+
+The product-link helper is another progressively enhanced interaction: a small nonce-authorised,
 self-hosted script starts the lookup after a link is pasted or changed. The ordinary “Fill from link”
 form action remains the fallback when JavaScript is unavailable, and creating a wish never depends on
 the script. The server remains authoritative. `unsafe-inline` and `unsafe-eval` are not acceptable

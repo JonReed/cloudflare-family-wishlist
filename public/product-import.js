@@ -193,4 +193,17 @@ for (const form of forms) {
     event.preventDefault();
     void fetchDetails(urlInput.value, true);
   });
+  form.addEventListener('submit', (event) => {
+    const submitter = event.submitter;
+    if (!(submitter instanceof HTMLButtonElement) || submitter.value !== 'add-item') return;
+
+    // The add response is authoritative from here. Do not let an earlier lookup
+    // finish against a cleared form or leave duplicate feedback beside it.
+    activeRequest?.abort();
+    activeRequest = undefined;
+    lastRequestedUrl = '';
+    fetchButton.disabled = false;
+    form.removeAttribute('aria-busy');
+    setStatus('');
+  });
 }

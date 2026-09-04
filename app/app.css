@@ -973,6 +973,13 @@
   padding: 1rem 0 0;
 }
 
+.add-form-fields {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
 .add-form-sidebar .form-fields {
   gap: 0.8rem;
 }
@@ -989,6 +996,22 @@
 .add-form-sidebar .button-primary {
   width: 100%;
   margin-top: 0.9rem;
+}
+
+.add-submit-status {
+  margin: 0.55rem 0 0;
+  color: var(--leaf);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.add-submit-status:empty {
+  display: none;
+}
+
+.add-submit-error {
+  color: var(--rust);
 }
 
 .product-link-field {

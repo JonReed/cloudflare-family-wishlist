@@ -1,5 +1,6 @@
 import { Link, redirect } from 'react-router';
 
+import { AddWishForm } from '../components/add-wish-form';
 import { InPlaceActionForm } from '../components/in-place-action-form';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
@@ -173,6 +174,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
       case 'add-item':
         await createWishlistItem(env.DB, member.id, wishlistId, itemInput(formData));
+        if (formData.get('enhancedAdd') === 'true') {
+          return { wishlistId, updated: 'add' as const };
+        }
         break;
       case 'edit-item':
         await updateWishlistItem(env.DB, formString(formData, 'itemId'), itemInput(formData));
@@ -702,6 +706,31 @@ function WishlistSheet({
   );
 }
 
+function clearAddedWishForm(form: HTMLFormElement): void {
+  let titleField: HTMLInputElement | null = null;
+
+  for (const name of ['productUrl', 'title', 'imageUrl', 'notes', 'price']) {
+    const field = form.elements.namedItem(name);
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+      field.value = '';
+      if (name === 'title' && field instanceof HTMLInputElement) titleField = field;
+    }
+  }
+
+  const priority = form.elements.namedItem('priority');
+  if (priority instanceof HTMLSelectElement) priority.value = 'normal';
+
+  // Keep the existing dependency-free product helper in sync with the cleared form.
+  for (const name of ['productUrl', 'imageUrl']) {
+    const field = form.elements.namedItem(name);
+    if (field instanceof HTMLInputElement) {
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  titleField?.focus({ preventScroll: true });
+}
+
 function AddWishPanel({
   wishlist,
   actionData
@@ -753,25 +782,45 @@ function AddWishPanel({
         {wishlist.isOwn ? 'Add to wishlist' : `Add something for ${wishlist.owner.displayName}`}
       </h2>
 
-      <form
+      <AddWishForm
+        actionKey={`add-wish:${wishlist.id}`}
         method="post"
         action={wishlistFormAction(wishlist.id)}
         className="add-form add-form-sidebar"
         data-product-import-form
+        onSuccess={clearAddedWishForm}
       >
-        <ActionFields wishlistId={wishlist.id} />
-        <ItemFields
-          formId={addFormId}
-          recipientName={recipientName}
-          urlFirst
-          draft={fetchedDraft}
-          urlAction={urlAction}
-          urlStatus={urlStatus}
-        />
-        <button name="intent" value="add-item" className="button-primary">
-          Add to the list
-        </button>
-      </form>
+        {({ error, isPending, succeeded }) => (
+          <>
+            <ActionFields wishlistId={wishlist.id} />
+            <fieldset className="add-form-fields" disabled={isPending}>
+              <ItemFields
+                formId={addFormId}
+                recipientName={recipientName}
+                urlFirst
+                draft={fetchedDraft}
+                urlAction={urlAction}
+                urlStatus={urlStatus}
+              />
+              <button name="intent" value="add-item" className="button-primary">
+                {isPending ? 'Adding…' : 'Add to the list'}
+              </button>
+            </fieldset>
+            <p
+              className={error ? 'add-submit-status add-submit-error' : 'add-submit-status'}
+              role="status"
+              aria-live="polite"
+            >
+              {error ??
+                (succeeded
+                  ? wishlist.isOwn
+                    ? 'Added to your wishlist.'
+                    : `Added to ${wishlist.owner.displayName}’s wishlist.`
+                  : '')}
+            </p>
+          </>
+        )}
+      </AddWishForm>
     </aside>
   );
 }
