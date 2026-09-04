@@ -101,10 +101,12 @@ without a link remains supported. Titles, useful buying notes, an
 approximate price and a human description of priority are enough.
 
 In the saved list, put “Edit this wish” on its own line below the item content. Opening the editor must
-not change the position or width of the image, metadata or claim controls above it. Label only the
-exceptional **Top wish** and **Nice to have** priorities; ordinary wishes need no “Would love” marker.
-Present top wishes first, ordinary wishes second and nice-to-have wishes last, with newer additions
-first inside each group.
+not change the position or width of the image, metadata or claim controls above it. With JavaScript,
+saving keeps the editor open, updates the wish in place, reports the local result and returns keyboard
+focus to the editor summary. A failed save keeps the draft and moves focus to its local error; an
+unenhanced save retains the ordinary form redirect. Label only the exceptional **Top wish** and
+**Nice to have** priorities; ordinary wishes need no “Would love” marker. Present top wishes first,
+ordinary wishes second and nice-to-have wishes last, with newer additions first inside each group.
 
 When a shop publishes a product image, show it as a modest square preview rather than turning the
 wishlist into a catalogue grid. The picture is an editable convenience: it may be removed or replaced

@@ -215,6 +215,9 @@ after reading the account-specific private handoff and verifying the active Wran
   the working page, while a browser-added form marker lets an unenhanced document post retain its
   redirect. Clear the draft only after structured success data and keep the product-image helper in
   sync by emitting the same input events as a person clearing the link and picture fields.
+- Expanded wish editors use the same browser-marker pattern. Keep each fetcher keyed by item ID,
+  leave the editor open after a successful revalidation, and restore focus to its summary so a
+  priority change can safely move the keyed row without losing the keyboard position.
 - Keep authenticated hydration and every generated script on the per-response CSP nonce. Public
   sharing pages must continue to omit `<Scripts>` and authenticated JavaScript bundles. Preserve the
   `meta[property="csp-nonce"]`, `ServerRouter`, render-stream and CSP wiring together: Vite uses that
@@ -236,6 +239,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts   |
 | `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback  |
 | `test/add-wish-form.test.tsx`           | frequent adds retain a native server-submittable form fallback     |
+| `test/edit-wish-form.test.tsx`          | item edits retain a native server-submittable form fallback        |
 | `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures |
 | `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction    |
 | `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion   |

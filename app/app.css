@@ -917,6 +917,13 @@
   padding-top: 1rem;
 }
 
+.edit-form-fields {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
 .empty-list {
   margin: 2.5rem 0 0;
   border-block: 1px dashed rgb(48 51 41 / 0.25);
@@ -998,7 +1005,7 @@
   margin-top: 0.9rem;
 }
 
-.add-submit-status {
+.mutation-submit-status {
   margin: 0.55rem 0 0;
   color: var(--leaf);
   font-size: 0.78rem;
@@ -1006,11 +1013,11 @@
   line-height: 1.4;
 }
 
-.add-submit-status:empty {
+.mutation-submit-status:empty {
   display: none;
 }
 
-.add-submit-error {
+.mutation-submit-error {
   color: var(--rust);
 }
 

@@ -154,6 +154,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `migrations/`                             | Append-only persistent schema history                                              |
 | `app/root.tsx`, `app/entry.server.tsx`    | Document shell, authenticated hydration and CSP nonce propagation                  |
 | `app/components/add-wish-form.tsx`        | Progressive frequent-add submission, local state and native form fallback          |
+| `app/components/edit-wish-form.tsx`       | Progressive item editing, local state and native form fallback                     |
 | `app/components/in-place-action-form.tsx` | Reusable progressive form, local pending state and action errors                   |
 | `app/app.css`, `app/components/`          | Design system and shared presentation                                              |
 
@@ -277,6 +278,10 @@ revalidate the active wishlist, clear the completed draft and report local pendi
 state without a document navigation. Its server-rendered form marks itself as enhanced only in the
 browser; an unenhanced document submission follows the existing post-redirect-get path. Both paths
 call the same route action and wishlist service validation.
+
+Expanded item editors use the same marked-fetcher boundary for a local pending state, validation
+feedback and successful loader revalidation. The saved editor stays open and restores focus to its
+summary; an unenhanced edit continues through post-redirect-get.
 
 The product-link helper is another progressively enhanced interaction: a small nonce-authorised,
 self-hosted script starts the lookup after a link is pasted or changed. The ordinary “Fill from link”

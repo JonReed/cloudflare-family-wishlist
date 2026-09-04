@@ -22,6 +22,7 @@
     "../app/components/add-wish-form.tsx",
     "../app/components/brand.tsx",
     "../app/components/client-runtime.tsx",
+    "../app/components/edit-wish-form.tsx",
     "../app/components/family-member-removal.tsx",
     "../app/components/in-place-action-form.tsx",
     "../app/components/product-image-field.tsx",

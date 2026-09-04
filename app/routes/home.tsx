@@ -1,6 +1,8 @@
+import { useCallback, useState } from 'react';
 import { Link, redirect } from 'react-router';
 
 import { AddWishForm } from '../components/add-wish-form';
+import { EditWishForm } from '../components/edit-wish-form';
 import { InPlaceActionForm } from '../components/in-place-action-form';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
@@ -178,9 +180,14 @@ export async function action({ request, context }: Route.ActionArgs) {
           return { wishlistId, updated: 'add' as const };
         }
         break;
-      case 'edit-item':
-        await updateWishlistItem(env.DB, formString(formData, 'itemId'), itemInput(formData));
+      case 'edit-item': {
+        const itemId = formString(formData, 'itemId');
+        await updateWishlistItem(env.DB, itemId, itemInput(formData));
+        if (formData.get('enhancedEdit') === 'true') {
+          return { wishlistId, itemId, updated: 'edit' as const };
+        }
         break;
+      }
       case 'delete-item':
         await deleteWishlistItem(env.DB, formString(formData, 'itemId'));
         break;
@@ -465,10 +472,34 @@ const priorityLabels = {
   high: 'Top wish'
 } as const;
 
-function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: WishlistItem }) {
+function focusEditedWishSummary(form: HTMLFormElement): void {
+  const summary = form.closest('details')?.querySelector('summary');
+  if (summary instanceof HTMLElement) summary.focus({ preventScroll: true });
+}
+
+function focusEditError(form: HTMLFormElement): void {
+  const error = form.querySelector('.mutation-submit-error');
+  if (error instanceof HTMLElement) error.focus({ preventScroll: true });
+}
+
+function WishlistItemRow({
+  wishlist,
+  item,
+  wasJustEdited,
+  onItemEdited
+}: {
+  wishlist: FamilyWishlist;
+  item: WishlistItem;
+  wasJustEdited: boolean;
+  onItemEdited: (itemId: string, form: HTMLFormElement) => void;
+}) {
   const formId = `edit-${item.id}`;
   const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
   const hasClaimControls = !wishlist.isOwn && item.claimVisibility === 'visible';
+  const handleEditSuccess = useCallback(
+    (form: HTMLFormElement) => onItemEdited(item.id, form),
+    [item.id, onItemEdited]
+  );
 
   return (
     <li
@@ -527,18 +558,48 @@ function WishlistItemRow({ wishlist, item }: { wishlist: FamilyWishlist; item: W
 
       <details className="edit-panel">
         <summary>Edit this wish</summary>
-        <form method="post" action={wishlistFormAction(wishlist.id)} className="edit-form">
-          <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-          <ItemFields item={item} formId={formId} recipientName={recipientName} />
-          <div className="form-actions">
-            <button name="intent" value="edit-item" className="button-primary">
-              Save changes
-            </button>
-            <button name="intent" value="delete-item" className="button-danger">
-              Remove from the list
-            </button>
-          </div>
-        </form>
+        <EditWishForm
+          actionKey={`edit-wish:${item.id}`}
+          method="post"
+          action={wishlistFormAction(wishlist.id)}
+          className="edit-form"
+          onSubmissionError={focusEditError}
+          onSuccess={handleEditSuccess}
+        >
+          {({ error, isPending, submittedIntent, succeeded }) => {
+            const isSaving = isPending && submittedIntent === 'edit-item';
+            const isRemoving = isPending && submittedIntent === 'delete-item';
+
+            return (
+              <>
+                <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+                <fieldset className="edit-form-fields" disabled={isPending}>
+                  <ItemFields item={item} formId={formId} recipientName={recipientName} />
+                  <div className="form-actions">
+                    <button name="intent" value="edit-item" className="button-primary">
+                      {isSaving ? 'Saving…' : 'Save changes'}
+                    </button>
+                    <button name="intent" value="delete-item" className="button-danger">
+                      {isRemoving ? 'Removing…' : 'Remove from the list'}
+                    </button>
+                  </div>
+                </fieldset>
+                <p
+                  className={
+                    error
+                      ? 'mutation-submit-status mutation-submit-error'
+                      : 'mutation-submit-status'
+                  }
+                  role={error ? 'alert' : 'status'}
+                  aria-live="polite"
+                  tabIndex={error ? -1 : undefined}
+                >
+                  {error ?? (!isPending && (succeeded || wasJustEdited) ? 'Changes saved.' : '')}
+                </p>
+              </>
+            );
+          }}
+        </EditWishForm>
       </details>
     </li>
   );
@@ -662,7 +723,12 @@ function WishlistSheet({
   shareLinkName?: string;
   shareUrl?: string;
 }) {
+  const [lastEditedItemId, setLastEditedItemId] = useState<string | null>(null);
   const possessiveName = wishlist.isOwn ? 'Your' : `${wishlist.owner.displayName}’s`;
+  const handleItemEdited = useCallback((itemId: string, form: HTMLFormElement) => {
+    setLastEditedItemId(itemId);
+    focusEditedWishSummary(form);
+  }, []);
 
   return (
     <article id="wishlist" className="wishlist-sheet">
@@ -696,7 +762,13 @@ function WishlistSheet({
       {wishlist.items.length ? (
         <ul className="wish-list">
           {wishlist.items.map((item) => (
-            <WishlistItemRow key={item.id} wishlist={wishlist} item={item} />
+            <WishlistItemRow
+              key={item.id}
+              wishlist={wishlist}
+              item={item}
+              wasJustEdited={lastEditedItemId === item.id}
+              onItemEdited={handleItemEdited}
+            />
           ))}
         </ul>
       ) : (
@@ -807,7 +879,9 @@ function AddWishPanel({
               </button>
             </fieldset>
             <p
-              className={error ? 'add-submit-status add-submit-error' : 'add-submit-status'}
+              className={
+                error ? 'mutation-submit-status mutation-submit-error' : 'mutation-submit-status'
+              }
               role="status"
               aria-live="polite"
             >
@@ -890,6 +964,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           {activeWishlist ? (
             <div className="wishlist-workspace">
               <WishlistSheet
+                key={activeWishlist.id}
                 wishlist={activeWishlist}
                 shareLinkCount={shareLinkCount}
                 shareLinkName={shareLinkName}
