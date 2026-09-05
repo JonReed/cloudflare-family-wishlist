@@ -458,8 +458,8 @@ the existing helper without becoming persistence or availability dependencies.
 ## Deployment boundary
 
 `main` is connected to Cloudflare Builds for the reference deployment. Application deployments are
-automatic after a push; the initial organiser policy, Access-management API token, DNS and D1
-migration changes remain separate Cloudflare operations. The setup command and first viewing-link
+automatic after a push; pending D1 migrations run through `deploy:production` before Worker deployment. Initial
+Access, DNS and token setup remain separate operations. The setup command and first viewing-link
 action use that scoped token to configure only the documented public paths. Later exact-email
 additions are deliberately performed by the organiser from `/family`.
 

@@ -480,21 +480,37 @@ Now connect the build:
 2. select **Connect** and authorise Cloudflare's GitHub integration for your fork;
 3. use production branch `main`;
 4. use build command `npm run build`;
-5. use deploy command `npx wrangler deploy --keep-vars`; and
+5. use deploy command `npm run deploy:production`; and
 6. use repository root `/`.
 
-Disable preview builds for the simple direct-to-`main` workflow. If you enable them later, the
-Worker-level Access policy protects them too.
+The build API token must include Account / D1 / Edit for this deployment's account as well as its
+existing Worker deployment permissions. Review it in **Settings → Builds → API token**. Never add
+the token to the repository. The `DB` binding in your committed Wrangler configuration determines
+which database receives migrations.
+
+Disable preview builds for the simple direct-to-`main` workflow. Never use `deploy:production` or
+`db:migrate:remote` in non-production builds against the production binding. If previews are needed,
+give them a separate Worker, database and credentials.
 
 Workers Builds now deploys each push to `main`. Cloudflare's [Git integration guide](https://developers.cloudflare.com/workers/ci-cd/builds/)
 requires the Worker name in the dashboard to match `name` in `wrangler.jsonc`.
 
-Builds do not apply D1 migrations. Before pushing a release containing a new migration, authenticate
-the correct profile and run:
+Production Builds now run the repository's release script after a successful build:
 
 ```sh
-npm run db:migrate:remote
+npm run deploy:production
 ```
+
+It applies only pending D1 migrations, then deploys with `--keep-vars`. A failed migration stops
+deployment; a release without database changes simply skips migrations. Existing installations need
+to change their production deploy command once and verify the token's D1 permission. Future updates
+to the tracked branch then require no separate migration command. Fork owners still need to sync
+upstream updates into their fork while preserving their own Wrangler account/database configuration.
+
+Migrations must remain compatible with the old Worker, which continues serving traffic until the
+new deployment succeeds. Use additive changes first and remove old columns only in a later release.
+A successful migration is not undone if deployment fails or Worker code is rolled back. Do not
+automatically restore the database or delete migration history; fix the failure and retry the build.
 
 Apply all pending migrations before the matching application code reaches production. Existing
 migrations include family roles, invitation admission and revocation state, item images, product

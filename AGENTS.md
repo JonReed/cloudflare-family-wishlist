@@ -82,6 +82,9 @@ Retrieve current Cloudflare and React Router documentation before relying on API
 - Plan first, implement second, review the complete diff third.
 - Run `npm run quality` and `npm run audit` before every commit or push.
 - Do not run a manual production deployment unless explicitly requested; `main` is connected to Cloudflare Builds.
+- Production Builds run `npm run deploy:production`: pending D1 migrations, then Worker deployment.
+  Keep migrations backwards-compatible with the running Worker; a failed deployment does not undo SQL.
+  Never run production migrations from preview builds. This does not authorise manual remote changes.
 - Preserve unrelated or user-authored changes.
 
 For a normal change:

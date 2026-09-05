@@ -95,18 +95,23 @@ Delete expired exports according to the household's agreed retention policy.
    npm ci
    npm run quality
    npm run audit
-   npm run db:migrate:remote
    ```
 
-5. Push the reviewed commit to the fork's `main`. Cloudflare Builds deploys it automatically. If the
+5. Push the reviewed commit to the fork's `main`. With production deploy command
+   `npm run deploy:production`, Cloudflare Builds applies pending migrations before deploying and
+   stops deployment if a migration fails. No manual SQL step is needed. Existing installations must
+   switch that command once and ensure the build token has Account / D1 / Edit permission. If the
    source is already on `main`, use the dashboard's retry or redeploy control instead of an empty
    commit.
 6. After the build succeeds, rerun `npm run setup:check` and the affected items in the installation
    guide's final acceptance checklist. Confirm the deployment status checks every version receiving
    traffic, which matters during a gradual deployment.
 
-Rolling back Worker code does not roll back D1. Prefer a forward-fix for an additive schema problem;
-use Time Travel only when restoring the whole database to an earlier state is the intended recovery.
+Rolling back Worker code does not roll back D1. Prefer a forward-fix for an additive schema problem.
+Keep migrations compatible with the previous Worker until the new deployment is healthy. A failed
+deployment after successful migration leaves that migration applied; fix and retry, do not restore
+the database automatically.
+Use Time Travel only when restoring the whole database to an earlier state is the intended recovery.
 Do not apply down migrations to an existing installation.
 
 ## Complete the recovery picture
