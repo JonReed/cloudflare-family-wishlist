@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  createBrowserRunProductRenderer,
   fetchProductMetadata,
   ProductMetadataError,
   type ProductAiExtractor,
@@ -14,6 +15,141 @@ function htmlResponse(html: string, init?: ResponseInit): Response {
 }
 
 describe('fetchProductMetadata', () => {
+  it.each([429, 503])(
+    'reports Browser Run service HTTP %s without exposing its response',
+    async (status) => {
+      const browser = {
+        quickAction: () => Promise.resolve(new Response('SECRET response', { status }))
+      } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+      const failure = await fetchProductMetadata('https://shop.example/scarf', 'wishlist.example', {
+        fetchPage: () => Promise.resolve(htmlResponse('', { status: 403 })),
+        renderPage: createBrowserRunProductRenderer(browser)
+      }).catch((error: unknown) => error);
+      if (!(failure instanceof ProductMetadataError)) throw new Error('Expected metadata error');
+      expect(failure.diagnostics?.steps).toContain(`Browser fallback: service HTTP ${status}`);
+      expect(JSON.stringify(failure.diagnostics)).not.toContain('SECRET');
+    }
+  );
+
+  it('records retailer retry and a browser verification page in order', async () => {
+    const failure = await fetchProductMetadata(
+      'https://www.amazon.co.uk/dp/B0F9XN4DCC',
+      'wishlist.example',
+      {
+        fetchPage: () => Promise.resolve(htmlResponse('', { status: 403 })),
+        renderPage: () =>
+          Promise.resolve({
+            html: '<title>Just a moment...</title><div id="cf-challenge-running">Checking your browser</div>',
+            finalUrl: 'https://www.amazon.co.uk/dp/B0F9XN4DCC',
+            navigationUrls: []
+          })
+      }
+    ).catch((error: unknown) => error);
+    if (!(failure instanceof ProductMetadataError)) throw new Error('Expected metadata error');
+    expect(failure.diagnostics?.steps.slice(0, 3)).toEqual([
+      'Direct fetch: HTTP 403',
+      'Retailer retry: HTTP 403',
+      'Browser fallback: verification page'
+    ]);
+  });
+  it('selects the matching product without borrowing a recommendation’s price or picture', async () => {
+    const metadata = await fetchProductMetadata(
+      'https://shop.example/scarf?utm_source=mail',
+      'wishlist.example',
+      {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(
+              `<script type="application/ld+json">${JSON.stringify([
+                {
+                  '@type': 'Product',
+                  url: '/hat',
+                  name: 'Recommended hat',
+                  image: '/hat.jpg',
+                  offers: { price: '99', priceCurrency: 'GBP' }
+                },
+                { '@type': 'Product', url: '/scarf', name: 'The scarf' }
+              ])}</script>`
+            )
+          )
+      }
+    );
+    expect(metadata).toMatchObject({ title: 'The scarf', price: '', imageUrl: '' });
+  });
+
+  it('uses a WebPage mainEntity reference across scripts', async () => {
+    const metadata = await fetchProductMetadata('https://shop.example/scarf', 'wishlist.example', {
+      fetchPage: () =>
+        Promise.resolve(
+          htmlResponse(
+            `<script type="application/ld+json">{"@type":"WebPage","mainEntity":{"@id":"#main"}}</script><script type="application/ld+json">${JSON.stringify(
+              [
+                { '@type': 'Product', name: 'Recommended hat' },
+                {
+                  '@type': 'Product',
+                  '@id': '#main',
+                  name: 'The scarf',
+                  offers: { price: '20', priceCurrency: 'GBP' }
+                }
+              ]
+            )}</script>`
+          )
+        )
+    });
+    expect(metadata).toMatchObject({ title: 'The scarf', price: '20.00' });
+  });
+
+  it('prefers the exact selected variant URL over a query-independent match', async () => {
+    const metadata = await fetchProductMetadata(
+      'https://shop.example/scarf?variant=blue',
+      'wishlist.example',
+      {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(
+              `<script type="application/ld+json">${JSON.stringify([
+                { '@type': 'Product', url: '/scarf?variant=red', name: 'Red scarf' },
+                { '@type': 'Product', url: '/scarf?variant=blue', name: 'Blue scarf' }
+              ])}</script>`
+            )
+          )
+      }
+    );
+    expect(metadata.title).toBe('Blue scarf');
+  });
+
+  it('reports safe failed stages without URLs, HTML or exception messages', async () => {
+    const failure = await fetchProductMetadata(
+      'https://shop.example/private-product?token=SECRET',
+      'wishlist.example',
+      {
+        fetchPage: () => Promise.resolve(htmlResponse('PRIVATE HTML', { status: 403 })),
+        renderPage: () => Promise.reject(new Error('SECRET cookie and internal stack'))
+      }
+    ).catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(ProductMetadataError);
+    if (!(failure instanceof ProductMetadataError)) throw new Error('Expected metadata error');
+    expect(failure.diagnostics).toMatchObject({
+      hostname: 'shop.example',
+      steps: [
+        'Direct fetch: HTTP 403',
+        'Browser fallback: failed or unsafe response rejected',
+        expect.stringMatching(/^Total: \d+ ms$/)
+      ]
+    });
+    expect(JSON.stringify(failure.diagnostics)).not.toMatch(
+      /SECRET|private-product|PRIVATE HTML|cookie/
+    );
+  });
+
+  it('distinguishes a direct timeout from an HTTP block', async () => {
+    const failure = await fetchProductMetadata('https://shop.example/scarf', 'wishlist.example', {
+      fetchPage: () => Promise.reject(new DOMException('private detail', 'TimeoutError'))
+    }).catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(ProductMetadataError);
+    if (!(failure instanceof ProductMetadataError)) throw new Error('Expected metadata error');
+    expect(failure.diagnostics?.steps[0]).toBe('Direct fetch: timed out');
+  });
   it('extracts Open Graph product details with bounded, non-forwarding request options', async () => {
     const fetchPage = vi.fn((url: string, init: RequestInit) => {
       void url;

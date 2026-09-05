@@ -6,6 +6,7 @@ import { SiteHeader } from '../components/site-header';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
+import { ProductDiagnostics } from '../components/product-diagnostics';
 import {
   createWishlistItems,
   listFamilyWishlists,
@@ -130,7 +131,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       member,
       wishlists,
       product: blankProduct(productUrl),
-      fetchError: error.message
+      fetchError: error.message,
+      diagnostics: error instanceof ProductMetadataError ? error.diagnostics : undefined
     };
   }
 }
@@ -177,7 +179,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       return {
         draft: formDraft(formData),
         selectedWishlistIds: wishlistIds,
-        fetchError: error.message
+        fetchError: error.message,
+        diagnostics: error instanceof ProductMetadataError ? error.diagnostics : undefined
       };
     }
   }
@@ -278,6 +281,17 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
               >
                 {productFetchError ?? productFetchStatus}
               </p>
+              <ProductDiagnostics
+                diagnostics={
+                  productFetchError
+                    ? actionData
+                      ? 'diagnostics' in actionData
+                        ? actionData.diagnostics
+                        : undefined
+                      : loaderData.diagnostics
+                    : undefined
+                }
+              />
             </div>
 
             <div>

@@ -231,7 +231,7 @@ function FamilyPersonRow({
                 ? 'Family organiser'
                 : 'Joined'
               : person.status === 'waiting'
-                ? 'Waiting to join'
+                ? 'Not signed in yet'
                 : person.status === 'attention'
                   ? 'Invitation needs attention'
                   : 'Removal needs attention'}
@@ -257,6 +257,9 @@ function FamilyPersonRow({
             Copy invitation
           </button>
           <span className="family-copy-status" role="status" aria-live="polite" />
+          {person.memberId ? (
+            <FamilyMemberRemoval displayName={person.displayName} memberId={person.memberId} />
+          ) : null}
         </div>
       ) : null}
 
@@ -307,7 +310,8 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
 
           {loaderData.added ? (
             <div role="status" className="profile-saved family-page-message">
-              They’re on the family list. Copy their invitation below and send it however you like.
+              Their wishlist is ready to add wishes. Copy their invitation below and send it however
+              you like.
             </div>
           ) : null}
 
@@ -347,8 +351,9 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
               <span aria-hidden="true" className="add-panel-tape" />
               <h2 id="add-family-member-title">Add someone</h2>
               <p>
-                Use the exact email address they’ll enter on the sign-in page. We won’t email them;
-                you’ll get an invitation to copy instead.
+                Their wishlist will be ready straight away, even before they sign in. Use the exact
+                email address they’ll sign in with. We won’t email them; you’ll get an invitation to
+                copy instead.
               </p>
 
               <Form method="post" className="profile-form family-add-form">

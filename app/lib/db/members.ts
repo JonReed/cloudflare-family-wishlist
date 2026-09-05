@@ -21,6 +21,7 @@ type MemberWithWishlistRow = {
   role: MemberRole;
   wishlist_id: string;
   disabled_at: string | null;
+  first_signed_in_at: string | null;
 };
 
 const FIND_MEMBER_WITH_WISHLIST = `
@@ -30,7 +31,8 @@ const FIND_MEMBER_WITH_WISHLIST = `
     members.display_name,
     members.role,
     wishlists.id AS wishlist_id,
-    members.disabled_at
+    members.disabled_at,
+    members.first_signed_in_at
   FROM members
   INNER JOIN wishlists ON wishlists.owner_member_id = members.id
   WHERE members.email = ?1 COLLATE NOCASE
@@ -88,18 +90,24 @@ function mapMember(row: MemberWithWishlistRow): MemberWithWishlist {
 async function findMemberWithWishlist(
   db: D1Database,
   email: string
-): Promise<{ member: MemberWithWishlist; disabled: boolean } | null> {
+): Promise<{ member: MemberWithWishlist; disabled: boolean; signedIn: boolean } | null> {
   const row = await db
     .prepare(FIND_MEMBER_WITH_WISHLIST)
     .bind(email)
     .first<MemberWithWishlistRow>();
 
-  return row ? { member: mapMember(row), disabled: row.disabled_at !== null } : null;
+  return row
+    ? {
+        member: mapMember(row),
+        disabled: row.disabled_at !== null,
+        signedIn: row.first_signed_in_at !== null
+      }
+    : null;
 }
 
 /**
- * Provisions the one member/one wishlist pair after Access has authenticated an
- * identity. Unique constraints make concurrent first requests idempotent.
+ * Resolves an authenticated identity to its existing invited wishlist, recording
+ * first sign-in once. Also supports organiser bootstrap and legacy invitations.
  */
 export async function ensureMemberForEmail(
   db: D1Database,
@@ -112,6 +120,17 @@ export async function ensureMemberForEmail(
   if (existing) {
     if (existing.disabled) {
       throw new MemberAdmissionError('This person no longer has access to this family wishlist.');
+    }
+    if (!existing.signedIn) {
+      await db
+        .prepare(
+          `UPDATE members SET first_signed_in_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?1 AND first_signed_in_at IS NULL AND disabled_at IS NULL`
+        )
+        .bind(existing.member.id)
+        .run();
+      const current = await findMemberWithWishlist(db, email);
+      if (!current || current.disabled)
+        throw new MemberAdmissionError('This person no longer has access to this family wishlist.');
     }
     return existing.member;
   }
@@ -131,7 +150,7 @@ export async function ensureMemberForEmail(
   await db.batch([
     db
       .prepare(
-        `INSERT INTO members (id, email, display_name, role)
+        `INSERT INTO members (id, email, display_name, role, first_signed_in_at)
          SELECT
            ?1,
            ?2,
@@ -148,7 +167,8 @@ export async function ensureMemberForEmail(
            CASE
              WHEN EXISTS (SELECT 1 FROM members) THEN 'member'
              ELSE 'admin'
-           END
+           END,
+           strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
          WHERE (
               NOT EXISTS (SELECT 1 FROM members)
               AND ?4 = ?2 COLLATE NOCASE
@@ -183,6 +203,9 @@ export async function ensureMemberForEmail(
   if (member.disabled) {
     throw new MemberAdmissionError('This person no longer has access to this family wishlist.');
   }
+
+  // Invitation activation may have won the race after the initial read.
+  if (!member.signedIn) return ensureMemberForEmail(db, email, initialOrganiserEmail);
 
   return member.member;
 }

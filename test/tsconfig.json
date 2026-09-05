@@ -26,6 +26,7 @@
     "../app/components/family-member-removal.tsx",
     "../app/components/in-place-action-form.tsx",
     "../app/components/product-image-field.tsx",
+    "../app/components/product-diagnostics.tsx",
     "../app/components/site-header.tsx",
     "../app/lib/auth/access.ts",
     "../app/lib/bookmarklet.ts",

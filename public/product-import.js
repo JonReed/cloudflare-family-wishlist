@@ -1,4 +1,4 @@
-/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, URL, document, fetch, setTimeout */
+/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, URL, document, fetch, setTimeout, navigator */
 
 const imagePreviewUpdates = new Map();
 
@@ -70,6 +70,32 @@ for (const form of forms) {
   const imageInput = form.querySelector('[data-product-image]');
   const fetchButton = form.querySelector('[data-product-fetch]');
   const status = form.querySelector('[data-product-status]');
+  const diagnostics = form.querySelector('[data-product-diagnostics]');
+  const diagnosticText = form.querySelector('[data-product-diagnostics-text]');
+  const copyButton = form.querySelector('[data-product-diagnostics-copy]');
+  const copyStatus = form.querySelector('[data-product-diagnostics-copy-status]');
+  if (copyButton && navigator.clipboard?.writeText) {
+    copyButton.hidden = false;
+    copyButton.addEventListener('click', async () => {
+      const text = diagnosticText.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        if (diagnosticText.textContent === text) copyStatus.textContent = 'Copied.';
+      } catch {
+        copyStatus.textContent = 'Select the details above and copy them manually.';
+      }
+    });
+  }
+  const showDiagnostics = (value) => {
+    if (!diagnostics || !diagnosticText) return;
+    const valid = value && typeof value.hostname === 'string' && Array.isArray(value.steps);
+    diagnostics.hidden = !valid;
+    diagnostics.removeAttribute('open');
+    diagnosticText.textContent = valid
+      ? [value.hostname, ...value.steps.filter((step) => typeof step === 'string')].join('\n')
+      : '';
+    if (copyStatus) copyStatus.textContent = '';
+  };
 
   if (
     !(form instanceof HTMLFormElement) ||
@@ -90,6 +116,7 @@ for (const form of forms) {
   let generatedImageUrl = '';
 
   const setStatus = (message, isError = false) => {
+    showDiagnostics(null);
     status.textContent = message;
     status.classList.toggle('product-fetch-error', isError);
   };
@@ -145,16 +172,20 @@ for (const form of forms) {
       }
 
       if (!response.ok) {
-        throw new Error(
-          typeof result.error === 'string' ? result.error : 'We couldn’t read that page.'
+        if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
+        setStatus(
+          typeof result?.error === 'string' ? result.error : 'We couldn’t read that page.',
+          true
         );
+        showDiagnostics(result?.diagnostics);
+        return;
       }
 
       if (!result || typeof result !== 'object') {
         throw new Error('We couldn’t read that page.');
       }
 
-      if (urlInput.value.trim() !== productUrl) return;
+      if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
 
       urlInput.value = result.productUrl;
       generatedTitle = fillGeneratedField(titleInput, result.title, generatedTitle);
@@ -167,6 +198,7 @@ for (const form of forms) {
           : 'We filled what the page shared. Check the details before adding.'
       );
     } catch (error) {
+      if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
       if (error instanceof DOMException && error.name === 'AbortError') return;
       setStatus(error instanceof Error ? error.message : 'We couldn’t read that page.', true);
     } finally {
@@ -183,6 +215,7 @@ for (const form of forms) {
     setTimeout(() => void fetchDetails(urlInput.value), 0);
   });
   urlInput.addEventListener('input', () => {
+    showDiagnostics(null);
     if (!urlInput.value.trim()) void fetchDetails('');
   });
   urlInput.addEventListener('change', () => void fetchDetails(urlInput.value));

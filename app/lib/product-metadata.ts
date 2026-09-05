@@ -84,7 +84,14 @@ type ProductMetadataOptions = {
   extractWithAi?: ProductAiExtractor;
 };
 
-export class ProductMetadataError extends Error {}
+export type ProductDiagnostics = { hostname: string; steps: string[] };
+
+export class ProductMetadataError extends Error {
+  diagnostics?: ProductDiagnostics;
+}
+
+// Only fixed descriptions and numeric HTTP statuses may cross the diagnostics boundary.
+class ProductRenderError extends Error {}
 
 function stripHostnameBrackets(hostname: string): string {
   return hostname
@@ -590,18 +597,23 @@ function collectOfferPrices(
   }
 }
 
-function collectJsonLdEvidence(value: unknown, evidence: JsonLdProduct, depth = 0): void {
+function collectJsonLdEvidence(
+  value: unknown,
+  evidence: JsonLdProduct,
+  depth = 0,
+  selected?: unknown
+): void {
   if (depth > 8) return;
 
   if (Array.isArray(value)) {
-    for (const entry of value) collectJsonLdEvidence(entry, evidence, depth + 1);
+    for (const entry of value) collectJsonLdEvidence(entry, evidence, depth + 1, selected);
     return;
   }
 
   if (!isRecord(value)) return;
 
   const types = schemaTypes(value);
-  if (types.includes('product')) {
+  if (types.includes('product') && value === selected) {
     addUniqueValue(evidence.titles, value.name);
     collectJsonLdImages(value.image, evidence.images);
     const currency = valueAsString(value.priceCurrency);
@@ -618,23 +630,82 @@ function collectJsonLdEvidence(value: unknown, evidence: JsonLdProduct, depth = 
     }
   }
 
-  for (const entry of Object.values(value)) collectJsonLdEvidence(entry, evidence, depth + 1);
+  for (const entry of Object.values(value))
+    collectJsonLdEvidence(entry, evidence, depth + 1, selected);
 }
 
-function extractJsonLdProduct(html: string): JsonLdProduct {
+function extractJsonLdProduct(html: string, productUrl: string): JsonLdProduct {
   const evidence: JsonLdProduct = { titles: [], breadcrumbTitles: [], prices: [], images: [] };
+  const roots: unknown[] = [];
 
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     const attributes = parseAttributes(match[1] ?? '');
     if (attributes.get('type')?.toLowerCase() !== 'application/ld+json') continue;
 
     try {
-      collectJsonLdEvidence(JSON.parse(match[2] ?? ''), evidence);
+      roots.push(JSON.parse(match[2] ?? ''));
     } catch {
       // Invalid structured data should not prevent the ordinary meta tags from being used.
     }
   }
 
+  const products: Record<string, unknown>[] = [];
+  const mainEntities: unknown[] = [];
+  const visit = (value: unknown, depth = 0): void => {
+    if (depth > 8) return;
+    if (Array.isArray(value)) {
+      value.forEach((entry) => visit(entry, depth + 1));
+      return;
+    }
+    if (!isRecord(value)) return;
+    if (schemaTypes(value).includes('product')) products.push(value);
+    if (schemaTypes(value).some((type) => type === 'webpage' || type === 'itempage')) {
+      const entities: unknown[] = Array.isArray(value.mainEntity)
+        ? value.mainEntity
+        : [value.mainEntity];
+      mainEntities.push(...entities);
+    }
+    Object.values(value).forEach((entry) => visit(entry, depth + 1));
+  };
+  roots.forEach((root) => visit(root));
+  const matchesPage = (value: unknown, ignoreQuery = false): boolean => {
+    const address = isRecord(value) ? value['@id'] : value;
+    if (typeof address !== 'string') return false;
+    try {
+      const candidate = new URL(address, productUrl);
+      const page = new URL(productUrl);
+      return (
+        candidate.origin === page.origin &&
+        candidate.pathname.replace(/\/$/, '') === page.pathname.replace(/\/$/, '') &&
+        (ignoreQuery || candidate.search === page.search)
+      );
+    } catch {
+      return false;
+    }
+  };
+  const score = (product: Record<string, unknown>): number => {
+    if (matchesPage(product.url)) return 6;
+    if (
+      mainEntities.some(
+        (entry) =>
+          entry === product ||
+          (isRecord(entry) && typeof entry['@id'] === 'string' && entry['@id'] === product['@id'])
+      )
+    )
+      return 5;
+    if (matchesPage(product.mainEntityOfPage)) return 4;
+    if (matchesPage(product['@id'])) return 3;
+    // Tracking parameters often appear only on the incoming link. Exact matches
+    // win first so a selected variant's query string still takes precedence.
+    if (matchesPage(product.url, true)) return 2;
+    if (matchesPage(product.mainEntityOfPage, true) || matchesPage(product['@id'], true)) return 1;
+    return 0;
+  };
+  const selected = products.reduce<Record<string, unknown> | undefined>(
+    (best, product) => (!best || score(product) > score(best) ? product : best),
+    undefined
+  );
+  for (const root of roots) collectJsonLdEvidence(root, evidence, 0, selected);
   return evidence;
 }
 
@@ -809,7 +880,7 @@ function cleanFallbackTitle(rawTitle: string, evidence: PageEvidence, productUrl
 
 async function extractMetadata(html: string, productUrl: string): Promise<ExtractedMetadata> {
   const evidence = await extractPageEvidence(html);
-  const jsonLd = extractJsonLdProduct(html);
+  const jsonLd = extractJsonLdProduct(html, productUrl);
   const metaTitle = firstMetaValue(evidence.meta, ['og:title', 'twitter:title', 'name', 'title']);
   const adapter = retailerAdapter(productUrl);
   const adapterTitle = adapter?.titleCandidates(evidence).find(Boolean) ?? '';
@@ -1274,14 +1345,18 @@ function priceAppearsInPage(price: string, pageText: string): boolean {
 async function enhanceMetadataWithAi(
   html: string,
   metadata: ExtractedMetadata,
-  extractWithAi: ProductAiExtractor
+  extractWithAi: ProductAiExtractor,
+  note: (message: string) => void
 ): Promise<ExtractedMetadata> {
   const needsTitle = !metadata.titleIsReliable;
   const needsPrice = !metadata.price;
   if (!needsTitle && !needsPrice) return metadata;
 
   const { pageText, imageCandidates } = await preparePageEvidenceForAi(html, metadata.productUrl);
-  if (!pageText) return metadata;
+  if (!pageText) {
+    note('AI assistance: skipped, no usable page text');
+    return metadata;
+  }
 
   try {
     const extracted = await extractWithAi({
@@ -1316,8 +1391,18 @@ async function enhanceMetadataWithAi(
       }
     }
 
+    note(
+      aiAssisted
+        ? 'AI assistance: supported details found'
+        : 'AI assistance: no supported details found'
+    );
     return { ...metadata, title, price, imageUrl, aiAssisted };
-  } catch {
+  } catch (error) {
+    note(
+      error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+        ? 'AI assistance: timed out'
+        : 'AI assistance: unavailable or invalid response'
+    );
     // AI is an optional enhancement. Quota, capacity, timeout and model errors
     // must leave the deterministic result and manual form available.
     return metadata;
@@ -1390,7 +1475,7 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
             ...browserRunResponseMetadata(response)
           })
         );
-        return null;
+        throw new ProductRenderError(`service HTTP ${response.status}`);
       }
 
       const parsed: unknown = JSON.parse(responseText);
@@ -1401,7 +1486,7 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
             ...browserRunResponseMetadata(response)
           })
         );
-        return null;
+        throw new ProductRenderError('invalid service response');
       }
 
       const meta = isRecord(parsed.meta) ? parsed.meta : {};
@@ -1414,7 +1499,7 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
             ...browserRunResponseMetadata(response)
           })
         );
-        return null;
+        throw new ProductRenderError(`shop HTTP ${originStatus}`);
       }
       const redirectChain = Array.isArray(meta.redirectChain) ? meta.redirectChain : [];
       const navigationUrls = redirectChain.flatMap((hop) => {
@@ -1445,7 +1530,12 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
           errorName: error instanceof Error ? error.name : 'UnknownError'
         })
       );
-      return null;
+      if (error instanceof ProductRenderError) throw error;
+      throw new ProductRenderError(
+        error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+          ? 'timed out'
+          : 'service failed or invalid response'
+      );
     }
   };
 }
@@ -1475,18 +1565,32 @@ export async function fetchProductMetadata(
   let redirectCount = 0;
   let challengeRetries = 0;
   let browserAttempted = false;
+  const diagnostics: ProductDiagnostics = { hostname: target.hostname, steps: [] };
+  let stage = 'Direct fetch';
+  const started = Date.now();
+  const note = (message: string): void => {
+    diagnostics.steps.push(message);
+  };
 
   try {
     const renderFallback = async (): Promise<{
       html: string;
       metadata: ExtractedMetadata;
     } | null> => {
-      if (browserAttempted || !options.renderPage) return null;
+      if (browserAttempted) return null;
+      if (!options.renderPage) {
+        note('Browser fallback: not configured');
+        return null;
+      }
       browserAttempted = true;
+      stage = 'Browser fallback';
 
       try {
         const rendered = await options.renderPage(target.toString());
-        if (!rendered) return null;
+        if (!rendered) {
+          note('Browser fallback: service returned no usable page');
+          return null;
+        }
 
         for (const navigationUrl of [...rendered.navigationUrls, rendered.finalUrl]) {
           assertPublicTarget(new URL(navigationUrl), blockedHostname);
@@ -1503,8 +1607,20 @@ export async function fetchProductMetadata(
           finalAdapter?.htmlByteLimit ?? MAX_HTML_BYTES
         );
         const metadata = await extractMetadata(html, renderedProductUrl);
+        note(
+          metadata.challengeDetected
+            ? 'Browser fallback: verification page'
+            : 'Browser fallback: page received'
+        );
         return metadata.challengeDetected ? null : { html, metadata };
       } catch (error) {
+        note(
+          error instanceof ProductRenderError
+            ? `Browser fallback: ${error.message}`
+            : error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+              ? 'Browser fallback: timed out'
+              : 'Browser fallback: failed or unsafe response rejected'
+        );
         console.warn(
           JSON.stringify({
             event: 'product_browser_render_rejected',
@@ -1522,6 +1638,7 @@ export async function fetchProductMetadata(
       if (!adapter || !retryTarget || retryTarget.toString() === target.toString()) return false;
 
       challengeRetries += 1;
+      stage = 'Retailer retry';
       productUrl = adapter.canonicalUrl(target).toString();
       target = retryTarget;
       return true;
@@ -1537,6 +1654,7 @@ export async function fetchProductMetadata(
         signal,
         headers: productPageRequestHeaders()
       });
+      note(`${stage}: HTTP ${response.status}`);
 
       if ([301, 302, 303, 307, 308].includes(response.status)) {
         const location = response.headers.get('location');
@@ -1562,7 +1680,8 @@ export async function fetchProductMetadata(
               metadata = await enhanceMetadataWithAi(
                 rendered.html,
                 metadata,
-                options.extractWithAi
+                options.extractWithAi,
+                note
               );
             }
             if (metadata.title || metadata.price) {
@@ -1574,6 +1693,7 @@ export async function fetchProductMetadata(
                 aiAssisted: metadata.aiAssisted
               };
             }
+            note('Extraction: no usable name or price found');
           }
         }
         throw new ProductMetadataError('That page wouldn’t share its product details.');
@@ -1581,6 +1701,7 @@ export async function fetchProductMetadata(
 
       const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
       if (contentType && !contentType.includes('text/html') && !contentType.includes('xhtml')) {
+        note(`${stage}: not an HTML page`);
         await response.body?.cancel();
         throw new ProductMetadataError('That link isn’t an ordinary product page.');
       }
@@ -1591,6 +1712,7 @@ export async function fetchProductMetadata(
       );
       let metadata = await extractMetadata(html, productUrl);
       if (metadata.challengeDetected) {
+        note(`${stage}: verification page`);
         if (applyRetailerRetry()) continue;
         const rendered = await renderFallback();
         if (rendered) {
@@ -1602,6 +1724,7 @@ export async function fetchProductMetadata(
           );
         }
       } else if (!metadata.title && !metadata.price) {
+        note(`${stage}: no name or price found`);
         const rendered = await renderFallback();
         if (rendered) {
           html = rendered.html;
@@ -1609,9 +1732,10 @@ export async function fetchProductMetadata(
         }
       }
       if (options.extractWithAi) {
-        metadata = await enhanceMetadataWithAi(html, metadata, options.extractWithAi);
+        metadata = await enhanceMetadataWithAi(html, metadata, options.extractWithAi, note);
       }
       if (!metadata.title && !metadata.price) {
+        note('Extraction: no usable name or price found');
         throw new ProductMetadataError(
           'We couldn’t find a name or price on that page. You can still add the details by hand.'
         );
@@ -1626,13 +1750,28 @@ export async function fetchProductMetadata(
       };
     }
   } catch (error) {
-    if (error instanceof ProductMetadataError) throw error;
+    if (!(error instanceof ProductMetadataError)) {
+      note(
+        error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+          ? `${stage}: timed out`
+          : `${stage}: request or processing failed`
+      );
+    }
+    note(`Total: ${Date.now() - started} ms`);
+    if (error instanceof ProductMetadataError) {
+      error.diagnostics = diagnostics;
+      throw error;
+    }
     console.error(
       JSON.stringify({
         event: 'product_metadata_fetch_failed',
         errorName: error instanceof Error ? error.name : 'UnknownError'
       })
     );
-    throw new ProductMetadataError('We couldn’t fetch that page. Check the link and try again.');
+    const failure = new ProductMetadataError(
+      'We couldn’t fetch that page. Check the link and try again.'
+    );
+    failure.diagnostics = diagnostics;
+    throw failure;
   }
 }

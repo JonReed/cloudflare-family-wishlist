@@ -15,6 +15,7 @@ export type WaitingFamilyMember = {
   email: string;
   displayName: string;
   invitedAt: string;
+  memberId: string | null;
 };
 
 export type AttentionFamilyMember = {
@@ -61,6 +62,7 @@ type WaitingFamilyMemberRow = {
   display_name: string;
   created_at: string;
   status: 'active' | 'pending' | 'cleanup_required';
+  member_id: string | null;
 };
 
 type RemovingFamilyMemberRow = {
@@ -126,9 +128,9 @@ export async function listFamilyPeople(db: D1Database): Promise<FamilyPerson[]> 
   const [joinedResult, waitingResult, removingResult] = await Promise.all([
     db
       .prepare(
-        `SELECT id, email, display_name, role, created_at
+        `SELECT id, email, display_name, role, first_signed_in_at AS created_at
        FROM members
-       WHERE disabled_at IS NULL
+       WHERE disabled_at IS NULL AND first_signed_in_at IS NOT NULL
        ORDER BY
          CASE role WHEN 'admin' THEN 0 ELSE 1 END,
          display_name COLLATE NOCASE,
@@ -142,13 +144,15 @@ export async function listFamilyPeople(db: D1Database): Promise<FamilyPerson[]> 
          family_invitations.email,
          family_invitations.display_name,
          family_invitations.created_at,
-         family_invitations.status
+         family_invitations.status,
+         (SELECT id FROM members WHERE members.email = family_invitations.email COLLATE NOCASE) AS member_id
        FROM family_invitations
        WHERE family_invitations.status IN ('active', 'pending', 'cleanup_required')
        AND NOT EXISTS (
          SELECT 1
          FROM members
          WHERE members.email = family_invitations.email COLLATE NOCASE
+           AND (members.first_signed_in_at IS NOT NULL OR members.disabled_at IS NOT NULL)
        )
        ORDER BY family_invitations.created_at, family_invitations.display_name COLLATE NOCASE`
       )
@@ -179,7 +183,8 @@ export async function listFamilyPeople(db: D1Database): Promise<FamilyPerson[]> 
     id: row.id,
     email: row.email,
     displayName: row.display_name,
-    invitedAt: row.created_at
+    invitedAt: row.created_at,
+    memberId: row.member_id
   }));
   const removing = removingResult.results.map((row): RemovingFamilyMember => ({
     status: 'removing',
@@ -202,7 +207,7 @@ export async function beginFamilyInvitation(
   const availability = await db
     .prepare(
       `SELECT
-         (SELECT role FROM members WHERE id = ?1 LIMIT 1) AS inviter_role,
+         (SELECT role FROM members WHERE id = ?1 AND disabled_at IS NULL LIMIT 1) AS inviter_role,
          EXISTS(
            SELECT 1 FROM members WHERE email = ?2 COLLATE NOCASE
          ) AS member_exists,
@@ -241,6 +246,7 @@ export async function beginFamilyInvitation(
          FROM members
          WHERE members.id = ?4
            AND members.role = 'admin'
+           AND members.disabled_at IS NULL
            AND NOT EXISTS (
              SELECT 1 FROM members existing_member
              WHERE existing_member.email = ?2 COLLATE NOCASE
@@ -268,16 +274,40 @@ export async function activateFamilyInvitation(
   invitationId: string,
   accessPolicyId: string
 ): Promise<void> {
-  const result = await db
-    .prepare(
-      `UPDATE family_invitations
+  // Activation and the member/list pair commit together: failed provisioning
+  // leaves the invitation pending so the caller can safely compensate Access.
+  const [result] = await db.batch([
+    db
+      .prepare(
+        `UPDATE family_invitations
        SET access_policy_id = ?1, status = 'active'
-       WHERE id = ?2 AND status IN ('pending', 'cleanup_required')`
-    )
-    .bind(accessPolicyId, invitationId)
-    .run();
+       WHERE id = ?2 AND (
+         status IN ('pending', 'cleanup_required')
+         OR (status = 'active' AND access_policy_id = ?1)
+       )`
+      )
+      .bind(accessPolicyId, invitationId),
+    db
+      .prepare(
+        `INSERT INTO members (id, email, display_name, role)
+      SELECT ?1, email, display_name, 'member' FROM family_invitations
+      WHERE id = ?2 AND status = 'active' AND access_policy_id = ?3
+      ON CONFLICT (email) DO NOTHING`
+      )
+      .bind(crypto.randomUUID(), invitationId, accessPolicyId),
+    db
+      .prepare(
+        `INSERT INTO wishlists (id, owner_member_id)
+      SELECT ?1, members.id FROM members
+      INNER JOIN family_invitations ON family_invitations.email = members.email COLLATE NOCASE
+      WHERE family_invitations.id = ?2 AND family_invitations.status = 'active'
+        AND family_invitations.access_policy_id = ?3 AND members.disabled_at IS NULL
+      ON CONFLICT (owner_member_id) DO NOTHING`
+      )
+      .bind(crypto.randomUUID(), invitationId, accessPolicyId)
+  ]);
 
-  if (!result.success || result.meta.changes !== 1) {
+  if (!result?.success || result.meta.changes !== 1) {
     throw new FamilyMemberInputError(
       'The invitation could not be completed. Nothing has been admitted, so it is safe to try again.'
     );

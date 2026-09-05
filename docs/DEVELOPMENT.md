@@ -167,7 +167,9 @@ after reading the account-specific private handoff and verifying the active Wran
 ### Authentication or Access
 
 - Treat `workers/app.ts` and `app/lib/auth/access.ts` as one security boundary.
-- Verify signature, issuer, audience, expiry, subject and email before provisioning.
+- Verify signature, issuer, audience, expiry, subject and email before resolving a signed-in member.
+  Invitation activation creates the member and wishlist atomically after Access succeeds; do not
+  record a first sign-in until that person authenticates. Test pre-login wishes and later claim privacy.
 - Fail closed when production configuration or the assertion is missing.
 - Keep the development identity restricted to a development build and a loopback hostname.
 - Never log assertions, tokens or full authentication payloads.

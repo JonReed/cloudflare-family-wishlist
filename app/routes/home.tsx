@@ -14,6 +14,7 @@ import {
 } from '../lib/cloudflare/access-public-sharing';
 import { ensureMemberForEmail } from '../lib/db/members';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
+import { ProductDiagnostics } from '../components/product-diagnostics';
 import {
   createBrowserRunProductRenderer,
   createWorkersAiProductExtractor,
@@ -170,7 +171,8 @@ export async function action({ request, context }: Route.ActionArgs) {
               { productUrl: '', title: '', price: '', imageUrl: '', aiAssisted: false },
               typeof productUrl === 'string' ? productUrl.slice(0, 2048) : ''
             ),
-            fetchError: error.message
+            fetchError: error.message,
+            diagnostics: error instanceof ProductMetadataError ? error.diagnostics : undefined
           };
         }
       }
@@ -957,19 +959,28 @@ function AddWishPanel({
     </button>
   );
   const urlStatus = (
-    <p
-      className={fetchError ? 'product-fetch-status product-fetch-error' : 'product-fetch-status'}
-      role="status"
-      aria-live="polite"
-      data-product-status
-    >
-      {fetchError ??
-        (fetchedDraft
-          ? fetchedDraft.aiAssisted
-            ? 'We found some details with a little AI help. Check them before adding.'
-            : 'We found some details. Check them before adding.'
-          : '')}
-    </p>
+    <>
+      <p
+        className={fetchError ? 'product-fetch-status product-fetch-error' : 'product-fetch-status'}
+        role="status"
+        aria-live="polite"
+        data-product-status
+      >
+        {fetchError ??
+          (fetchedDraft
+            ? fetchedDraft.aiAssisted
+              ? 'We found some details with a little AI help. Check them before adding.'
+              : 'We found some details. Check them before adding.'
+            : '')}
+      </p>
+      <ProductDiagnostics
+        diagnostics={
+          fetchError && actionData && 'diagnostics' in actionData
+            ? actionData.diagnostics
+            : undefined
+        }
+      />
+    </>
   );
 
   return (

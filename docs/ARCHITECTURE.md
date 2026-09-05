@@ -63,9 +63,11 @@ enforcement cannot disagree.
 1. Access rejects identities outside the deployment's exact email allow-list and handles the OTP UI.
 2. `workers/app.ts` verifies the Access assertion and builds an immutable request context containing
    the verified identity and D1 binding.
-3. A route calls `ensureMemberForEmail()`. Unique database constraints make concurrent first
-   requests converge on one member and one wishlist. Only the email in `INITIAL_ORGANISER_EMAIL` can
-   create the first admin; subsequent people require a completed exact-email invitation.
+3. A route calls `ensureMemberForEmail()`. It resolves the existing member/list by verified email and
+   records `first_signed_in_at` once, preserving wishes added before login. Only the email in
+   `INITIAL_ORGANISER_EMAIL` can bootstrap the first admin. Subsequent member/list pairs are created
+   atomically when their exact-email invitation is activated after Access succeeds; unique constraints
+   also preserve the legacy first-request path and concurrent-login safety.
 4. The loader requests all family wishlists for the viewer. Their own list sorts first; `?list=` chooses
    the active list rendered in the document.
 5. Forms post an explicit intent to an action. Before authentication or routing, the Worker requires
@@ -105,8 +107,11 @@ application. The final D1 state retains the member, wishlist and history while r
 An interrupted removal remains visible and can be finished safely; deleting an already absent policy
 is idempotent.
 
-Authentication happens before provisioning. There is no application endpoint that accepts an email
-address and creates a member without a verified Access identity.
+The organiser must be authenticated before inviting anyone. Invitation activation creates the
+member/list in the same D1 batch, after the exact-email Access policy succeeds. An invited owner need
+not sign in before the family can add wishes. There is no public member-creation endpoint.
+Migration 0012 backfills only completed active invitations, preserves existing member/list IDs and
+marks pre-existing members as already signed in using their original creation timestamp.
 
 ## Framework decision
 
@@ -354,6 +359,17 @@ Product import is deliberately staged:
    validated candidate. The model cannot provide or invent an image URL.
 7. Return an editable draft. Browser and AI timeouts, exhausted free allocations, capacity errors
    and invalid output quietly leave the best deterministic result or manual form in place.
+
+JSON-LD product candidates remain separate. Prefer an exact product URL, then the page's explicit
+main entity, then page relationships and query-independent URL matches; otherwise retain the first
+product for compatibility. Exact variant URLs outrank query-independent matches. Only the selected
+product contributes structured titles, offers and pictures, so recommendations cannot fill its gaps.
+
+Failed lookups carry a safe diagnostic summary to both the JSON helper and ordinary form responses:
+the requested hostname, attempted fetch/retry/browser stages, numeric HTTP statuses, fixed outcome
+descriptions and elapsed time. No page HTML, full URLs, query strings, credentials, response headers
+or raw exception messages enter this summary. Browser-service failures and shop failures are distinct.
+The form keeps these details collapsed, with an optional clipboard control and selectable text.
 
 Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the
 first choice; AI image selection happens only as part of an already-needed enrichment pass and only

@@ -18,12 +18,16 @@ Cloudflare API; only then can that person request an emailed one-time PIN from C
 application sees only a verified email identity after Access has admitted it.
 
 The deployment names the initial organiser's exact email address before anybody can be provisioned.
-On every admitted person's first successful request, the application creates:
+Once the organiser successfully adds an exact email address, the application creates:
 
 - one member record for that email; and
 - one wishlist owned by that member.
 
-The application records who is waiting to join and prepares a friendly invitation for the organiser
+The wishlist is immediately available for family members to add wishes, even before its owner signs
+in. First sign-in reuses that member and wishlist by email and preserves all existing wishes. The
+initial organiser is the only person whose record is created at first sign-in.
+
+The application records who has not signed in yet and prepares a friendly invitation for the organiser
 to share through email, WhatsApp or any preferred private channel. Cloudflare handles sign-in, so
 the family gets one-time PIN access without an application password or reset flow. Removing access
 preserves the person's wishlist and history in D1 for the family.
@@ -42,11 +46,12 @@ members use separate identities and remain signed in.
 ### Join the family space
 
 1. The organiser enters a name and exact sign-in email on **Your family**.
-2. The Worker adds an exact-email Allow policy in Cloudflare Access and records the person as waiting.
+2. The Worker adds an exact-email Allow policy in Cloudflare Access, then atomically activates the
+   invitation and creates the member and wishlist. The family can start adding wishes immediately.
 3. The organiser copies and privately shares the application link.
 4. The person requests and enters Cloudflare's one-time PIN.
 5. The Worker validates the signed Access assertion.
-6. The application idempotently creates their member and wishlist, using the invited display name.
+6. The application resolves their existing member and wishlist by email and records their first sign-in.
 
 The exact Access allow-list makes every membership intentional: a working mailbox becomes a family
 identity only after the organiser has invited that precise address.
@@ -136,7 +141,7 @@ agreement rather than an ordinary implementation detail.
 ## Available today
 
 - Access OTP authentication, exact-email admission and 30-day application sessions;
-- first-login member and wishlist provisioning;
+- invitation-time member and wishlist creation, with first-login organiser bootstrap;
 - self-service display-name editing from a personal profile page;
 - organiser-only family admission with joined and waiting-to-join states;
 - organiser-controlled member removal, including an explicit confirmation, immediate

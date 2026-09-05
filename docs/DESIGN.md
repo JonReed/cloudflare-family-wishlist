@@ -49,7 +49,10 @@ conventional button label or an action name explains any unfamiliar setup intera
 search field, exact choice and visible result. Every route must explicitly end at an editable draft,
 not imply that a wish is saved automatically.
 
-Household administration lives on the separate, infrequently visited **Your family** page. It shows
+Household administration lives on the separate, infrequently visited **Your family** page. Adding
+someone creates their wishlist immediately; their exact email remains required. Show **Not signed
+in yet** until their first authenticated visit, keep the invitation copy control available, and allow
+the organiser to remove access even before that visit. It shows
 joined people and those waiting for their first login, with an add form kept apart from the everyday
 wishlist. Cloudflare policy terminology and deployment setup stay out of family-facing copy so the
 normal list never feels like an admin console. Put **Remove access** behind a native disclosure with
@@ -109,6 +112,11 @@ also dismisses any earlier product-lookup feedback so it cannot duplicate the au
 result. The same add remains an ordinary server form and redirect without JavaScript. Adding a wish
 without a link remains supported. Titles, useful buying notes, an
 approximate price and a human description of priority are enough.
+
+Failed product lookups keep their friendly message and manual-entry route. A collapsed **Technical
+details** disclosure below the message shows a safe, selectable troubleshooting summary; **Copy
+diagnostics** appears when clipboard support is available. Keep it out of successful and empty states,
+and clear it when the link changes, another lookup starts or the wish is submitted.
 
 When the add form follows the list on narrower screens, show “Add a wish” beside the list heading
 as a native jump link to its focusable form heading. Keep the wishlist compact: a small gap after

@@ -441,10 +441,15 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 
 Open **Your family**, add one test address and confirm that:
 
-1. it appears as **Waiting to join**;
+1. it appears as **Not signed in yet**, with a wishlist available immediately;
 2. **Copy invitation** includes the application address and exact sign-in email;
 3. an unrelated address receives no OTP and cannot enter; and
-4. after the invited address completes OTP, it appears as **Joined** with one wishlist.
+4. add a wish before that person signs in; after they complete OTP, they appear as **Joined** with
+   the same wishlist and wish. Any claim remains hidden from them.
+
+For an existing deployment, apply migration `0012_invited_wishlists.sql` before deploying code that
+uses `first_signed_in_at`. It also creates wishlists for existing completed invitations; pending,
+cleanup-required and revoked invitations are excluded. Remote migration requires operator approval.
 
 The application creates one exact-email Access policy, records the waiting invitation in D1 and gives
 the organiser a warm, ready-to-send message for their preferred private channel.

@@ -48,7 +48,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     return Response.json(metadata);
   } catch (error) {
     if (error instanceof ProductMetadataError) {
-      return Response.json({ error: error.message }, { status: 400 });
+      return Response.json(
+        { error: error.message, diagnostics: error.diagnostics },
+        { status: 400 }
+      );
     }
 
     if (error instanceof ProductLookupRateLimitError) {

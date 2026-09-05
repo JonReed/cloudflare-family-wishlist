@@ -1078,6 +1078,27 @@
   display: none;
 }
 
+.product-diagnostics {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.product-diagnostics summary {
+  cursor: pointer;
+}
+.product-diagnostics pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  margin-block: 0.5rem;
+}
+.product-diagnostics button {
+  min-height: 44px;
+}
+.product-diagnostics [role='status'] {
+  display: block;
+}
+
 .product-fetch-error {
   color: var(--rust);
 }
@@ -1773,8 +1794,13 @@ button:disabled {
 
 .family-invite-copy {
   display: grid;
+  min-width: 0;
   justify-items: end;
   gap: 0.35rem;
+}
+
+.family-invite-copy .family-remove-access {
+  grid-column: 1;
 }
 
 .family-remove-access {

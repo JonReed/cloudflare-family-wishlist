@@ -32,8 +32,9 @@ Retrieve current Cloudflare and React Router documentation before relying on API
 
 - Cloudflare Access is the admission list and login UI. The application does not store passwords or
   send login email.
-- A successfully authenticated email is provisioned as one `member` plus one `wishlist` on first
-  request. Access admission must happen before provisioning; there is no public sign-up flow.
+- A completed organiser invitation creates one `member` plus one `wishlist` after Access admission
+  succeeds. First login reuses them by verified email; only the organiser bootstraps on first request.
+  There is no public sign-up flow, and a wishlist can receive wishes before its owner signs in.
 - The first provisioned member has the `admin` role and is called the family organiser in the UI.
   Later members default to `member`; role currently controls only the `/family` admission page.
 - Every admitted member can see and edit every wishlist. “Owner” and “gift-giver” are contextual
