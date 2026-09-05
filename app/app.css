@@ -506,6 +506,18 @@
   gap: 0.45rem;
 }
 
+.add-wish-shortcut {
+  display: none;
+  color: var(--leaf);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-underline-offset: 0.22rem;
+}
+
+.add-wish-panel h2 {
+  scroll-margin-top: 1.5rem;
+}
+
 .wishlist-heading h2,
 .no-lists h2 {
   margin: 0.5rem 0 0;
@@ -725,7 +737,7 @@
 }
 
 .wish-list {
-  margin: 2.5rem 0 0;
+  margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -737,7 +749,11 @@
   column-gap: 2.5rem;
   row-gap: 0.85rem;
   border-top: 1px solid var(--line);
-  padding: 2rem 0 2.15rem 1.1rem;
+  padding: 1.65rem 0 1.75rem 1.1rem;
+}
+
+.wish-row:first-child {
+  border-top: 0;
 }
 
 .wish-row-with-claim {
@@ -746,8 +762,8 @@
 
 .wish-row::before {
   position: absolute;
-  top: 2rem;
-  bottom: 2.15rem;
+  top: 1.65rem;
+  bottom: 1.75rem;
   left: 0;
   width: 3px;
   content: '';
@@ -1071,7 +1087,7 @@
   gap: 1.2rem;
 }
 
-.product-image-field {
+.product-image-field:has([data-product-image-preview]:not([hidden])) {
   border-block: 1px solid rgb(48 51 41 / 0.14);
   background: rgb(135 168 143 / 0.08);
   padding: 0.7rem;
@@ -1079,19 +1095,21 @@
 
 .product-image-overview {
   display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.7rem;
   align-items: start;
 }
 
-.product-image-preview,
-.product-image-empty {
+.product-image-overview:has([data-product-image-preview]:not([hidden])) {
+  grid-template-columns: 4rem minmax(0, 1fr);
+}
+
+.product-image-preview {
   width: 4rem;
   aspect-ratio: 1;
 }
 
 .product-image-preview[hidden],
-.product-image-empty[hidden],
 [data-product-image-present][hidden],
 [data-product-image-missing][hidden],
 .product-image-remove[hidden] {
@@ -1102,21 +1120,6 @@
   display: block;
   aspect-ratio: 1;
   box-shadow: 2px 3px 0 rgb(88 69 46 / 0.08);
-}
-
-.product-image-empty {
-  display: grid;
-  place-items: center;
-  border: 1px dashed rgb(48 51 41 / 0.28);
-  background: rgb(255 250 240 / 0.68);
-  color: var(--leaf);
-}
-
-.product-image-empty span {
-  font-family: var(--font-display);
-  font-size: 2.25rem;
-  font-weight: 400;
-  line-height: 1;
 }
 
 .product-image-copy {
@@ -1136,6 +1139,9 @@
   flex-wrap: wrap;
   gap: 0.6rem;
   align-items: start;
+}
+
+.product-image-copy:not([hidden]) + .product-image-actions {
   margin-top: 0.45rem;
 }
 
@@ -1917,6 +1923,10 @@ button:disabled {
 }
 
 @media (max-width: 70rem) {
+  .add-wish-shortcut {
+    display: inline;
+  }
+
   .parcel-hero {
     min-height: 7.5rem;
   }

@@ -27,12 +27,8 @@ export function ProductImageField({
           />
         </div>
 
-        <div className="product-image-empty" data-product-image-empty="" hidden={hasPreview}>
-          <span aria-hidden="true">+</span>
-        </div>
-
         <div className="product-image-details">
-          <div className="product-image-copy">
+          <div className="product-image-copy" data-product-image-present="" hidden={!hasPreview}>
             <p className="form-label">Picture</p>
           </div>
 

@@ -860,6 +860,9 @@ function WishlistSheet({
           <p className="wish-count">
             {wishlist.items.length} {wishlist.items.length === 1 ? 'wish' : 'wishes'}
           </p>
+          <a className="add-wish-shortcut" href={`#add-${wishlist.id}-heading`}>
+            Add a wish
+          </a>
           <ShareWishlistPanel
             wishlist={wishlist}
             linkCount={shareLinkCount}
@@ -970,9 +973,9 @@ function AddWishPanel({
   );
 
   return (
-    <aside className="add-wish-panel" aria-labelledby={`${addFormId}-title`}>
+    <aside className="add-wish-panel" aria-labelledby={`${addFormId}-heading`}>
       <span aria-hidden="true" className="add-panel-tape" />
-      <h2 id={`${addFormId}-title`}>
+      <h2 id={`${addFormId}-heading`} tabIndex={-1}>
         {wishlist.isOwn ? 'Add to wishlist' : `Add something for ${wishlist.owner.displayName}`}
       </h2>
 

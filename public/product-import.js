@@ -6,7 +6,6 @@ for (const field of document.querySelectorAll('[data-product-image-field]')) {
   const imageInput = field.querySelector('[data-product-image]');
   const imagePreview = field.querySelector('[data-product-image-preview]');
   const imagePreviewImage = field.querySelector('[data-product-image-preview-image]');
-  const imageEmpty = field.querySelector('[data-product-image-empty]');
   const removeButton = field.querySelector('[data-product-image-remove]');
   const presentCopy = field.querySelectorAll('[data-product-image-present]');
   const missingCopy = field.querySelectorAll('[data-product-image-missing]');
@@ -15,7 +14,6 @@ for (const field of document.querySelectorAll('[data-product-image-field]')) {
     !(imageInput instanceof HTMLInputElement) ||
     !(imagePreview instanceof HTMLElement) ||
     !(imagePreviewImage instanceof HTMLImageElement) ||
-    !(imageEmpty instanceof HTMLElement) ||
     !(removeButton instanceof HTMLButtonElement)
   ) {
     continue;
@@ -23,7 +21,6 @@ for (const field of document.querySelectorAll('[data-product-image-field]')) {
 
   const showPreview = (hasPreview) => {
     imagePreview.hidden = !hasPreview;
-    imageEmpty.hidden = hasPreview;
     for (const element of presentCopy) element.hidden = !hasPreview;
     for (const element of missingCopy) element.hidden = hasPreview;
   };

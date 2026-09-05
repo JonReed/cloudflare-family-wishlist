@@ -110,6 +110,10 @@ result. The same add remains an ordinary server form and redirect without JavaSc
 without a link remains supported. Titles, useful buying notes, an
 approximate price and a human description of priority are enough.
 
+When the add form follows the list on narrower screens, show “Add a wish” beside the list heading
+as a native jump link to its focusable form heading. Keep the wishlist compact: a small gap after
+the heading, no extra rule above the first wish, and restrained row padding.
+
 In the saved list, put “Edit this wish” on its own line below the item content. Opening the editor must
 not change the position or width of the image, metadata or claim controls above it. With JavaScript,
 saving closes the editor, updates the wish in place, shows “Changes saved.” beside “Edit this wish”,
@@ -127,7 +131,9 @@ edit-field validation and retains the ordinary form redirect without JavaScript.
 
 When a shop publishes a product image, show it as a modest square preview rather than turning the
 wishlist into a catalogue grid. The picture is an editable convenience: it may be removed or replaced
-before saving. Lead with the preview or a friendly “No picture yet” state; keep the direct picture
+before saving. With no picture, show a compact “Add a picture” control without an empty thumbnail,
+shaded block or repeated label. Show the thumbnail and labelled picture controls once a preview
+exists; keep the direct picture
 address behind explicit **Add picture** or **Change picture** controls so implementation language does
 not dominate the form. Saved images support recognition beside the wish's written details; they do
 not replace the wish name, and repeated adjacent alt text should be avoided.
