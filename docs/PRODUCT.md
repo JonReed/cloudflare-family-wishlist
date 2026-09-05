@@ -100,6 +100,10 @@ claim as purchased. Other gift-givers can see who has claimed it and its state.
 On the owner's list, claim information is absent—not blurred, redacted or hidden with CSS. This rule
 applies to rendered HTML, loader data, future APIs, logs and error details.
 
+Marking a gift purchased never removes the wish. It can remain useful for repeat gifts or several
+of the same thing; notes are sufficient for explaining that. Removal is a separate, explicit,
+confirmed action beside Edit. Removed wishes are deleted, not archived.
+
 ### Share gift ideas outside the family
 
 Any admitted family member can create a viewing link for one person's wishlist and send it to a

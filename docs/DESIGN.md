@@ -80,9 +80,11 @@ creation date, a route back to the wishlist and an explicit **Stop sharing this 
 that each wishlist can have up to five active links and that each readable address is shown only when
 made. Keep technical terms such as “revoke” out of family-facing controls and explanations.
 
-Stopping sharing updates the row in place after server confirmation and preserves unfinished profile
+Stopping sharing first opens a native disclosure explaining that the link will stop working, with
+a second explicit **Yes, stop sharing this link** action. Closing the disclosure cancels without
+changing anything. Stopping sharing updates the row in place after server confirmation and preserves unfinished profile
 edits. Show pending feedback and errors beside that link. Move focus to the next link's stop-sharing
-button, the previous one if necessary, or the empty message when none remain; leave focus alone if
+summary, the previous one if necessary, or the empty message when none remain; leave focus alone if
 the person moved elsewhere while waiting. Without JavaScript, retain the normal form redirect.
 
 Access sign-out affects the same email on every device, so it does not belong in the everyday header.
@@ -131,10 +133,16 @@ unenhanced save retains the ordinary form redirect. Label only the exceptional *
 **Nice to have** priorities; ordinary wishes need no “Would love” marker. Present top wishes first,
 ordinary wishes second and nice-to-have wishes last, with newer additions first inside each group.
 
+Put a quiet **Remove** disclosure beside **Edit this wish**, outside the editor. It names the wish,
+explains that removal cannot be undone, and requires **Yes, remove this wish** before submitting.
+Closing the disclosure cancels. This follows the same two-step pattern as stopping sharing and
+removing family access, including without JavaScript. Draft-only picture removal and reversible
+gift-claim changes do not need an extra confirmation.
+
 Removing a wish shows a local pending state and waits for the server before removing its row and
 updating the count. Focus moves to the next wish, the previous wish when removing the last row, or
 the empty-list message when no wishes remain. If the person moves focus elsewhere while waiting,
-leave it there. Failed removals keep the editor and show its local error. Removal ignores unfinished
+leave it there. Failed removals keep the confirmation open and show its local error. Removal ignores unfinished
 edit-field validation and retains the ordinary form redirect without JavaScript.
 
 When a shop publishes a product image, show it as a modest square preview rather than turning the

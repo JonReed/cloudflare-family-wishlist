@@ -906,8 +906,42 @@
   line-height: 1.4;
 }
 
-.edit-panel {
+.wish-item-actions {
   grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: start;
+  column-gap: 1.25rem;
+}
+
+.wish-item-actions > details,
+.wish-item-actions > details::details-content {
+  display: contents;
+}
+
+/* Flatten the open panels into the shared grid without exposing closed forms. */
+.wish-item-actions > details:not([open]) > form {
+  display: none;
+}
+
+.wish-item-actions > details > summary {
+  grid-row: 1;
+}
+
+.wish-item-actions .edit-panel > summary {
+  grid-column: 1;
+}
+
+.wish-item-actions .remove-wish-panel > summary {
+  grid-column: 2;
+}
+
+.wish-item-actions form {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.edit-panel {
   min-width: 0;
   font-size: 0.85rem;
   font-weight: 700;
@@ -945,6 +979,32 @@
   margin-top: 1rem;
   border-top: 1px dashed rgb(48 51 41 / 0.25);
   padding-top: 1rem;
+}
+
+.removal-confirmation > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--rust);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.25rem;
+}
+
+.removal-confirmation > summary:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 4px;
+}
+
+.removal-confirmation form {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.removal-confirmation form > p:first-child {
+  margin: 0 0 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 .edit-form-fields {

@@ -106,7 +106,9 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
     if (document.activeElement !== document.body) return;
     const nextId = removal.candidates.find((id) => sharedLists.some((link) => link.id === id));
     const target = nextId
-      ? shares.querySelector<HTMLElement>(`[data-share-id="${nextId}"] button`)
+      ? shares.querySelector<HTMLElement>(
+          `[data-share-id="${nextId}"] .removal-confirmation > summary`
+        )
       : (shares.querySelector<HTMLElement>('.profile-shares-empty') ??
         shares.querySelector<HTMLElement>('#shared-lists-title'));
     target?.focus({ preventScroll: true });

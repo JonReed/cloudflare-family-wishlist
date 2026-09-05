@@ -27,33 +27,37 @@ export function StopSharingForm({
   }, [fetcher.data, fetcher.state, onRemovalError]);
 
   return (
-    <fetcher.Form
-      method="post"
-      action="/profile"
-      aria-busy={isPending || undefined}
-      onSubmit={(event) => {
-        if (isPending) {
-          event.preventDefault();
-          return;
-        }
-        if (markerRef.current) markerRef.current.value = 'true';
-        onRemovalStart(shareLinkId);
-      }}
-    >
-      <input type="hidden" name="intent" value="revoke-share-link" />
-      <input type="hidden" name="shareLinkId" value={shareLinkId} />
-      <input ref={markerRef} type="hidden" name="enhancedRemoval" defaultValue="false" />
-      <button type="submit" className="button-danger" disabled={isPending}>
-        {isPending ? 'Stopping sharing…' : 'Stop sharing this link'}
-      </button>
-      <p
-        ref={errorRef}
-        className="mutation-submit-status mutation-submit-error"
-        role="alert"
-        tabIndex={-1}
+    <details className="removal-confirmation">
+      <summary>Stop sharing this link</summary>
+      <fetcher.Form
+        method="post"
+        action="/profile"
+        aria-busy={isPending || undefined}
+        onSubmit={(event) => {
+          if (isPending) {
+            event.preventDefault();
+            return;
+          }
+          if (markerRef.current) markerRef.current.value = 'true';
+          onRemovalStart(shareLinkId);
+        }}
       >
-        {error}
-      </p>
-    </fetcher.Form>
+        <p>This link will stop working for everyone who has it. Your wishlist will stay here.</p>
+        <input type="hidden" name="intent" value="revoke-share-link" />
+        <input type="hidden" name="shareLinkId" value={shareLinkId} />
+        <input ref={markerRef} type="hidden" name="enhancedRemoval" defaultValue="false" />
+        <button type="submit" className="button-danger" disabled={isPending}>
+          {isPending ? 'Stopping sharing…' : 'Yes, stop sharing this link'}
+        </button>
+        <p
+          ref={errorRef}
+          className="mutation-submit-status mutation-submit-error"
+          role="alert"
+          tabIndex={-1}
+        >
+          {error}
+        </p>
+      </fetcher.Form>
+    </details>
   );
 }

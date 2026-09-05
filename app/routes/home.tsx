@@ -3,6 +3,7 @@ import { Link, redirect, useFetcher } from 'react-router';
 
 import { AddWishForm } from '../components/add-wish-form';
 import { EditWishForm } from '../components/edit-wish-form';
+import { RemoveWishForm } from '../components/remove-wish-form';
 import { InPlaceActionForm } from '../components/in-place-action-form';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
@@ -572,72 +573,66 @@ function WishlistItemRow({
         </div>
       ) : null}
 
-      <details
-        className="edit-panel"
-        onToggle={(event) => {
-          if (event.currentTarget.open) onEditorOpened();
-        }}
-      >
-        <summary>
-          <span className="edit-summary-label">Edit this wish</span>
-          <span className="edit-saved-status" role="status" aria-live="polite">
-            {wasJustEdited ? 'Changes saved.' : ''}
-          </span>
-        </summary>
-        <EditWishForm
-          actionKey={`edit-wish:${item.id}`}
-          method="post"
-          action={wishlistFormAction(wishlist.id)}
-          className="edit-form"
-          onSubmissionError={onEditError}
-          onSuccess={handleEditSuccess}
-          onSubmit={(event) => {
-            const submitter = event.nativeEvent.submitter;
-            if (submitter instanceof HTMLButtonElement && submitter.value === 'delete-item') {
-              onRemovalStart(item.id);
-            }
+      <div className="wish-item-actions">
+        <details
+          className="edit-panel"
+          onToggle={(event) => {
+            if (event.currentTarget.open) onEditorOpened();
           }}
         >
-          {({ error, isPending, submittedIntent }) => {
-            const isSaving = isPending && submittedIntent === 'edit-item';
-            const isRemoving = isPending && submittedIntent === 'delete-item';
+          <summary>
+            <span className="edit-summary-label">Edit this wish</span>
+            <span className="edit-saved-status" role="status" aria-live="polite">
+              {wasJustEdited ? 'Changes saved.' : ''}
+            </span>
+          </summary>
+          <EditWishForm
+            actionKey={`edit-wish:${item.id}`}
+            method="post"
+            action={wishlistFormAction(wishlist.id)}
+            className="edit-form"
+            onSubmissionError={onEditError}
+            onSuccess={handleEditSuccess}
+          >
+            {({ error, isPending, submittedIntent }) => {
+              const isSaving = isPending && submittedIntent === 'edit-item';
 
-            return (
-              <>
-                <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-                <fieldset className="edit-form-fields" disabled={isPending}>
-                  <ItemFields item={item} formId={formId} recipientName={recipientName} />
-                  <div className="form-actions">
-                    <button name="intent" value="edit-item" className="button-primary">
-                      {isSaving ? 'Saving…' : 'Save changes'}
-                    </button>
-                    <button
-                      name="intent"
-                      value="delete-item"
-                      className="button-danger"
-                      formNoValidate
-                    >
-                      {isRemoving ? 'Removing…' : 'Remove from the list'}
-                    </button>
-                  </div>
-                </fieldset>
-                <p
-                  className={
-                    error
-                      ? 'mutation-submit-status mutation-submit-error'
-                      : 'mutation-submit-status'
-                  }
-                  role={error ? 'alert' : 'status'}
-                  aria-live="polite"
-                  tabIndex={error ? -1 : undefined}
-                >
-                  {error}
-                </p>
-              </>
-            );
-          }}
-        </EditWishForm>
-      </details>
+              return (
+                <>
+                  <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+                  <fieldset className="edit-form-fields" disabled={isPending}>
+                    <ItemFields item={item} formId={formId} recipientName={recipientName} />
+                    <div className="form-actions">
+                      <button name="intent" value="edit-item" className="button-primary">
+                        {isSaving ? 'Saving…' : 'Save changes'}
+                      </button>
+                    </div>
+                  </fieldset>
+                  <p
+                    className={
+                      error
+                        ? 'mutation-submit-status mutation-submit-error'
+                        : 'mutation-submit-status'
+                    }
+                    role={error ? 'alert' : 'status'}
+                    aria-live="polite"
+                    tabIndex={error ? -1 : undefined}
+                  >
+                    {error}
+                  </p>
+                </>
+              );
+            }}
+          </EditWishForm>
+        </details>
+        <RemoveWishForm
+          wishlistId={wishlist.id}
+          itemId={item.id}
+          title={item.title}
+          onRemovalStart={onRemovalStart}
+          onRemovalError={onEditError}
+        />
+      </div>
     </li>
   );
 }
