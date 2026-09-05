@@ -123,6 +123,8 @@ and clear it when the link changes, another lookup starts or the wish is submitt
 When the add form follows the list on narrower screens, show “Add a wish” beside the list heading
 as a native jump link to its focusable form heading. Keep the wishlist compact: a small gap after
 the heading, no extra rule above the first wish, and restrained row padding.
+The active wishlist heading is a modest serif section title, not a display headline: cap it at
+2rem on desktop and use 1.65rem on mobile, with a shallow top inset so wishes begin sooner.
 
 In the saved list, put “Edit this wish” on its own line below the item content. Opening the editor must
 not change the position or width of the image, metadata or claim controls above it. With JavaScript,

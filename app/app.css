@@ -465,6 +465,10 @@
   padding: clamp(2rem, 6vw, 4.5rem);
 }
 
+.wishlist-workspace .wishlist-sheet {
+  padding-top: 2rem;
+}
+
 .paper-tape {
   position: absolute;
   top: -1.45rem;
@@ -506,6 +510,10 @@
   gap: 0.45rem;
 }
 
+.wishlist-workspace .wishlist-heading {
+  padding-bottom: 1rem;
+}
+
 .add-wish-shortcut {
   display: none;
   color: var(--leaf);
@@ -518,7 +526,15 @@
   scroll-margin-top: 1.5rem;
 }
 
-.wishlist-heading h2,
+.wishlist-heading h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 2.4vw, 2rem);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
 .no-lists h2 {
   margin: 0.5rem 0 0;
   font-family: var(--font-display);
@@ -2208,6 +2224,10 @@ button:disabled {
     box-shadow: 4px 6px 0 rgb(88 69 46 / 0.08);
   }
 
+  .wishlist-workspace .wishlist-sheet {
+    padding-top: 1.75rem;
+  }
+
   .share-link-copy {
     grid-template-columns: 1fr;
   }
@@ -2235,7 +2255,7 @@ button:disabled {
   }
 
   .wishlist-heading h2 {
-    font-size: 2.15rem;
+    font-size: 1.65rem;
   }
 
   .wish-count {
