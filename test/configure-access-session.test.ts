@@ -123,7 +123,42 @@ describe('Access session setup', () => {
     expect(client.get).toHaveBeenCalledTimes(2);
   });
 
+  it.each([undefined, null])('supports Worker applications with domain %s', async (domain) => {
+    const before = {
+      ...accessApplication(),
+      domain,
+      destinations: [{ type: 'worker', worker_id: '0123456789abcdef0123456789abcdef' }]
+    };
+    const after = { ...before, session_duration: '720h' };
+    const client = {
+      get: vi.fn().mockResolvedValueOnce(before).mockResolvedValueOnce(after),
+      update: vi.fn().mockResolvedValue(after)
+    };
+    await expect(configureAccessSession(configuration, client)).resolves.toMatchObject({
+      changed: true
+    });
+    expect(client.update).toHaveBeenCalledWith(
+      configuration.applicationId,
+      configuration.accountId,
+      expect.objectContaining({ destinations: before.destinations, session_duration: '720h' })
+    );
+    await expect(
+      checkAccessSession(configuration, { get: vi.fn().mockResolvedValue(after) })
+    ).resolves.toMatchObject({ sessionDuration: '720h' });
+  });
+
   it.each([
+    { ...accessApplication(), domain: 42 },
+    {
+      ...accessApplication(),
+      domain: undefined,
+      destinations: [{ type: 'worker', worker_id: '' }]
+    },
+    {
+      ...accessApplication(),
+      domain: undefined,
+      destinations: [{ type: 'public', uri: 'example.com' }]
+    },
     { ...accessApplication(), id: crypto.randomUUID() },
     { ...accessApplication(), type: 'saas' },
     { ...accessApplication(), destinations: [] },

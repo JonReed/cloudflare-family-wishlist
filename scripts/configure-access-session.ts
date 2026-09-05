@@ -123,7 +123,16 @@ function assertExpectedApplication(
     throw new Error('The configured Access application is not a self-hosted application.');
   }
 
-  if (typeof value.domain !== 'string') {
+  const hasWorkerDestination =
+    Array.isArray(value.destinations) &&
+    value.destinations.some(
+      (destination) =>
+        isRecord(destination) &&
+        destination.type === 'worker' &&
+        typeof destination.worker_id === 'string' &&
+        /^[0-9a-f]{32}$/i.test(destination.worker_id)
+    );
+  if (typeof value.domain !== 'string' && !(value.domain == null && hasWorkerDestination)) {
     throw new Error('The Access application has no readable domain; refusing to update it.');
   }
 

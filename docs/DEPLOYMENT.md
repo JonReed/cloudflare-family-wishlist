@@ -273,13 +273,22 @@ not need an email provider. See Cloudflare's [one-time PIN setup and behaviour](
 
 Use Cloudflare's Worker-level integration rather than protecting only one hostname:
 
+First, in **Zero Trust → Access controls → Policies**, create a reusable policy with action
+**Allow** and an **Include → Emails** rule containing only the organiser's exact email address.
+Give it a recognisable name and leave its policy session duration unset so it inherits the
+application session. The Worker's quick-setup dialog can select this policy, but cannot create an
+exact-email rule itself. Do not choose its whole-email-domain or Cloudflare-account presets.
+
 1. go to **Workers & Pages** and select your Worker;
 2. open its **Access** tab;
 3. select **Protect this Worker behind Access**;
 4. choose **All traffic**, not previews only;
-5. create an Allow policy whose Include rule contains only the organiser's **exact email address**;
-6. select only **One-time PIN** as the application's login method; and
-7. apply Access.
+5. select the exact-email reusable policy you just created; and
+6. apply Access.
+
+Then open **Manage Access app** from the Worker's Access tab. Under **Authentication → Identity**,
+turn off **Accept all available identity providers**, select only **onetimepin**, and save.
+The quick-setup dialog does not offer this login-method setting.
 
 Worker-level Access protects the production Worker, its `workers.dev` address, custom domains, routes
 and preview deployments together. Cloudflare documents this as the safest and most straightforward
@@ -402,6 +411,10 @@ later source deployments preserve dashboard-managed variables and secrets.
 Apply and verify the 30-day Access application session from this checkout. Export the two public
 identifiers and list every production hostname, then read the API token privately so it does not
 enter shell history:
+
+Worker-level Access applications may have no hostname `domain` field: their Worker destination
+defines the protected traffic. The session setup supports that shape and preserves the destination,
+audience, login methods, cookie settings and attached policies while updating the duration.
 
 ```sh
 export ACCESS_MANAGEMENT_ACCOUNT_ID="YOUR-ACCOUNT-ID"
