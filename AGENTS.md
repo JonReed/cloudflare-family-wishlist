@@ -6,13 +6,15 @@ pushes are deployed automatically by Cloudflare Builds.
 
 ## Start here
 
-Read these before making a material change:
+Read the guidance relevant to the change before editing:
 
-1. [docs/PRODUCT.md](docs/PRODUCT.md) — the user model, supported workflows and non-goals.
-2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — request flow, data model and privacy boundaries.
-3. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — setup, tests and safe change recipes.
+1. [docs/PRODUCT.md](docs/PRODUCT.md) for user workflows, product behaviour and scope.
+2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for data, identity, request flow and privacy boundaries.
+3. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, tests and the applicable change recipe.
 4. [docs/DESIGN.md](docs/DESIGN.md) for interface or copy work.
 5. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Cloudflare setup or operations.
+
+A change spanning product behaviour and data/privacy needs both product and architecture context. Reuse documents already read in this task unless they have changed.
 
 The maintainer checkout may contain `.private/WRANGLER_PROFILE.md`. It is deliberately ignored and
 contains account-specific operational context. Read it before using Wrangler against the reference
