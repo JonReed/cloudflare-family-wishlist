@@ -408,6 +408,38 @@ Development can synthesise one fixed email only when both conditions are true:
 This mechanism avoids storing developer credentials and cannot be enabled through a production
 environment variable.
 
+## Why Cloudflare
+
+The goal is a private family application without an ongoing server-administration hobby. Each
+household owns its installation and Cloudflare account; this is not a shared hosted Family Wishlist
+service. Cloudflare is the supported hosting platform, rather than an alternative to ownership.
+
+- **Managed infrastructure:** [Workers](https://developers.cloudflare.com/workers/) runs on
+  Cloudflare's global network. There is no home machine to keep online, operating system to patch,
+  router port to expose or separate reverse proxy to maintain. Global compute does not mean this
+  application replicates its D1 database everywhere or guarantees equal latency worldwide.
+- **Admission and sign-in:** Access handles exact-email admission and one-time PIN delivery; the
+  Worker independently verifies its signed assertions. The application needs no password database
+  or separate login-email service. Access configuration and account security still need care.
+- **Recovery:** D1 [Time Travel](https://developers.cloudflare.com/d1/reference/time-travel/) is
+  always enabled on production databases, with seven days of history on Free and 30 on Paid.
+  This bounded recovery window is not an independent backup. Operators should keep appropriate
+  private exports and practise the [restore procedure](BACKUP_RESTORE_UPGRADE.md).
+- **Optional import assistance:** [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)
+  and [Browser Run](https://developers.cloudflare.com/browser-run/limits/) offer free allocations
+  without a separate AI vendor account or a locally maintained browser/GPU server. They are bounded
+  fallbacks, not unlimited services or a guarantee that a shop can be read. Manual entry remains usable.
+- **One operating environment:** bindings connect compute, database and optional helpers. Builds
+  supports deployment from the installation's repository, with migrations preceding Worker updates.
+  Deploying a repository change and obtaining upstream changes are separate responsibilities.
+
+The costs of this choice are platform-specific APIs, dependence on Cloudflare availability and
+account policies, and processing of application data by Cloudflare. Free-tier allowances are finite
+and can change; see the dated [deployment guide](DEPLOYMENT.md). The project does not promise
+offline operation, a Docker/NAS installation, jurisdiction-specific processing or a free-tier SLA.
+SQL exports aid data portability, but moving the complete app elsewhere requires replacing its
+Workers, D1 and Access integrations. Operators still manage invitations, updates, usage and backups.
+
 ## Cloudflare services
 
 - **Workers:** application compute and server rendering.

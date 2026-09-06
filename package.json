@@ -20,6 +20,8 @@
     "deploy:production": "node scripts/deploy-production.ts",
     "installation:configure": "node scripts/installation-config.ts",
     "installation:wrangler": "node scripts/installation-wrangler.ts",
+    "installation:create": "node scripts/create-installation.ts",
+    "installation:status": "node scripts/check-installation-status.ts",
     "preview": "npm run build && vite preview",
     "access:configure-session": "node scripts/configure-access-session.ts",
     "access:configure-sharing": "node scripts/configure-access-sharing.ts",

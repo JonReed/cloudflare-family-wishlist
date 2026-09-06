@@ -10,6 +10,10 @@ This guide starts with an empty Cloudflare account and ends with a private famil
 deploys from GitHub. Each household gets an independent deployment, invitation-only membership and
 Cloudflare-managed sign-in.
 
+Using Codex or another coding assistant? Start with [Install with Codex](../README.md#install-with-codex)
+and the [agent installation checklist](AGENT_INSTALLATION.md). They use this guide as the source of
+truth; no separate plugin or installer is required.
+
 The normal installation uses only Cloudflare's free plans. A domain is optional because every
 Cloudflare account can publish the Worker at a free `workers.dev` address. If you later attach a
 custom domain, the same Worker-level Access policy protects it.
@@ -166,6 +170,12 @@ repository pins a release that supports them. If profile creation is unavailable
 `npx wrangler login` and make the `whoami` check before every remote command.
 
 Keep `wrangler.jsonc` unchanged: it contains shared defaults, not deployment identifiers.
+
+Use the physical directory path for a profile binding (`pwd -P` on macOS/Linux), especially for a
+temporary checkout. For example, macOS resolves `/tmp` to `/private/tmp`; binding the alias can leave
+a command in the physical directory using a different default profile. Recheck `whoami` from the
+actual deployment directory before any remote operation, and stop if the identity differs.
+
 Copy `installation.example.json` to `.wishlist-installation.json`, set `accountId` to your account
 ID and choose `workerName`. Complete the database fields in the next step. This local file is ignored
 by Git. See [Installation settings](INSTALLATION_CONFIG.md) for the configuration boundary and the
@@ -248,9 +258,10 @@ Wrangler prints the new `workers.dev` address. Before Access is configured, open
 503 Authentication is not configured.
 ```
 
-That intentional response proves the Worker and D1 binding exist while the application waits safely
-for its Access configuration. Keep the application's JWT validation as the complementary identity
-check behind Access.
+That intentional response confirms the Worker reaches its authentication gate while the application
+waits safely for Access configuration. It does not verify database connectivity; the later setup
+checks and authenticated flows do that. Keep the application's JWT validation as the complementary
+identity check behind Access.
 
 ## 7. Enable Zero Trust Free and one-time PIN login
 
@@ -464,6 +475,24 @@ The application creates one exact-email Access policy, records the waiting invit
 the organiser a warm, ready-to-send message for their preferred private channel.
 
 ## 11. Connect automatic deployments
+
+The project has two update channels: `stable` for tested releases (recommended) and `main` for
+people who deliberately want changes before release. The reference installation stays on `main`.
+The first successful stable release creates `stable`; until then this guide's fork-based setup is
+the available installation route. See [RELEASES.md](RELEASES.md).
+
+Cloudflare Builds watches a branch in the repository connected through your authorised GitHub
+integration. It does not subscribe to upstream releases or keep a fork synchronised. A public
+repository is not automatically available for every unrelated account to connect. Independent-account
+updates from upstream have an [installation bootstrap](INSTALLATION_UPDATES.md). Its real Cloudflare
+build and pending-migration path have passed, but a timer-triggered updater run and clean-account
+acceptance remain unverified. The steps below configure a self-managed fork.
+
+**Automatic deployment is not automatic upstream updating.** With a fork, you choose when to sync
+upstream changes; Builds then applies pending migrations and deploys them. With the separate
+version-pin updater, a scheduled GitHub workflow checks upstream and changes the installation's pin;
+Builds then builds that pinned source. Follow [INSTALLATION_UPDATES.md](INSTALLATION_UPDATES.md) only
+when choosing that route, including its different deploy command and current verification limits.
 
 The first CLI deployment created the correctly named Worker and its bindings. Connect that existing
 Worker to your fork rather than importing a second Worker.

@@ -3,3 +3,8 @@ import './configure-access-sharing.ts';
 import './installation-config.ts';
 import './installation-wrangler.ts';
 import './deploy-production.ts';
+import './promote-release.ts';
+import './check-upstream-update.ts';
+import './build-installation.ts';
+import './create-installation.ts';
+import './check-installation-status.ts';

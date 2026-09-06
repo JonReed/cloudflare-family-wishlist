@@ -32,7 +32,7 @@ happens directly on `main`, and each step keeps the application deployable with 
 
 - [x] Validate Cloudflare Access JWT signature, issuer and audience in the Worker.
 - [x] Fail closed when Access configuration or assertions are absent.
-- [x] Create a member and their single wishlist on first successful login.
+- [x] Create invited members and their wishlists before first login; reuse them by verified email.
 - [x] Provide a local-only development identity mechanism that cannot be enabled in production accidentally.
 - [x] Provision only the explicitly configured initial organiser as admin and default invited members
       to member.
@@ -70,5 +70,7 @@ happens directly on `main`, and each step keeps the application deployable with 
 - [x] Backup, restore and upgrade documentation.
 - [x] Abuse-case and privacy review.
 - [x] Publish an isolated fresh-deployment acceptance procedure.
+- [x] Prove SQL-export recovery and D1 Time Travel with disposable data; see [release readiness](RELEASE_READINESS.md).
+- [ ] Verify automatic upstream delivery through a real Cloudflare Build and scheduled run.
 - [ ] Execute and record the fresh-deployment walkthrough for the first release.
 - [ ] First tagged release.

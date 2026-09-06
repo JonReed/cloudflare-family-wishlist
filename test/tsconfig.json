@@ -64,6 +64,11 @@
     "../scripts/installation-config.ts",
     "../scripts/installation-wrangler.ts",
     "../scripts/deploy-production.ts",
+    "../scripts/promote-release.ts",
+    "../scripts/check-upstream-update.ts",
+    "../scripts/build-installation.ts",
+    "../scripts/create-installation.ts",
+    "../scripts/check-installation-status.ts",
     "../workers/app.ts"
   ]
 }

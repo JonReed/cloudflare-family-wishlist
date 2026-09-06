@@ -1,8 +1,21 @@
 # Cloudflare Family Wishlist
 
 This is a private, self-hosted family wishlist for one household per deployment. It runs as a
-Cloudflare Worker with D1 and sits behind Cloudflare Access. Work directly on `main`; successful
-pushes are deployed automatically by Cloudflare Builds.
+Cloudflare Worker with D1 and sits behind Cloudflare Access.
+
+## Installing or developing?
+
+- **Installing for a household or resuming its setup:** read
+  [docs/AGENT_INSTALLATION.md](docs/AGENT_INSTALLATION.md). Use the repository-local
+  [wishlist-install skill](.agents/skills/wishlist-install/SKILL.md) when available. Confirm the
+  owner's intended account and resources; do not treat the maintainer's deployment or Git remote as
+  the installation target. Setup does not normally require application-source changes.
+- **Developing this project:** follow the contributor guidance below. Work directly on `main`;
+  successful pushes to the reference repository deploy automatically through Cloudflare Builds.
+
+Neither these instructions nor the installation skill grants permission to change remote resources.
+Follow the user's requested scope and approvals. Maintainer-specific branch and deployment conventions
+describe this source repository, not a new household's existing infrastructure.
 
 ## Start here
 

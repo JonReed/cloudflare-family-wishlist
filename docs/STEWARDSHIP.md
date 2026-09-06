@@ -13,6 +13,24 @@ The reference deployment belongs to Jon's family. Other families operate their o
 deployments, keeping their wishlist data within their chosen Cloudflare account. This is an
 open-source project rather than a hosted Furls service.
 
+## Public website and optional setup help
+
+[familywishlist.org](https://familywishlist.org/) is the public product website, operated by Furls
+Digital Ltd. It provides a screenshot tour, plain-language product information and an optional
+[paid setup service](https://familywishlist.org/setup-help/). The application remains a separate,
+MIT-licensed open-source project maintained by Jon Reed.
+
+Setup work is supplied and invoiced by Furls Digital Ltd, with scope and price agreed in a quote
+before work starts. The app and database run in the family's own Cloudflare account; any setup
+access and handover are agreed with the customer. Ongoing maintenance, updates and support are
+agreed separately, not included merely by using the software or paying for installation.
+
+Self-hosting does not require purchasing help. The [installation guide](DEPLOYMENT.md) remains
+freely available. The website's [setup terms](https://familywishlist.org/setup-terms/) and
+[privacy notice](https://familywishlist.org/privacy/) cover that website and service; they are not
+a privacy notice for every family's independent installation. Each operator remains responsible
+for their installation's access, updates and backups.
+
 ## Development and review process
 
 The project was built with substantial AI assistance under maintainer direction. Repository guidance,

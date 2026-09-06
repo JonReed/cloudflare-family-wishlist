@@ -53,6 +53,8 @@ to production. If a migration is added, rerun `npm run db:migrate:local` before 
 | `npm run audit`                            | Required dependency vulnerability gate                 |
 | `npm run cf-typegen`                       | Regenerate Worker binding types after config changes   |
 
+Work on `main`. The `stable` branch is maintained by the release workflow; do not make changes directly on it. See [RELEASES.md](RELEASES.md) for the release procedure.
+
 Run `npm run quality` and `npm run audit` before every commit or push. CI repeats those checks.
 The quality gate includes `scripts:check`, keeping native Node compatibility verified for every setup
 tool.
@@ -246,6 +248,9 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/access-membership.test.ts`        | exact-email policy shape, bounded API handling and cleanup         |
 | `test/access-public-sharing.test.ts`    | narrow, idempotent public-path setup and drift detection           |
 | `test/configure-access-session.test.ts` | idempotent 30-day session setup without Access configuration drift |
+| `test/check-upstream-update.test.ts`    | updater inputs, channel ancestry and version file writes           |
+| `test/promote-release.test.ts`          | stable release eligibility, ancestry and concurrent promotion      |
+| `test/installation-delivery.test.ts`    | build receipts, deploy tags and desired/live version comparison    |
 | `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks    |
 | `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts   |
 | `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback  |

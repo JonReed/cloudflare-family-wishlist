@@ -83,6 +83,10 @@ rechecking their account IDs and database UUIDs.
 Test recovery at least before the first tagged release and after material schema or runbook changes.
 Delete expired exports according to the household's agreed retention policy.
 
+Both SQL-export recovery and Time Travel were exercised with synthetic data on 6 September 2026;
+see the [release-readiness evidence](RELEASE_READINESS.md). This proves the recovery operations, not
+the completeness of any particular household's backup or its separately managed Access settings.
+
 ## Upgrade an installation
 
 1. On the currently deployed revision, run `npm run setup:check` to prove the installation starts
