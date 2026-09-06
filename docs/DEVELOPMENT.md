@@ -14,6 +14,10 @@ Ordinary local development and tests run without Cloudflare credentials. Vite an
 bindings isolated, giving contributors fast deterministic product-import coverage while preserving a
 deployment's Browser Run and Workers AI allowances.
 
+The shared `wrangler.jsonc` contains no household identifiers. An optional ignored
+`.wishlist-installation.json` or `WISHLIST_INSTALLATION` build variable supplies them for deployment;
+see [Installation settings](INSTALLATION_CONFIG.md). Do not edit shared source to select a household.
+
 ## First local run
 
 ```sh
@@ -88,6 +92,10 @@ the no-JavaScript path remains sound.
 
 The home route contains the core family workspace. New substantial interactions are best expressed as
 a cohesive component or server helper, keeping that central route welcoming and easy to navigate.
+Its item fields, rows, claims, sharing, add panel and sheet coordination live in
+`app/components/wishlist/`; bounded lookup drafts live in `app/lib/wishlist-form-draft.ts`.
+The extraction entry point remains `app/lib/product-metadata.ts`, with implementation modules under
+`app/lib/product-metadata/`. Keep dependencies one-way and retain the public entry point for callers.
 
 Product metadata lookup is progressive enhancement. Keep the ordinary `fetch-product` form intent
 working without JavaScript, and keep `public/product-import.js` limited to the same-origin convenience

@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+import { parseJsoncObject } from './jsonc.ts';
+import { prepareInstallationConfig } from './installation-config.ts';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
@@ -51,80 +53,6 @@ function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function removeJsonComments(input: string): string {
-  let output = '';
-  let inString = false;
-  let escaped = false;
-
-  for (let index = 0; index < input.length; index += 1) {
-    const character = input[index];
-    const next = input[index + 1];
-
-    if (inString) {
-      output += character;
-      if (escaped) escaped = false;
-      else if (character === '\\') escaped = true;
-      else if (character === '"') inString = false;
-      continue;
-    }
-
-    if (character === '"') {
-      inString = true;
-      output += character;
-      continue;
-    }
-
-    if (character === '/' && next === '/') {
-      while (index < input.length && input[index] !== '\n') index += 1;
-      output += '\n';
-      continue;
-    }
-
-    if (character === '/' && next === '*') {
-      index += 2;
-      while (index < input.length && !(input[index] === '*' && input[index + 1] === '/')) {
-        output += input[index] === '\n' ? '\n' : ' ';
-        index += 1;
-      }
-      index += 1;
-      continue;
-    }
-
-    output += character;
-  }
-
-  return output;
-}
-
-function removeTrailingCommas(input: string): string {
-  let output = '';
-  let inString = false;
-  let escaped = false;
-
-  for (let index = 0; index < input.length; index += 1) {
-    const character = input[index];
-    if (inString) {
-      output += character;
-      if (escaped) escaped = false;
-      else if (character === '\\') escaped = true;
-      else if (character === '"') inString = false;
-      continue;
-    }
-    if (character === '"') {
-      inString = true;
-      output += character;
-      continue;
-    }
-    if (character === ',') {
-      let lookahead = index + 1;
-      while (/\s/.test(input[lookahead] ?? '')) lookahead += 1;
-      if (input[lookahead] === '}' || input[lookahead] === ']') continue;
-    }
-    output += character;
-  }
-  return output;
-}
-
 function requiredString(record: JsonRecord, key: string): string {
   const value = record[key];
   if (typeof value !== 'string' || !value.trim()) {
@@ -134,13 +62,7 @@ function requiredString(record: JsonRecord, key: string): string {
 }
 
 export function parseSetupConfiguration(source: string): SetupConfiguration {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(removeTrailingCommas(removeJsonComments(source)));
-  } catch {
-    throw new Error('wrangler.jsonc is not valid JSONC.');
-  }
-  if (!isRecord(parsed)) throw new Error('wrangler.jsonc must contain an object.');
+  const parsed = parseJsoncObject(source);
 
   const accountId = requiredString(parsed, 'account_id');
   const workerName = requiredString(parsed, 'name');
@@ -329,8 +251,11 @@ export async function checkSetup(
 
 async function main(): Promise<void> {
   try {
-    const configuration = parseSetupConfiguration(readFileSync('wrangler.jsonc', 'utf8'));
-    const messages = await checkSetup(configuration);
+    const configPath = prepareInstallationConfig({ required: true });
+    const configuration = parseSetupConfiguration(readFileSync(configPath, 'utf8'));
+    const messages = await checkSetup(configuration, (args) =>
+      runWrangler([...args, '--config', configPath])
+    );
     for (const message of messages) console.log(`✓ ${message}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown setup check failure.';

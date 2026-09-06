@@ -45,7 +45,8 @@ record.
 4. Exercise every item in the installation guide's final acceptance checklist using the three test
    identities. In particular, verify that the unrelated address cannot enter and that a wishlist
    owner never receives their own item's claim or purchase state.
-5. Push one harmless documentation-only commit to the disposable fork. Confirm exactly one successful
+5. Verify the build uses its `WISHLIST_INSTALLATION` settings without a tracked household-specific
+   change to `wrangler.jsonc`. Push one harmless documentation-only commit to the disposable fork. Confirm exactly one successful
    Cloudflare Build and that the existing Worker remains reachable.
 6. Re-run `npm run setup:check` without the Access environment variables. Confirm the Wrangler, D1 and
    deployed-binding checks still pass and that the output explicitly says the deep Access checks were

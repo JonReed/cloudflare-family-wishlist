@@ -5,7 +5,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cloudflare-family-wishlist",
-  "account_id": "fe36a5f853539765511b8639f28c4b6c",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "./workers/app.ts",
@@ -24,7 +23,8 @@
     {
       "binding": "DB",
       "database_name": "cloudflare-family-wishlist",
-      "database_id": "ec081efb-f134-49b4-887a-558ec776fe9e",
+      // Local-only identity. Deployment IDs come from installation settings, never shared source.
+      "database_id": "local-only",
       "migrations_dir": "migrations"
     }
   ],

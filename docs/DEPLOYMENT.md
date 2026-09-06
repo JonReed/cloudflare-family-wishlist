@@ -165,15 +165,11 @@ account ID printed by `whoami`. Wrangler currently labels named profiles experim
 repository pins a release that supports them. If profile creation is unavailable, use
 `npx wrangler login` and make the `whoami` check before every remote command.
 
-Open `wrangler.jsonc` and make these installation-specific changes:
-
-1. replace `account_id` with your Cloudflare account ID;
-2. optionally change `name` if that Worker name already exists in your account; and
-3. leave the `DB` binding name, AI binding and product AI settings unchanged for now.
-
-The account and D1 IDs checked into the upstream repository identify its reference deployment. A fork
-replaces them before its first deployment, and keeping the family's own `account_id` in configuration
-adds a valuable account-selection check.
+Keep `wrangler.jsonc` unchanged: it contains shared defaults, not deployment identifiers.
+Copy `installation.example.json` to `.wishlist-installation.json`, set `accountId` to your account
+ID and choose `workerName`. Complete the database fields in the next step. This local file is ignored
+by Git. See [Installation settings](INSTALLATION_CONFIG.md) for the configuration boundary and the
+one-time transition for existing installations.
 
 ## 4. Create and migrate D1
 
@@ -184,11 +180,11 @@ Create one database. `weur` is a sensible location hint for a UK or European fam
 npx wrangler d1 create cloudflare-family-wishlist --location weur
 ```
 
-Copy the returned database UUID into `database_id` for the `DB` binding in `wrangler.jsonc`. If you
-changed the database name, update `database_name` too. Then generate bindings and apply every checked-in
-migration to the remote database:
+Copy the UUID into `databaseId` in `.wishlist-installation.json` and set `databaseName` to the name
+you created. Then validate settings, generate bindings and apply every checked-in migration:
 
 ```sh
+npm run installation:configure
 npm run cf-typegen
 npm run db:migrate:remote
 ```
@@ -392,7 +388,7 @@ dashboard's **Variables and Secrets** settings, add:
 | Binding name                       | Type   | Value                                           |
 | ---------------------------------- | ------ | ----------------------------------------------- |
 | `ACCESS_MANAGEMENT_API_TOKEN`      | Secret | the narrowly scoped custom API token            |
-| `ACCESS_MANAGEMENT_ACCOUNT_ID`     | Text   | the account ID already used in `wrangler.jsonc` |
+| `ACCESS_MANAGEMENT_ACCOUNT_ID`     | Text   | the account ID in your installation settings    |
 | `ACCESS_MANAGEMENT_APPLICATION_ID` | Text   | the UUID of the Worker-level Access application |
 
 The application UUID is in **Zero Trust → Access controls → Applications → your application**. It is
@@ -402,7 +398,7 @@ If you prefer the CLI, use the private interactive prompt for the token so it ne
 history:
 
 ```sh
-npx wrangler secret put ACCESS_MANAGEMENT_API_TOKEN
+npm run installation:wrangler -- secret put ACCESS_MANAGEMENT_API_TOKEN
 ```
 
 Do not pipe or pass the token as a command argument. The deployment command uses `--keep-vars`, so
@@ -472,17 +468,10 @@ the organiser a warm, ready-to-send message for their preferred private channel.
 The first CLI deployment created the correctly named Worker and its bindings. Connect that existing
 Worker to your fork rather than importing a second Worker.
 
-First commit the installation-specific `wrangler.jsonc` changes to your fork so Cloudflare does not
-build with the upstream reference account and database IDs:
-
-```sh
-git add wrangler.jsonc
-git commit -m "Configure family deployment"
-git push origin main
-```
-
-`worker-configuration.d.ts` is generated and intentionally ignored, so it must not be added to the
-commit.
+Do not commit installation-specific settings. Before the first build, add a build text variable named
+`WISHLIST_INSTALLATION` containing the complete JSON from `.wishlist-installation.json`. The build
+merges those identifiers with shared configuration. The local settings, generated
+`wrangler.installation.json` and `worker-configuration.d.ts` are ignored and must not be committed.
 
 Account and database IDs are safe identifiers. Keep Access API tokens, `.env`, `.dev.vars`, database
 exports and other secrets in their dedicated private stores.
@@ -498,15 +487,15 @@ Now connect the build:
 
 The build API token must include Account / D1 / Edit for this deployment's account as well as its
 existing Worker deployment permissions. Review it in **Settings → Builds → API token**. Never add
-the token to the repository. The `DB` binding in your committed Wrangler configuration determines
-which database receives migrations.
+the token to the repository. The `DB` binding generated from installation settings determines
+which database receives migrations; the release script verifies that it matches the built Worker.
 
 Disable preview builds for the simple direct-to-`main` workflow. Never use `deploy:production` or
 `db:migrate:remote` in non-production builds against the production binding. If previews are needed,
 give them a separate Worker, database and credentials.
 
 Workers Builds now deploys each push to `main`. Cloudflare's [Git integration guide](https://developers.cloudflare.com/workers/ci-cd/builds/)
-requires the Worker name in the dashboard to match `name` in `wrangler.jsonc`.
+requires the Worker name in the dashboard to match `workerName` in the installation settings.
 
 Production Builds now run the repository's release script after a successful build:
 
@@ -518,7 +507,7 @@ It applies only pending D1 migrations, then deploys with `--keep-vars`. A failed
 deployment; a release without database changes simply skips migrations. Existing installations need
 to change their production deploy command once and verify the token's D1 permission. Future updates
 to the tracked branch then require no separate migration command. Fork owners still need to sync
-upstream updates into their fork while preserving their own Wrangler account/database configuration.
+upstream updates into their fork; account/database settings stay separate from shared source.
 
 Migrations must remain compatible with the old Worker, which continues serving traffic until the
 new deployment succeeds. Use additive changes first and remove old columns only in a later release.

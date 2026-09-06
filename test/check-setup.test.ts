@@ -4,7 +4,7 @@ import { checkSetup, parseSetupConfiguration, type WranglerRunner } from '../scr
 
 const configuration = {
   accountId: '0123456789abcdef0123456789abcdef',
-  databaseId: 'ec081efb-f134-49b4-887a-558ec776fe9e',
+  databaseId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   databaseName: 'family-wishlist',
   workerName: 'family-wishlist'
 };

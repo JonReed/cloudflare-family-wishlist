@@ -45,6 +45,12 @@
     "../app/lib/product-image.ts",
     "../app/lib/product-draft.ts",
     "../app/lib/product-metadata.ts",
+    "../app/lib/product-metadata/**/*.ts",
+    "../app/lib/wishlist-form-draft.ts",
+    "../app/components/wishlist/item-fields.tsx",
+    "../app/components/wishlist/form-fields.tsx",
+    "../app/components/wishlist/claim-controls.tsx",
+    "../app/components/wishlist/item-row.tsx",
     "../app/lib/product-url.ts",
     "../app/lib/public-share-path.ts",
     "../app/lib/request-security.ts",
@@ -54,6 +60,10 @@
     "../scripts/configure-access-session.ts",
     "../scripts/configure-access-sharing.ts",
     "../scripts/check-setup.ts",
+    "../scripts/jsonc.ts",
+    "../scripts/installation-config.ts",
+    "../scripts/installation-wrangler.ts",
+    "../scripts/deploy-production.ts",
     "../workers/app.ts"
   ]
 }

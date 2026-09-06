@@ -13,12 +13,13 @@ quiet maintenance window.
 ## Create a recovery point
 
 1. Work from a clean, reviewed checkout. Read `.private/WRANGLER_PROFILE.md` when it exists.
-2. Confirm `npx wrangler whoami --json` shows the account ID in `wrangler.jsonc`.
+2. Confirm `npm run installation:wrangler -- whoami --json` shows the account ID in your
+   [installation settings](INSTALLATION_CONFIG.md).
 3. Run `npm run setup:check`; stop on a mismatch or pending migration you did not expect.
 4. Capture the current recoverable bookmark:
 
    ```sh
-   npx wrangler d1 time-travel info DB
+   npm run installation:wrangler -- d1 time-travel info DB
    ```
 
    Record the bookmark, UTC time, deployed commit and operator in a private operational note. Do not
@@ -28,7 +29,7 @@ quiet maintenance window.
    outside the repository:
 
    ```sh
-   npx wrangler d1 export DB --remote --output=/absolute/private/path/family-wishlist-YYYY-MM-DD.sql
+   npm run installation:wrangler -- d1 export DB --remote --output=/absolute/private/path/family-wishlist-YYYY-MM-DD.sql
    shasum -a 256 /absolute/private/path/family-wishlist-YYYY-MM-DD.sql
    ```
 
@@ -40,7 +41,7 @@ in a public cloud folder. The Time Travel bookmark is a recovery coordinate, not
 First identify the UTC time immediately before the bad write or migration and preview its bookmark:
 
 ```sh
-npx wrangler d1 time-travel info DB --timestamp="2026-09-03T12:00:00Z"
+npm run installation:wrangler -- d1 time-travel info DB --timestamp="2026-09-03T12:00:00Z"
 ```
 
 Inspect the timestamp and account again before continuing. A restore overwrites the production
@@ -48,13 +49,13 @@ database in place, cancels in-flight queries and discards writes after the chose
 active state. It is a production mutation and requires explicit maintainer approval:
 
 ```sh
-npx wrangler d1 time-travel restore DB --timestamp="2026-09-03T12:00:00Z"
+npm run installation:wrangler -- d1 time-travel restore DB --timestamp="2026-09-03T12:00:00Z"
 ```
 
 Save the `previous_bookmark` reported by Wrangler; it can undo the restore. Then run:
 
 ```sh
-npx wrangler d1 execute DB --remote --command="PRAGMA quick_check;"
+npm run installation:wrangler -- d1 execute DB --remote --command="PRAGMA quick_check;"
 npm run setup:check
 ```
 
@@ -68,9 +69,9 @@ Test restores against a newly created, disposable D1 database. This keeps produc
 giving the family concrete confidence in every export.
 
 ```sh
-npx wrangler d1 create family-wishlist-recovery-test --location weur
-npx wrangler d1 execute family-wishlist-recovery-test --remote --file=/absolute/private/path/family-wishlist-YYYY-MM-DD.sql
-npx wrangler d1 execute family-wishlist-recovery-test --remote --command="PRAGMA quick_check; SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name;"
+npm run installation:wrangler -- d1 create family-wishlist-recovery-test --location weur
+npm run installation:wrangler -- d1 execute family-wishlist-recovery-test --remote --file=/absolute/private/path/family-wishlist-YYYY-MM-DD.sql
+npm run installation:wrangler -- d1 execute family-wishlist-recovery-test --remote --command="PRAGMA quick_check; SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name;"
 ```
 
 Compare row counts for `members`, `wishlists`, `items`, `claims` and `wishlist_share_links` with the
@@ -116,8 +117,8 @@ Do not apply down migrations to an existing installation.
 
 ## Complete the recovery picture
 
-A D1 backup covers the family's application data. The reviewed repository plus `wrangler.jsonc`
-covers non-secret application configuration, while the family's password manager or approved secret
+A D1 backup covers the family's application data. The reviewed repository plus the privately backed-up
+installation settings covers non-secret application configuration, while the family's password manager or approved secret
 store protects secret values. [Install and deploy](DEPLOYMENT.md) provides the repeatable route for
 reconstructing Access applications and policies, Worker variables, custom domains, Builds settings
 and Wrangler authentication.
