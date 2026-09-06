@@ -144,7 +144,7 @@
 .brand-link:focus-visible,
 .account-links a:focus-visible,
 .footer-links a:focus-visible,
-.footer-repo:focus-visible,
+.footer-project:focus-visible,
 .wish-meta a:focus-visible,
 .edit-panel summary:focus-visible {
   outline: 2px solid var(--leaf);
@@ -1460,7 +1460,7 @@ button:disabled {
   padding-block: 2.5rem;
 }
 
-.footer-repo {
+.footer-project {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -1468,7 +1468,7 @@ button:disabled {
   text-decoration: none;
 }
 
-.footer-repo:hover,
+.footer-project:hover,
 .footer-links a:hover {
   color: #d4b78d;
 }

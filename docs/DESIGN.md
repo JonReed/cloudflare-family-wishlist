@@ -24,7 +24,10 @@ The signed-in home has four stable regions:
 2. **Family selector:** one looped-string gift tag per member over a quiet parcel-table image.
 3. **Active wishlist:** one person's complete list, with an always-open add form alongside it on
    wider screens.
-4. **Project footer:** source repository, licence, issue reporting, self-hosting and version.
+4. **Project footer:** the Family Wishlist brochure site, source repository, licence, issue reporting,
+   self-hosting and version. The prominent **Family Wishlist** link opens `https://familywishlist.org/`;
+   **Source code** remains a secondary link to GitHub, and **Set up your own** links to the repository's
+   setup instructions.
 
 The signed-in header is identical on every route for the same member. It always includes “Hello” and
 their display name, Wishlists, Add from anywhere and Profile; the family organiser also sees Your
