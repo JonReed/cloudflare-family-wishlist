@@ -2,47 +2,59 @@
   <img src="public/favicon.svg" width="88" height="88" alt="Family Wishlist gift mark">
 </p>
 
-<h1 align="center">Cloudflare Family Wishlist</h1>
+<h1 align="center">Family Wishlist</h1>
 
 <p align="center">
   <strong>For your favourite people.</strong><br>
   Keep your family's gift ideas together and buying plans secret.<br>
-  Free, open-source software you run in your own Cloudflare account.
+  A private, open-source home for your family's wishes.
 </p>
 
 <p align="center">
-  <a href="https://familywishlist.org/">Website &amp; screenshots</a>
-  &nbsp;&middot;&nbsp;
+  <a href="#why-cloudflare-rather-than-a-home-server-or-vps"><img src="docs/assets/runs-on-cloudflare.svg" height="20" alt="Runs on Cloudflare®"></a>
+  <a href="https://github.com/JonReed/cloudflare-family-wishlist/releases/latest"><img src="https://img.shields.io/github/v/release/JonReed/cloudflare-family-wishlist?style=flat-square&amp;label=release&amp;color=24483E" height="20" alt="Latest stable release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-24483E?style=flat-square" height="20" alt="MIT licence"></a>
+</p>
+
+<p align="center">
   <a href="docs/DEPLOYMENT.md"><strong>Set up your own</strong></a>
   &nbsp;&middot;&nbsp;
-  <a href="docs/PRODUCT.md">See how it works</a>
+  <a href="#install-with-codex">Install with Codex</a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://familywishlist.org/">Website</a>
   &nbsp;&middot;&nbsp;
   <a href="docs/DEVELOPMENT.md">Develop locally</a>
 </p>
 
-Each family member has one wishlist. Everyone in the invited family group can view and edit every list, while claims and purchases are hidden from the owner of the list so surprises stay surprising.
-When someone outside the family wants ideas, a revocable read-only link can share one person's list
-without giving them access to the private family space.
+<p align="center">
+  <a href="https://familywishlist.org/"><img src="docs/assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist showing gift-tag family navigation, a paper wishlist and its add form"></a>
+</p>
 
-A wish only needs a name. Add ideas from any shop, or ask for a homemade cake, a day out or help in
-the garden—no product link required. Family members use it in their browser; phone and desktop
-shortcuts are optional.
+<p align="center"><sub>The everyday workspace: choose someone, see their wishes and add another without leaving the page.</sub></p>
+
+## Good ideas together. Surprises kept secret.
+
+A wish only needs a name. Save something from any shop, a homemade cake, a day out or help in the
+garden. Each person has one list, and everyone in your invited family can help keep those lists
+useful. Buying plans stay hidden from the person receiving the gift.
+
+- **Keep it in the family.** Private, invitation-only sign-in and a wishlist ready for each person.
+- **Save it while you see it.** Add from a shopping link, your phone's Share menu or a browser button.
+- **Make someone's day.** Coordinate gifts without spoiling the surprise or buying the same thing twice.
+- **Let others join the giving.** Share a read-only list with friends or relatives, and stop sharing whenever you like.
+
+Run your own independent installation in your own Cloudflare account. No always-on home server,
+application password database or separate AI account to manage. A normal family deployment is
+designed for the free tier; [hosting allowances and limits](docs/DEPLOYMENT.md#what-cloudflare-provides)
+still apply.
 
 The app has no advertising or analytics scripts and does not add affiliate codes to shop links.
 Links you paste may already contain tracking parameters; Cloudflare still processes requests to
 host and protect your installation.
 
-> [!NOTE]
-> Family Wishlist is feature-complete for everyday family use: private sign-in, the family dashboard,
-> wish editing, add-from-anywhere tools, surprise-preserving claims and read-only sharing are all in
-> place. See the [v1.0.0 release notes](docs/releases/v1.0.0.md) for the core release scope and
-> the optional updater's experimental status.
-
-<p align="center">
-  <img src="docs/assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist showing gift-tag family navigation, a paper wishlist and its add form">
-</p>
-
-<p align="center"><sub>The everyday workspace: choose someone, see their wishes and add another without leaving the page.</sub></p>
+**Ready for everyday family use.** [v1.0.0 is released](docs/releases/v1.0.0.md), with private sign-in,
+shared wishlists, surprise-preserving gifts and public viewing links. The optional
+[automatic upstream updater](docs/INSTALLATION_UPDATES.md) remains experimental.
 
 ## Turn a shopping link into a useful wish
 
@@ -57,22 +69,15 @@ API key or paid service to configure. The feature is designed to fit within thei
 Every result remains an editable suggestion, and the dependable manual form is always ready when a
 shop shares only limited product information.
 
-## Made for families
+## Thoughtful details, built in
 
-Family Wishlist is purpose-built around the way a trusted family actually shares gift ideas:
+The family organiser can prepare someone's wishlist before they first sign in, see who has joined,
+and share a personal invitation through the family's preferred private channel. Top wishes rise to
+the beginning of a list; optional notes, pictures and GBP price guidance make choosing easier.
 
-- invitation-only access;
-- a family-organiser page showing who has joined and who is still waiting;
-- one wishlist per family member;
-- shared editing across the family;
-- high, normal and low priorities that keep the most useful wishes at the top;
-- AI-assisted, editable names, pictures and GBP prices from product links;
-- Android Share menu, iPhone/iPad Share Sheet and desktop browser tools for adding something to one or more lists while shopping;
-- private claims that the recipient cannot see;
-- revocable viewing links for relatives and friends outside the signed-in family;
-- Cloudflare-managed sign-in, with no application password database;
-- personal invitations shared through the family's preferred private channel; and
-- a normal family deployment designed for Cloudflare's free tier.
+Claim a gift, mark it bought or change your mind. Buying something never silently removes the wish:
+its owner decides when it is no longer needed. Core forms work even without client JavaScript.
+See the [complete product guide](docs/PRODUCT.md) for the everyday workflows and privacy model.
 
 ## Why Cloudflare rather than a home server or VPS?
 
@@ -227,3 +232,10 @@ commit `ad9571c` found no remaining actionable findings in the reviewed source. 
 report preserves the evidence, remediation record, exact commits, scope and review boundaries.
 
 Suspected vulnerabilities have a dedicated private reporting route in [SECURITY.md](SECURITY.md).
+
+---
+
+<sub>Family Wishlist is an independent project, not affiliated with or endorsed by Cloudflare, Inc.
+Cloudflare and Cloudflare Workers are trademarks and/or registered trademarks of Cloudflare, Inc.
+in the United States and other jurisdictions. The “Runs on Cloudflare” badge is a text-only platform
+reference, not an official Cloudflare logo. See <a href="https://www.cloudflare.com/trademark/">trademark guidance</a>.</sub>

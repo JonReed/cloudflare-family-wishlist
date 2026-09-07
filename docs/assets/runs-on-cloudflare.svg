@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="162" height="20" viewBox="0 0 162 20" role="img" aria-labelledby="title">
+  <title id="title">Runs on Cloudflare®</title>
+  <path fill="#24483e" d="M0 0h65v20H0z"/>
+  <path fill="#f6821f" d="M65 0h97v20H65z"/>
+  <g font-family="Verdana,DejaVu Sans,sans-serif" text-anchor="middle" font-size="10">
+    <text x="32.5" y="14" fill="#fff">RUNS ON</text>
+    <text x="113.5" y="14" fill="#1f2328" font-weight="bold">Cloudflare®</text>
+  </g>
+</svg>
