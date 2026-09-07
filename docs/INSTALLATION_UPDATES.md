@@ -178,7 +178,11 @@ existing `updater.json`, pin and household settings. Release notes must explicit
 installer fixes. This limitation is preferable to silently executing fetched code with repository
 write permission; ordinary application updates remain automatic once the delivery path is connected.
 
-## Verification still required before shipping
+## Experimental updater: remaining verification
+
+The core application's first release does not certify unattended upstream updates. These checks
+remain required before presenting this optional updater as fully verified; they do not negate the
+completed household installation walkthroughs. See [release scope](RELEASE_READINESS.md#first-release-scope).
 
 The bot-push-to-Builds connection, live-version comparison and failed-build retry now pass in the
 synthetic fixture. The generated real-application installer also passed both local deployment and

@@ -70,7 +70,9 @@ Avoid treating an updater commit as proof of deployment. A failed build leaves t
 of the live Worker. The retained build bootstrap, SHA tagging and status checker now implement that
 distinction. The live comparison, Cloudflare retry path and generated real-application build/migration
 integration now have test evidence. Scheduler observation and clean-account acceptance remain
-separate gates. The real-app fixture uses published source predating optional SHA tagging; the
+separate checks for the experimental updater, not a requirement to repeat the accepted core-product
+installation walkthroughs; see [release scope](RELEASE_READINESS.md#first-release-scope).
+The real-app fixture uses published source predating optional SHA tagging; the
 synthetic fixture proves that separately, not as an exact first-release candidate.
 
 Keep scheduled installation repositories private to avoid GitHub's public-repository inactivity
@@ -81,11 +83,13 @@ The broader installation plan is in [INSTALLATION_UPDATES.md](INSTALLATION_UPDAT
 ## Cleanup
 
 After the approved connection switch and successful real-app build, both disposable Workers and the
-real-app test database were deleted. Only fictional test data was removed; local fixture checkouts
-and this evidence remain. Production was not changed.
+real-app test database were deleted. Only fictional test data was removed. This evidence remains;
+temporary local fixture checkouts are no longer available. Production was not changed.
 
-The two disposable GitHub repositories remain because the available GitHub CLI credential lacks
-the `delete_repo` permission. No extra credential scope was requested. The installation workflow is
-paused (`disabled_manually`), so neither repository is left scheduling work. Its timer was enabled
-during active checks but no `schedule` event was observed. Remove the two test repositories through
-an authorised owner session when convenient; a later scheduler check needs a fresh disposable fixture.
+On 7 September 2026, both disposable GitHub repositories were deleted through an authenticated owner
+session: `JonReed/wishlist-updater-test-install-20260906` and
+`JonReed/wishlist-updater-test-upstream-20260906`. No extra CLI credential scope was requested, and no
+test workflow remains scheduled. Only synthetic fixtures were removed; the results are preserved here,
+but historical run and resource identifiers may no longer resolve after cleanup. The timer was enabled
+during active checks but no `schedule` event was observed. A later scheduler check needs a fresh
+disposable fixture.

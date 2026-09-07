@@ -15,11 +15,13 @@ must not receive independent changes. Fork owners are responsible for their own 
 
 1. Merge or commit the intended work on `main` and run `npm run quality` and `npm run audit` before
    pushing, as usual. Check the reference installation and complete the
-   [fresh-deployment acceptance walkthrough](FRESH_DEPLOYMENT_ACCEPTANCE.md) before the first release.
+   [release-readiness checklist](RELEASE_READINESS.md) before the first release. The maintainer has
+   accepted the completed installation walkthroughs for the core release; the stricter
+   [fresh-account procedure](FRESH_DEPLOYMENT_ACCEPTANCE.md) remains follow-up verification.
 2. Set `package.json` and both package version entries in `package-lock.json` to the intended release
    version, commit them, and rerun the gates. The promotion script rejects a tag whose version differs
    from either file. In GitHub, prepare release notes explaining changes, migrations, installer fixes
-   and any operator action. Start from the [first-release draft](releases/FIRST_RELEASE_DRAFT.md). Choose
+   and any operator action. Use the [v1.0.0 notes](releases/v1.0.0.md) as a structural reference. Choose
    the exact tested commit on `main` and a new tag named `vMAJOR.MINOR.PATCH`, for example `v1.0.0`.
 3. Publish the release as a normal release. Drafts and prereleases do not advance `stable`.
 4. Watch **Actions → Release to stable**. The workflow checks out the release commit, verifies that

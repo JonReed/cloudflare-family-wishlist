@@ -1,7 +1,9 @@
 # First-release readiness
 
-Evidence reviewed on 6 September 2026. This is a test record, not a release announcement. The package
-is currently `0.1.0`; the final release version and tag have not been selected or published.
+Evidence reconciled on 7 September 2026. The maintainer selected `v1.0.0` and authorised publication;
+package and lockfile versions are aligned at `1.0.0`. This is the pre-publication evidence record,
+not proof of successful promotion. See the [release](https://github.com/JonReed/cloudflare-family-wishlist/releases/tag/v1.0.0)
+and its **Release to stable** workflow for publication and promotion results.
 
 ## Completed evidence
 
@@ -30,24 +32,43 @@ repositories: eligibility checking, first creation of `stable`, a no-op rerun, a
 refusal to move backwards all passed. This does not replace observing GitHub's release event,
 workflow permissions or a real tagged release; no remote GitHub repository was changed by this check.
 
-## Remaining release gates
+## First-release scope
+
+On 7 September the maintainer confirmed that the repeated installation walkthroughs already carried
+out are sufficient installation evidence for the first core-product release. The existing-account
+family flows, separate generated-installation builds and live migration/recovery checks above are
+completed evidence, not an untested installation path. No further full installation rerun is required
+solely because the stricter clean-account checklist was left open.
+
+This acceptance does not turn unobserved checks into passes: a complete new-account onboarding run
+without repairs, every assertion in the strict acceptance procedure on one final commit, and an
+actual timer-triggered updater event have not been recorded. The version-pin updater remains
+experimental; fully unattended upstream delivery is outside the first release's verified scope.
+The core application and normal deployment of changes in a connected repository are distinct from
+that optional updater. Keep these limits in the release notes.
+
+## Release checklist
 
 - [x] Authorise Cloudflare's GitHub integration for only the private disposable installation repository,
       preserving existing access; connect the synthetic Worker with previews disabled.
 - [x] Verify a bot-generated version-only commit triggers a real Cloudflare Build and deployment.
-- [ ] Observe a real timer-triggered updater run; manual dispatch is not scheduler evidence.
 - [x] Verify a failed Cloudflare build leaves the existing version live, then retry successfully and
       compare desired versus deployed SHA using the new version tag/status check.
 - [x] Deploy the real generated application locally and apply its pending migration to disposable data.
 - [x] Repeat the real generated-installer deployment through Cloudflare Builds.
-- [ ] Complete [fresh-deployment acceptance](FRESH_DEPLOYMENT_ACCEPTANCE.md) from a clean account and
-      checkout, including unrelated-email denial and the complete guide checklist without repairs.
-      The earlier smoke test did not cover new-account payment/activation, the fork Builds path, or
-      a complete clean rerun after guide corrections; it must not be labelled a full pass.
+- [x] Accept the completed installation walkthroughs and live upgrade evidence for the first
+      core-product release, with the scope and limitations above recorded.
 - [ ] Select the first version, align package/lockfile versions, review the final diff, and run both
       quality and dependency-audit gates on the exact release commit.
 - [ ] Publish only with maintainer approval; observe successful promotion to `stable`, then verify
       delivery to an opted-in test installation.
+
+## Follow-up verification, not core-release blockers
+
+- [ ] Observe a real timer-triggered updater run; manual dispatch is not scheduler evidence.
+- [ ] Complete the stricter [fresh-deployment acceptance](FRESH_DEPLOYMENT_ACCEPTANCE.md) from a
+      brand-new account and checkout, recording all assertions without repairs. Preserve this as a
+      future repeatable test; do not describe it as completed by the existing-account walkthroughs.
 
 The disposable Git connection was switched from the synthetic Worker to the real-application Worker
 with explicit maintainer approval. Account sign-in and payment verification remain owner-assisted

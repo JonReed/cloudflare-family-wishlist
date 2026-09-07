@@ -35,7 +35,8 @@ host and protect your installation.
 > [!NOTE]
 > Family Wishlist is feature-complete for everyday family use: private sign-in, the family dashboard,
 > wish editing, add-from-anywhere tools, surprise-preserving claims and read-only sharing are all in
-> place. The next milestone is the recorded release walkthrough and first tagged release.
+> place. See the [v1.0.0 release notes](docs/releases/v1.0.0.md) for the core release scope and
+> the optional updater's experimental status.
 
 <p align="center">
   <img src="docs/assets/wishlist-overview.jpg" width="1200" alt="Family Wishlist showing gift-tag family navigation, a paper wishlist and its add form">

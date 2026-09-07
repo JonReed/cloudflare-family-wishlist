@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-family-wishlist",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A private, self-hosted family wishlist built for Cloudflare's free tier.",
   "private": true,
   "type": "module",

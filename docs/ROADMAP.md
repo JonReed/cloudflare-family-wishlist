@@ -1,6 +1,6 @@
 # Roadmap
 
-Family Wishlist is approaching its first tagged release with every product phase complete. Work
+Family Wishlist's v1.0.0 core release scope has every product phase complete. Work
 happens directly on `main`, and each step keeps the application deployable with a green quality gate.
 
 ## Phase 0 — Foundation
@@ -71,6 +71,7 @@ happens directly on `main`, and each step keeps the application deployable with 
 - [x] Abuse-case and privacy review.
 - [x] Publish an isolated fresh-deployment acceptance procedure.
 - [x] Prove SQL-export recovery and D1 Time Travel with disposable data; see [release readiness](RELEASE_READINESS.md).
-- [ ] Verify automatic upstream delivery through a real Cloudflare Build and scheduled run.
-- [ ] Execute and record the fresh-deployment walkthrough for the first release.
-- [ ] First tagged release.
+- [ ] Verify the optional updater's complete scheduled delivery path; live Cloudflare build delivery is already proven.
+- [x] Complete installation walkthroughs and accept the recorded evidence for the first core release; see [release scope](RELEASE_READINESS.md#first-release-scope).
+- [ ] Extend acceptance evidence to the strict brand-new-account walkthrough without repairs.
+- [ ] Publish and verify the first tagged release; see the [v1.0.0 release record](releases/v1.0.0.md).
