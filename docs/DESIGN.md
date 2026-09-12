@@ -187,10 +187,11 @@ public visitor cannot do.
 Member navigation uses paper gift tags with a visible cotton-string loop through each tag hole and a
 clear active state. The grid always begins at the left edge of the family board, including when it
 contains a single tag, and a single tag stays tag-sized rather than stretching across the page. Tags
-should remain compact enough for at least six to share a typical desktop row when space permits.
-They may wrap into additional rows and must work with long display names. The supporting labels are
-**Your wishlist** and **Their wishlist**. Every tag should lift on hover, including inactive tags,
-and switching lists must not jump the page down to the list. They are navigation, not filter chips.
+should remain compact enough for at least seven to share a typical desktop row when space permits.
+They may wrap into additional rows and must work with long display names. Supporting copy is
+deliberately sparse: only the signed-in member's tag carries **My wishlist**; other tags rely on the
+member's name alone. Every tag should lift on hover, including inactive tags, and switching lists must
+not jump the page down to the list. They are navigation, not filter chips.
 
 The tag body, layout and states remain responsive HTML and CSS. The reinforced hole and fibrous cord
 use the small transparent

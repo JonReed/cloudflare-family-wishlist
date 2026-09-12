@@ -30,8 +30,9 @@ import {
   ensurePublicSharingAccess,
   PublicSharingAccessError
 } from '../lib/cloudflare/access-public-sharing';
-import { redirect, Link } from 'react-router';
+import { redirect } from 'react-router';
 import { SiteHeader } from '../components/site-header';
+import { FamilyWishlistTags } from '../components/family-wishlist-tags';
 import { WishlistSheet } from '../components/wishlist/sheet';
 import { AddWishPanel } from '../components/wishlist/add-panel';
 import { SiteFooter } from '../components/site-footer';
@@ -218,33 +219,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <h1 id="page-title" className="sr-only">
             Family wishlists
           </h1>
-          <nav aria-label="Choose a family wishlist" className="family-tags">
-            {wishlists.map((wishlist) => {
-              const isActive = activeWishlist?.id === wishlist.id;
-
-              return (
-                <div key={wishlist.id} className="family-tag-wrap">
-                  <Link
-                    to={`/?list=${encodeURIComponent(wishlist.id)}`}
-                    preventScrollReset
-                    className="family-tag"
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <span>{wishlist.owner.displayName}</span>
-                    {wishlist.isOwn ? <small>Your wishlist</small> : <small>Their wishlist</small>}
-                    <img
-                      src="/images/tag-string-hanging.png"
-                      alt=""
-                      width="384"
-                      height="256"
-                      className="tag-string"
-                      draggable="false"
-                    />
-                  </Link>
-                </div>
-              );
-            })}
-          </nav>
+          <FamilyWishlistTags wishlists={wishlists} activeWishlistId={activeWishlist?.id} />
         </section>
 
         <div className="content-wrap page-wrap">

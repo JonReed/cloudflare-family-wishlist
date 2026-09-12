@@ -29,6 +29,7 @@
     "../app/components/brand.tsx",
     "../app/components/client-runtime.tsx",
     "../app/components/edit-wish-form.tsx",
+    "../app/components/family-wishlist-tags.tsx",
     "../app/components/remove-wish-form.tsx",
     "../app/components/stop-sharing-form.tsx",
     "../app/components/family-member-removal.tsx",
