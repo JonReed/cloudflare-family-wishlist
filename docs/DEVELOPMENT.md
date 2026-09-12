@@ -254,11 +254,13 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks    |
 | `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts   |
 | `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback  |
+| `test/add-family-member-form.test.tsx`  | family adds retain a native server-submittable form fallback       |
 | `test/add-wish-form.test.tsx`           | frequent adds retain a native server-submittable form fallback     |
 | `test/edit-wish-form.test.tsx`          | item edits retain a native server-submittable form fallback        |
 | `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures |
 | `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction    |
 | `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion   |
+| `test/family-route.test.ts`             | enhanced add results and native redirect fallback                  |
 | `test/member-provisioning.test.ts`      | email validation, idempotent first login and one-list constraint   |
 | `test/product-image.test.ts`            | same-origin proxy types, redirects and response-byte boundary      |
 | `test/product-images.test.ts`           | member-scoped image burst/day budgets and reset boundaries         |

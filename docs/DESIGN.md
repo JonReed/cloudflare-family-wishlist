@@ -55,7 +55,9 @@ not imply that a wish is saved automatically.
 Household administration lives on the separate, infrequently visited **Your family** page. Adding
 someone creates their wishlist immediately; their exact email remains required. Show **Not signed
 in yet** until their first authenticated visit, keep the invitation copy control available, and allow
-the organiser to remove access even before that visit. It shows
+the organiser to remove access even before that visit. After a successful addition, clear the add
+form, return focus to the name field and show the confirmation beside the form so the organiser can
+see immediately that the person and wishlist are ready. It shows
 joined people and those waiting for their first login, with an add form kept apart from the everyday
 wishlist. Cloudflare policy terminology and deployment setup stay out of family-facing copy so the
 normal list never feels like an admin console. Put **Remove access** behind a native disclosure with

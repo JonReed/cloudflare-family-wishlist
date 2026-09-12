@@ -1963,8 +1963,27 @@ button:disabled {
   padding-top: 1.35rem;
 }
 
-.family-add-form .button-primary {
+.family-add-fields {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  gap: 1.5rem;
+  padding: 0;
+}
+
+.family-add-fields .button-primary {
   width: 100%;
+}
+
+.family-add-success {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.family-add-success[hidden] {
+  display: none;
 }
 
 .error-page {

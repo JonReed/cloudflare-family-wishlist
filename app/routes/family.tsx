@@ -1,5 +1,6 @@
-import { data, Form, redirect, useNavigation } from 'react-router';
+import { data, Form, redirect } from 'react-router';
 
+import { AddFamilyMemberForm } from '../components/add-family-member-form';
 import { FamilyMemberRemoval } from '../components/family-member-removal';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
@@ -159,6 +160,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       throw error;
     }
 
+    if (formData.get('enhancedAddMember') === 'true') {
+      return { added: true as const };
+    }
+
     return redirect('/family?added=1');
   } catch (error) {
     if (error instanceof FamilyAdminRequiredError) {
@@ -291,10 +296,10 @@ function FamilyPersonRow({
 }
 
 export default function Family({ loaderData, actionData }: Route.ComponentProps) {
-  const navigation = useNavigation();
-  const isAdding = navigation.state === 'submitting';
   const joinedCount = loaderData.people.filter((person) => person.status === 'joined').length;
   const waitingCount = loaderData.people.length - joinedCount;
+  const navigationError = actionData && 'error' in actionData ? actionData.error : null;
+  const submittedValues = actionData && 'values' in actionData ? actionData.values : undefined;
 
   return (
     <div className="site-shell">
@@ -307,13 +312,6 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
             <h1 id="family-title">Your family</h1>
             <p>See who has made it in and add another favourite person when you’re ready.</p>
           </div>
-
-          {loaderData.added ? (
-            <div role="status" className="profile-saved family-page-message">
-              Their wishlist is ready to add wishes. Copy their invitation below and send it however
-              you like.
-            </div>
-          ) : null}
 
           {loaderData.repaired ? (
             <div role="status" className="profile-saved family-page-message">
@@ -356,54 +354,74 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
                 copy instead.
               </p>
 
-              <Form method="post" className="profile-form family-add-form">
-                <input type="hidden" name="intent" value="add-member" />
-                {actionData?.error ? (
-                  <div role="alert" className="form-alert profile-alert">
-                    <strong>Sorry, that didn’t work.</strong> {actionData.error}
-                  </div>
-                ) : null}
+              <AddFamilyMemberForm
+                method="post"
+                className="profile-form family-add-form"
+                serverSucceeded={loaderData.added}
+              >
+                {({ error, isPending, succeeded }) => (
+                  <>
+                    <input type="hidden" name="intent" value="add-member" />
+                    {(error ?? navigationError) ? (
+                      <div role="alert" className="form-alert profile-alert">
+                        <strong>Sorry, that didn’t work.</strong> {error ?? navigationError}
+                      </div>
+                    ) : null}
 
-                <div>
-                  <label htmlFor="family-display-name" className="form-label">
-                    Their name
-                  </label>
-                  <input
-                    id="family-display-name"
-                    name="displayName"
-                    required
-                    maxLength={80}
-                    defaultValue={actionData?.values.displayName}
-                    autoComplete="off"
-                    className="form-control"
-                    placeholder="The name your family uses"
-                  />
-                </div>
+                    <fieldset className="family-add-fields" disabled={isPending}>
+                      <div>
+                        <label htmlFor="family-display-name" className="form-label">
+                          Their name
+                        </label>
+                        <input
+                          id="family-display-name"
+                          name="displayName"
+                          required
+                          maxLength={80}
+                          defaultValue={submittedValues?.displayName}
+                          autoComplete="off"
+                          className="form-control"
+                          placeholder="The name your family uses"
+                        />
+                      </div>
 
-                <div>
-                  <label htmlFor="family-email" className="form-label">
-                    Sign-in email
-                  </label>
-                  <input
-                    id="family-email"
-                    name="email"
-                    type="email"
-                    required
-                    maxLength={254}
-                    defaultValue={actionData?.values.email}
-                    autoComplete="email"
-                    className="form-control"
-                    placeholder="name@example.com"
-                  />
-                  <p className="profile-hint">
-                    For a child, an address such as yourname+child@gmail.com works nicely.
-                  </p>
-                </div>
+                      <div>
+                        <label htmlFor="family-email" className="form-label">
+                          Sign-in email
+                        </label>
+                        <input
+                          id="family-email"
+                          name="email"
+                          type="email"
+                          required
+                          maxLength={254}
+                          defaultValue={submittedValues?.email}
+                          autoComplete="email"
+                          className="form-control"
+                          placeholder="name@example.com"
+                        />
+                        <p className="profile-hint">
+                          For a child, an address such as yourname+child@gmail.com works nicely.
+                        </p>
+                      </div>
 
-                <button type="submit" className="button-primary" disabled={isAdding}>
-                  {isAdding ? 'Adding…' : 'Add to the family'}
-                </button>
-              </Form>
+                      <button type="submit" className="button-primary">
+                        {isPending ? 'Adding…' : 'Add to the family'}
+                      </button>
+                    </fieldset>
+
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="profile-saved family-add-success"
+                      hidden={!succeeded}
+                    >
+                      Added to your family. Their wishlist is ready for wishes. Copy their
+                      invitation from the family list and send it however you like.
+                    </div>
+                  </>
+                )}
+              </AddFamilyMemberForm>
             </aside>
           </div>
         </section>
