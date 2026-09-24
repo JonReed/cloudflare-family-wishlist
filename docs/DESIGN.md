@@ -106,9 +106,10 @@ than a pill or software-dashboard badge.
 
 ### Adding or improving an idea
 
-Any admitted member can choose a person, add a wish or expand “Edit this wish”. The add form stays in
+Any admitted member can choose a person, add a wish or open “Edit this wish”. The add form stays in
 reach beside the active list on laptop-sized screens and follows the list on small screens; edit
-forms are disclosed beside the item they change. A new wish asks for its optional product link first
+forms open in a focused dialog, with inline disclosures as the no-JavaScript fallback. A new wish
+asks for its optional product link first
 so the page can fill the name and GBP price when a shop shares them; the person checks that draft and
 can change every value before adding it. A visible “Fill from link” control keeps this useful without
 JavaScript, while pasting or leaving the link field triggers the same lookup when enhancement is
@@ -128,21 +129,37 @@ and clear it when the link changes, another lookup starts or the wish is submitt
 When the add form follows the list on narrower screens, show “Add a wish” beside the list heading
 as a native jump link to its focusable form heading. Keep the wishlist compact: a small gap after
 the heading, no extra rule above the first wish, and restrained row padding.
+Keep the wish count and “Share this list” on the same line. On mobile, place this pair below
+the title and “Add a wish” shortcut rather than stacking all three tools vertically.
 The active wishlist heading is a modest serif section title, not a display headline: cap it at
 2rem on desktop and use 1.65rem on mobile, with a shallow top inset so wishes begin sooner.
 
-In the saved list, put “Edit this wish” on its own line below the item content. Opening the editor must
+In the saved list, group an outlined “Edit this wish” button and a quieter, underlined “Remove” text
+action on the right of a footer below the item content. Keep their touch targets at least 44px high.
+Give the “See where to find it” shop link a filled evergreen treatment and retain its external-link
+arrow, making the buying route more prominent than list maintenance. Keep it a semantic link, including
+on the read-only shared list. Apply the same Edit/Remove hierarchy to the no-JavaScript disclosure
+summaries. Opening the editor must
 not change the position or width of the image, metadata or claim controls above it. With JavaScript,
-saving closes the editor, updates the wish in place, shows “Changes saved.” beside “Edit this wish”,
-and returns keyboard focus to that summary. Opening an editor clears the previous confirmation.
+saving closes the editor, updates the wish in place, shows “Changes saved.” below the controls,
+and returns keyboard focus to that control. Opening an editor clears the previous confirmation.
 A failed save keeps the editor open with its draft and moves focus to its local error; an
 unenhanced save retains the ordinary form redirect. Label only the exceptional **Top wish** and
 **Nice to have** priorities; ordinary wishes need no “Would love” marker. Present top wishes first,
 ordinary wishes second and nice-to-have wishes last, with newer additions first inside each group.
 
-Put a quiet **Remove** disclosure beside **Edit this wish**, outside the editor. It names the wish,
+Use the reusable native action dialog for editing and removal when JavaScript is available, so the
+list stays stationary at its current scroll position. The edit dialog is medium-sized on desktop and
+nearly full-screen on mobile; removal uses a compact confirmation. Keep focus inside the dialog,
+support Escape and an explicit Cancel button, and restore focus on dismissal. Do not dismiss on
+backdrop clicks. If an edit has changed, ask whether to keep editing or discard changes before closing.
+While a save or removal is pending, keep the dialog open and disable repeat actions. Without
+JavaScript or native dialog support, retain the ordinary inline disclosures and forms.
+
+Put a quiet **Remove** control beside **Edit this wish**, outside the editor. It names the wish,
 explains that removal cannot be undone, and requires **Yes, remove this wish** before submitting.
-Closing the disclosure cancels. This follows the same two-step pattern as stopping sharing and
+Cancel is initially focused in the removal dialog. Closing the confirmation cancels. This follows
+the same two-step pattern as stopping sharing and
 removing family access, including without JavaScript. Draft-only picture removal and reversible
 gift-claim changes do not need an extra confirmation.
 

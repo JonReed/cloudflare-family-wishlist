@@ -53,6 +53,21 @@ export function EditWishForm({
   });
 
   useEffect(() => {
+    const form = formRef.current;
+    const dialog = form?.closest('dialog[open]');
+    if (!state.isPending || !dialog) return;
+    const active = document.activeElement;
+    // Disabling the submitting control can send focus to the document body.
+    // Keep it in the modal, even when removal disables every available button.
+    if (
+      active === document.body ||
+      (active instanceof HTMLElement && form?.contains(active) && active.matches(':disabled'))
+    ) {
+      dialog.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+    }
+  }, [state.isPending]);
+
+  useEffect(() => {
     const result = fetcher.data;
     if (fetcher.state !== 'idle' || result === handledResultRef.current || !formRef.current) {
       return;

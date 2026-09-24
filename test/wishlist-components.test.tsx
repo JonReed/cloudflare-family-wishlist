@@ -20,7 +20,7 @@ const ownItem: WishlistItem = {
   claimVisibility: 'hidden'
 };
 
-function rowHtml(item: WishlistItem, isOwn = true) {
+function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
   const wishlist: FamilyWishlist = {
     id: 'list-1',
     owner: { id: 'member-1', displayName: 'Sam' },
@@ -35,7 +35,7 @@ function rowHtml(item: WishlistItem, isOwn = true) {
           <WishlistItemRow
             wishlist={wishlist}
             item={item}
-            wasJustEdited={false}
+            wasJustEdited={wasJustEdited}
             onItemEdited={vi.fn()}
             onEditorOpened={vi.fn()}
             onRemovalStart={vi.fn()}
@@ -49,6 +49,14 @@ function rowHtml(item: WishlistItem, isOwn = true) {
 }
 
 describe('extracted wishlist components', () => {
+  it('keeps saved feedback outside the edit control and preserves the external shop link', () => {
+    const html = rowHtml({ ...ownItem, productUrl: 'https://example.com/book' }, true, true);
+    expect(html).toContain('<summary>Edit this wish</summary>');
+    expect(html).toContain('aria-live="polite">Changes saved.</span>');
+    expect(html).toContain('href="https://example.com/book" target="_blank" rel="noreferrer"');
+    expect(html).toContain('See where to find it');
+  });
+
   it('keeps owner rows free of gift coordination and normal-priority labels', () => {
     const html = rowHtml(ownItem);
     expect(html).not.toContain('claim-item');

@@ -24,6 +24,7 @@
     "../.react-router/types/app/routes/+types/family.ts",
     "../app/root.tsx",
     "../app/components/access-sign-out.tsx",
+    "../app/components/action-dialog.tsx",
     "../app/components/add-family-member-form.tsx",
     "../app/components/add-wish-form.tsx",
     "../app/components/brand.tsx",

@@ -230,10 +230,17 @@ after reading the account-specific private handoff and verifying the active Wran
   the working page, while a browser-added form marker lets an unenhanced document post retain its
   redirect. Clear the draft only after structured success data and keep the product-image helper in
   sync by emitting the same input events as a person clearing the link and picture fields.
-- Expanded wish editors use the same browser-marker pattern. Keep each fetcher keyed by item ID,
-  close the editor after a successful revalidation, and restore focus to its summary with visible
+- Wish editors use the same browser-marker pattern. `ActionDialog` progressively enhances native
+  disclosures into modal dialogs, retaining server forms without JavaScript. Keep each fetcher keyed
+  by item ID,
+  close the editor after a successful revalidation, and restore focus to its trigger with visible
   success feedback so a priority change can safely move the keyed row without losing the keyboard
   position. Failed saves keep the editor open and preserve the draft.
+  Check Escape, Cancel, dirty-draft confirmation, focus containment/restoration, scroll stability,
+  removal errors and mobile keyboard space. While every dialog control is disabled for a pending
+  request, retain focus on the dialog heading and keep both Tab directions inside it.
+  Compare actual form values for dirty drafts, including
+  picture changes made by the progressive image helper; ignore only the enhancement marker.
 - Keep authenticated hydration and every generated script on the per-response CSP nonce. Public
   sharing pages must continue to omit `<Scripts>` and authenticated JavaScript bundles. Preserve the
   `meta[property="csp-nonce"]`, `ServerRouter`, render-stream and CSP wiring together: Vite uses that
