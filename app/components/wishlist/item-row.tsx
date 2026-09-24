@@ -81,7 +81,9 @@ export function WishlistItemRow({
           </div>
 
           {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
+        </div>
 
+        <div className="wish-footer">
           <div className="wish-meta">
             {item.priceAmountMinor !== null && item.priceCurrency ? (
               <span>About {formatPrice(item.priceAmountMinor, item.priceCurrency)}</span>
@@ -92,6 +94,74 @@ export function WishlistItemRow({
               </a>
             ) : null}
           </div>
+          <div className="wish-item-actions">
+            <span className="edit-saved-status" role="status" aria-live="polite">
+              {wasJustEdited ? 'Changes saved.' : ''}
+            </span>
+            <ActionDialog
+              className="edit-panel"
+              title="Edit this wish"
+              protectDraft
+              onOpen={onEditorOpened}
+              trigger="Edit this wish"
+            >
+              {({ close, requestClose, enhanced }) => (
+                <EditWishForm
+                  actionKey={`edit-wish:${item.id}`}
+                  method="post"
+                  action={wishlistFormAction(wishlist.id)}
+                  className="edit-form"
+                  onSubmissionError={onEditError}
+                  onSuccess={(form) => {
+                    close();
+                    handleEditSuccess(form);
+                  }}
+                >
+                  {({ error, isPending, submittedIntent }) => {
+                    const isSaving = isPending && submittedIntent === 'edit-item';
+
+                    return (
+                      <>
+                        <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+                        <fieldset className="edit-form-fields" disabled={isPending}>
+                          <ItemFields item={item} formId={formId} recipientName={recipientName} />
+                          <div className="form-actions">
+                            <button name="intent" value="edit-item" className="button-primary">
+                              {isSaving ? 'Saving…' : 'Save changes'}
+                            </button>
+                            {enhanced ? (
+                              <button type="button" className="button-quiet" onClick={requestClose}>
+                                Cancel
+                              </button>
+                            ) : null}
+                          </div>
+                        </fieldset>
+                        <p
+                          className={
+                            error
+                              ? 'mutation-submit-status mutation-submit-error'
+                              : 'mutation-submit-status'
+                          }
+                          role={error ? 'alert' : 'status'}
+                          aria-live="polite"
+                          tabIndex={error ? -1 : undefined}
+                        >
+                          {error}
+                        </p>
+                      </>
+                    );
+                  }}
+                </EditWishForm>
+              )}
+            </ActionDialog>
+            <RemoveWishForm
+              wishlistId={wishlist.id}
+              itemId={item.id}
+              title={item.title}
+              onRemovalStart={onRemovalStart}
+              onRemovalError={onEditError}
+            />
+          </div>
         </div>
       </div>
 
@@ -100,75 +170,6 @@ export function WishlistItemRow({
           <ClaimControls wishlist={wishlist} item={item} />
         </div>
       ) : null}
-
-      <div className="wish-item-actions">
-        <span className="edit-saved-status" role="status" aria-live="polite">
-          {wasJustEdited ? 'Changes saved.' : ''}
-        </span>
-        <ActionDialog
-          className="edit-panel"
-          title="Edit this wish"
-          protectDraft
-          onOpen={onEditorOpened}
-          trigger="Edit this wish"
-        >
-          {({ close, requestClose, enhanced }) => (
-            <EditWishForm
-              actionKey={`edit-wish:${item.id}`}
-              method="post"
-              action={wishlistFormAction(wishlist.id)}
-              className="edit-form"
-              onSubmissionError={onEditError}
-              onSuccess={(form) => {
-                close();
-                handleEditSuccess(form);
-              }}
-            >
-              {({ error, isPending, submittedIntent }) => {
-                const isSaving = isPending && submittedIntent === 'edit-item';
-
-                return (
-                  <>
-                    <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-                    <fieldset className="edit-form-fields" disabled={isPending}>
-                      <ItemFields item={item} formId={formId} recipientName={recipientName} />
-                      <div className="form-actions">
-                        <button name="intent" value="edit-item" className="button-primary">
-                          {isSaving ? 'Saving…' : 'Save changes'}
-                        </button>
-                        {enhanced ? (
-                          <button type="button" className="button-quiet" onClick={requestClose}>
-                            Cancel
-                          </button>
-                        ) : null}
-                      </div>
-                    </fieldset>
-                    <p
-                      className={
-                        error
-                          ? 'mutation-submit-status mutation-submit-error'
-                          : 'mutation-submit-status'
-                      }
-                      role={error ? 'alert' : 'status'}
-                      aria-live="polite"
-                      tabIndex={error ? -1 : undefined}
-                    >
-                      {error}
-                    </p>
-                  </>
-                );
-              }}
-            </EditWishForm>
-          )}
-        </ActionDialog>
-        <RemoveWishForm
-          wishlistId={wishlist.id}
-          itemId={item.id}
-          title={item.title}
-          onRemovalStart={onRemovalStart}
-          onRemovalError={onEditError}
-        />
-      </div>
     </li>
   );
 }

@@ -49,6 +49,18 @@ function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
 }
 
 describe('extracted wishlist components', () => {
+  it('groups buying details and management controls in one footer', () => {
+    const html = rowHtml({
+      ...ownItem,
+      productUrl: 'https://example.com/book',
+      priceAmountMinor: 1500,
+      priceCurrency: 'GBP'
+    });
+    expect(html).toContain('<div class="wish-footer"><div class="wish-meta">');
+    expect(html).toContain('About £15.00');
+    expect(html).toMatch(/See where to find it.*?<\/a><\/div><div class="wish-item-actions">/);
+  });
+
   it('keeps saved feedback outside the edit control and preserves the external shop link', () => {
     const html = rowHtml({ ...ownItem, productUrl: 'https://example.com/book' }, true, true);
     expect(html).toContain('<summary>Edit this wish</summary>');

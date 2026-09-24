@@ -135,7 +135,10 @@ The active wishlist heading is a modest serif section title, not a display headl
 2rem on desktop and use 1.65rem on mobile, with a shallow top inset so wishes begin sooner.
 
 In the saved list, group an outlined “Edit this wish” button and a quieter, underlined “Remove” text
-action on the right of a footer below the item content. Keep their touch targets at least 44px high.
+action on the right of the same wrapping footer as the price and shop link. Do not reserve an extra
+row for editing controls when they fit alongside the metadata. Keep their touch targets at least 44px high.
+When a picture or gift-status column leaves too little room, let the footer span the item content's
+full width; use the available content width rather than only the viewport to choose this layout.
 Give the “See where to find it” shop link a filled evergreen treatment and retain its external-link
 arrow, making the buying route more prominent than list maintenance. Keep it a semantic link, including
 on the read-only shared list. Apply the same Edit/Remove hierarchy to the no-JavaScript disclosure
