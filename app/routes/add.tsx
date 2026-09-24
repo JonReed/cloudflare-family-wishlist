@@ -14,6 +14,7 @@ import {
   type ItemInput
 } from '../lib/db/wishlists';
 import { fillMissingProductDraft } from '../lib/product-draft';
+import { normaliseProductUrl } from '../lib/product-url';
 import {
   createBrowserRunProductRenderer,
   createWorkersAiProductExtractor,
@@ -100,41 +101,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     organiserEmailForRequest(env, identity.email)
   );
   const wishlists = await listFamilyWishlists(env.DB, member.id);
-  const productUrl = new URL(request.url).searchParams.get('url')?.slice(0, 2048) ?? '';
+  const sharedUrl = new URL(request.url).searchParams.get('url') ?? '';
+  const productUrl = normaliseProductUrl(sharedUrl);
 
-  if (!productUrl) {
-    return { member, wishlists, product: blankProduct(), fetchError: null };
-  }
-
-  try {
-    await consumeProductLookupBudget(env.DB, member.id);
-    const product = await fetchProductMetadata(productUrl, new URL(request.url).hostname, {
-      renderPage: createBrowserRunProductRenderer(env.BROWSER),
-      extractWithAi:
-        String(env.PRODUCT_AI_ENABLED).toLowerCase() === 'true'
-          ? createWorkersAiProductExtractor(env.AI, env.PRODUCT_AI_MODEL)
-          : undefined
-    });
-
-    return {
-      member,
-      wishlists,
-      product: { ...product, notes: '', priority: 'normal' as const },
-      fetchError: null
-    };
-  } catch (error) {
-    if (!(error instanceof ProductMetadataError || error instanceof ProductLookupRateLimitError)) {
-      throw error;
-    }
-
-    return {
-      member,
-      wishlists,
-      product: blankProduct(productUrl),
-      fetchError: error.message,
-      diagnostics: error instanceof ProductMetadataError ? error.diagnostics : undefined
-    };
-  }
+  // External lookups begin after hydration through /product-details. Rendering
+  // the form must never wait for the shop, Browser Run or AI enrichment.
+  return {
+    member,
+    wishlists,
+    product: blankProduct(productUrl ?? ''),
+    fetchError:
+      sharedUrl && !productUrl ? 'Use a web link beginning with http:// or https://.' : null
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -237,12 +215,28 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
             <p>Check one or more family lists, tidy up the details, then save it for later.</p>
           </div>
 
-          <Form method="post" className="profile-form mt-10" data-product-import-form>
+          <Form
+            method="post"
+            className="profile-form mt-10"
+            data-product-import-form
+            data-product-auto-fetch={!actionData && product.productUrl ? 'true' : undefined}
+          >
             {actionError ? (
               <div role="alert" className="form-alert profile-alert">
                 <strong>Sorry, that didn’t work.</strong> {actionError}
               </div>
             ) : null}
+
+            <div className="product-fetching-panel" data-product-fetching hidden>
+              <span className="product-fetching-spinner" aria-hidden="true" />
+              <div>
+                <strong>Fetching product details…</strong>
+                <p>You can add notes, choose a priority and pick wishlists while we look.</p>
+                <button type="button" className="button-quiet" data-product-fetch-cancel>
+                  Enter details myself
+                </button>
+              </div>
+            </div>
 
             <div>
               <label htmlFor="bookmarklet-product-url" className="form-label">
@@ -284,11 +278,9 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
               <ProductDiagnostics
                 diagnostics={
                   productFetchError
-                    ? actionData
-                      ? 'diagnostics' in actionData
-                        ? actionData.diagnostics
-                        : undefined
-                      : loaderData.diagnostics
+                    ? actionData && 'diagnostics' in actionData
+                      ? actionData.diagnostics
+                      : undefined
                     : undefined
                 }
               />

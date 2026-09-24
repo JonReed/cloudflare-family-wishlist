@@ -1,239 +1,313 @@
-/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, URL, document, fetch, setTimeout, navigator */
+/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, MutationObserver, URL, document, fetch, setTimeout, navigator */
 
-const imagePreviewUpdates = new Map();
+const imagePreviewUpdates = new WeakMap();
+const enhancedImages = new WeakSet();
+const enhancedForms = new WeakSet();
 
-for (const field of document.querySelectorAll('[data-product-image-field]')) {
-  const imageInput = field.querySelector('[data-product-image]');
-  const imagePreview = field.querySelector('[data-product-image-preview]');
-  const imagePreviewImage = field.querySelector('[data-product-image-preview-image]');
-  const removeButton = field.querySelector('[data-product-image-remove]');
-  const presentCopy = field.querySelectorAll('[data-product-image-present]');
-  const missingCopy = field.querySelectorAll('[data-product-image-missing]');
+function enhanceProductForms() {
+  for (const field of document.querySelectorAll('[data-product-image-field]')) {
+    if (enhancedImages.has(field)) continue;
+    const imageInput = field.querySelector('[data-product-image]');
+    const imagePreview = field.querySelector('[data-product-image-preview]');
+    const imagePreviewImage = field.querySelector('[data-product-image-preview-image]');
+    const removeButton = field.querySelector('[data-product-image-remove]');
+    const presentCopy = field.querySelectorAll('[data-product-image-present]');
+    const missingCopy = field.querySelectorAll('[data-product-image-missing]');
 
-  if (
-    !(imageInput instanceof HTMLInputElement) ||
-    !(imagePreview instanceof HTMLElement) ||
-    !(imagePreviewImage instanceof HTMLImageElement) ||
-    !(removeButton instanceof HTMLButtonElement)
-  ) {
-    continue;
-  }
-
-  const showPreview = (hasPreview) => {
-    imagePreview.hidden = !hasPreview;
-    for (const element of presentCopy) element.hidden = !hasPreview;
-    for (const element of missingCopy) element.hidden = hasPreview;
-  };
-
-  const updateImagePreview = () => {
-    const imageUrl = imageInput.value.trim();
-    removeButton.hidden = !imageUrl;
-
-    if (!/^https:\/\//i.test(imageUrl)) {
-      imagePreviewImage.removeAttribute('src');
-      showPreview(false);
-      return;
+    if (
+      !(imageInput instanceof HTMLInputElement) ||
+      !(imagePreview instanceof HTMLElement) ||
+      !(imagePreviewImage instanceof HTMLImageElement) ||
+      !(removeButton instanceof HTMLButtonElement)
+    ) {
+      continue;
     }
 
-    const proxyUrl = new URL('/product-image', document.baseURI);
-    proxyUrl.searchParams.set('url', imageUrl);
+    enhancedImages.add(field);
+    const showPreview = (hasPreview) => {
+      imagePreview.hidden = !hasPreview;
+      for (const element of presentCopy) element.hidden = !hasPreview;
+      for (const element of missingCopy) element.hidden = hasPreview;
+    };
 
-    if (imagePreviewImage.src !== proxyUrl.href) {
-      showPreview(true);
-      imagePreviewImage.src = proxyUrl.href;
-    } else if (imagePreviewImage.complete && imagePreviewImage.naturalWidth > 0) {
-      showPreview(true);
-    }
-  };
+    const updateImagePreview = () => {
+      const imageUrl = imageInput.value.trim();
+      removeButton.hidden = !imageUrl;
 
-  imagePreviewImage.addEventListener('load', () => showPreview(true));
-  imagePreviewImage.addEventListener('error', () => {
-    imagePreviewImage.removeAttribute('src');
-    showPreview(false);
-  });
-  imageInput.addEventListener('input', updateImagePreview);
-  removeButton.addEventListener('click', () => {
-    imageInput.value = '';
-    updateImagePreview();
-  });
-
-  imagePreviewUpdates.set(imageInput, updateImagePreview);
-  updateImagePreview();
-}
-
-const forms = document.querySelectorAll('[data-product-import-form]');
-
-for (const form of forms) {
-  const urlInput = form.querySelector('[data-product-url]');
-  const titleInput = form.querySelector('[data-product-title]');
-  const priceInput = form.querySelector('[data-product-price]');
-  const imageInput = form.querySelector('[data-product-image]');
-  const fetchButton = form.querySelector('[data-product-fetch]');
-  const status = form.querySelector('[data-product-status]');
-  const diagnostics = form.querySelector('[data-product-diagnostics]');
-  const diagnosticText = form.querySelector('[data-product-diagnostics-text]');
-  const copyButton = form.querySelector('[data-product-diagnostics-copy]');
-  const copyStatus = form.querySelector('[data-product-diagnostics-copy-status]');
-  if (copyButton && navigator.clipboard?.writeText) {
-    copyButton.hidden = false;
-    copyButton.addEventListener('click', async () => {
-      const text = diagnosticText.textContent;
-      try {
-        await navigator.clipboard.writeText(text);
-        if (diagnosticText.textContent === text) copyStatus.textContent = 'Copied.';
-      } catch {
-        copyStatus.textContent = 'Select the details above and copy them manually.';
-      }
-    });
-  }
-  const showDiagnostics = (value) => {
-    if (!diagnostics || !diagnosticText) return;
-    const valid = value && typeof value.hostname === 'string' && Array.isArray(value.steps);
-    diagnostics.hidden = !valid;
-    diagnostics.removeAttribute('open');
-    diagnosticText.textContent = valid
-      ? [value.hostname, ...value.steps.filter((step) => typeof step === 'string')].join('\n')
-      : '';
-    if (copyStatus) copyStatus.textContent = '';
-  };
-
-  if (
-    !(form instanceof HTMLFormElement) ||
-    !(urlInput instanceof HTMLInputElement) ||
-    !(titleInput instanceof HTMLInputElement) ||
-    !(priceInput instanceof HTMLInputElement) ||
-    !(imageInput instanceof HTMLInputElement) ||
-    !(fetchButton instanceof HTMLButtonElement) ||
-    !(status instanceof HTMLElement)
-  ) {
-    continue;
-  }
-
-  let activeRequest;
-  let lastRequestedUrl = '';
-  let generatedTitle = '';
-  let generatedPrice = '';
-  let generatedImageUrl = '';
-
-  const setStatus = (message, isError = false) => {
-    showDiagnostics(null);
-    status.textContent = message;
-    status.classList.toggle('product-fetch-error', isError);
-  };
-
-  const fillGeneratedField = (input, value, previousValue) => {
-    if (typeof value !== 'string') return previousValue;
-    if (!input.value || input.value === previousValue) input.value = value;
-    return value;
-  };
-
-  const fetchDetails = async (candidate, force = false) => {
-    const productUrl = candidate.trim();
-    if (!productUrl) {
-      lastRequestedUrl = '';
-      activeRequest?.abort();
-      activeRequest = undefined;
-      fetchButton.disabled = false;
-      form.removeAttribute('aria-busy');
-      setStatus('');
-      return;
-    }
-    if (!/^https?:\/\//i.test(productUrl)) {
-      setStatus(
-        'That link doesn’t look right. Use an address beginning with http:// or https://.',
-        true
-      );
-      return;
-    }
-    if (!force && productUrl === lastRequestedUrl) return;
-
-    lastRequestedUrl = productUrl;
-    activeRequest?.abort();
-    const controller = new AbortController();
-    activeRequest = controller;
-    fetchButton.disabled = true;
-    form.setAttribute('aria-busy', 'true');
-    setStatus('Looking at that page…');
-
-    try {
-      const body = new FormData();
-      body.set('productUrl', productUrl);
-      const response = await fetch('/product-details', {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body,
-        signal: controller.signal
-      });
-      let result;
-      try {
-        result = await response.json();
-      } catch {
-        throw new Error('We couldn’t read that page.');
-      }
-
-      if (!response.ok) {
-        if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
-        setStatus(
-          typeof result?.error === 'string' ? result.error : 'We couldn’t read that page.',
-          true
-        );
-        showDiagnostics(result?.diagnostics);
+      if (!/^https:\/\//i.test(imageUrl)) {
+        imagePreviewImage.removeAttribute('src');
+        showPreview(false);
         return;
       }
 
-      if (!result || typeof result !== 'object') {
-        throw new Error('We couldn’t read that page.');
-      }
+      const proxyUrl = new URL('/product-image', document.baseURI);
+      proxyUrl.searchParams.set('url', imageUrl);
 
-      if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
-
-      urlInput.value = result.productUrl;
-      generatedTitle = fillGeneratedField(titleInput, result.title, generatedTitle);
-      generatedPrice = fillGeneratedField(priceInput, result.price, generatedPrice);
-      generatedImageUrl = fillGeneratedField(imageInput, result.imageUrl, generatedImageUrl);
-      imagePreviewUpdates.get(imageInput)?.();
-      setStatus(
-        result.aiAssisted
-          ? 'We filled what we could find, with a little AI help. Check the details before adding.'
-          : 'We filled what the page shared. Check the details before adding.'
-      );
-    } catch (error) {
-      if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      setStatus(error instanceof Error ? error.message : 'We couldn’t read that page.', true);
-    } finally {
-      if (activeRequest === controller) {
-        fetchButton.disabled = false;
-        form.removeAttribute('aria-busy');
+      if (imagePreviewImage.src !== proxyUrl.href) {
+        showPreview(true);
+        imagePreviewImage.src = proxyUrl.href;
+      } else if (imagePreviewImage.complete && imagePreviewImage.naturalWidth > 0) {
+        showPreview(true);
       }
+    };
+
+    imagePreviewImage.addEventListener('load', () => showPreview(true));
+    imagePreviewImage.addEventListener('error', () => {
+      imagePreviewImage.removeAttribute('src');
+      showPreview(false);
+    });
+    imageInput.addEventListener('input', updateImagePreview);
+    removeButton.addEventListener('click', () => {
+      imageInput.value = '';
+      updateImagePreview();
+    });
+
+    imagePreviewUpdates.set(imageInput, updateImagePreview);
+    updateImagePreview();
+  }
+
+  const forms = document.querySelectorAll('[data-product-import-form]');
+
+  for (const form of forms) {
+    if (enhancedForms.has(form)) continue;
+    const urlInput = form.querySelector('[data-product-url]');
+    const titleInput = form.querySelector('[data-product-title]');
+    const priceInput = form.querySelector('[data-product-price]');
+    const imageInput = form.querySelector('[data-product-image]');
+    const fetchButton = form.querySelector('[data-product-fetch]');
+    const status = form.querySelector('[data-product-status]');
+    const diagnostics = form.querySelector('[data-product-diagnostics]');
+    const diagnosticText = form.querySelector('[data-product-diagnostics-text]');
+    const copyButton = form.querySelector('[data-product-diagnostics-copy]');
+    const copyStatus = form.querySelector('[data-product-diagnostics-copy-status]');
+    if (copyButton && navigator.clipboard?.writeText) {
+      copyButton.hidden = false;
+      copyButton.addEventListener('click', async () => {
+        const text = diagnosticText.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          if (diagnosticText.textContent === text) copyStatus.textContent = 'Copied.';
+        } catch {
+          copyStatus.textContent = 'Select the details above and copy them manually.';
+        }
+      });
     }
-  };
+    const showDiagnostics = (value) => {
+      if (!diagnostics || !diagnosticText) return;
+      const valid = value && typeof value.hostname === 'string' && Array.isArray(value.steps);
+      diagnostics.hidden = !valid;
+      diagnostics.removeAttribute('open');
+      diagnosticText.textContent = valid
+        ? [value.hostname, ...value.steps.filter((step) => typeof step === 'string')].join('\n')
+        : '';
+      if (copyStatus) copyStatus.textContent = '';
+    };
 
-  urlInput.addEventListener('paste', () => {
-    // Paste fires before the browser updates the input. Waiting one task also
-    // handles replacing a selection or pasting into a partly completed URL.
-    setTimeout(() => void fetchDetails(urlInput.value), 0);
-  });
-  urlInput.addEventListener('input', () => {
-    showDiagnostics(null);
-    if (!urlInput.value.trim()) void fetchDetails('');
-  });
-  urlInput.addEventListener('change', () => void fetchDetails(urlInput.value));
-  fetchButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    void fetchDetails(urlInput.value, true);
-  });
-  form.addEventListener('submit', (event) => {
-    const submitter = event.submitter;
-    if (!(submitter instanceof HTMLButtonElement) || submitter.value !== 'add-item') return;
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !(urlInput instanceof HTMLInputElement) ||
+      !(titleInput instanceof HTMLInputElement) ||
+      !(priceInput instanceof HTMLInputElement) ||
+      !(imageInput instanceof HTMLInputElement) ||
+      !(fetchButton instanceof HTMLButtonElement) ||
+      !(status instanceof HTMLElement)
+    ) {
+      continue;
+    }
 
-    // The add response is authoritative from here. Do not let an earlier lookup
-    // finish against a cleared form or leave duplicate feedback beside it.
-    activeRequest?.abort();
-    activeRequest = undefined;
-    lastRequestedUrl = '';
-    fetchButton.disabled = false;
-    form.removeAttribute('aria-busy');
-    setStatus('');
-  });
+    enhancedForms.add(form);
+    let activeRequest;
+    let lastRequestedUrl = '';
+    let generatedTitle = '';
+    let generatedPrice = '';
+    let generatedImageUrl = '';
+
+    const fetchingPanel = form.querySelector('[data-product-fetching]');
+    const cancelFetchButton = form.querySelector('[data-product-fetch-cancel]');
+    const imageField = form.querySelector('[data-product-image-field]');
+    const lockedControls = new Map();
+    const setFetching = (pending) => {
+      fetchButton.disabled = pending;
+      if (!fetchingPanel) return;
+      fetchingPanel.hidden = !pending;
+      // Keep one visible progress message while the existing live region announces it.
+      status.classList.toggle('sr-only', pending);
+      if (imageField instanceof HTMLElement) imageField.inert = pending;
+      for (const control of [
+        urlInput,
+        titleInput,
+        priceInput,
+        imageInput,
+        form.querySelector('[data-product-image-remove]'),
+        form.querySelector('button[value="add-item"]')
+      ]) {
+        if (!(control instanceof HTMLInputElement || control instanceof HTMLButtonElement))
+          continue;
+        if (pending) {
+          if (!lockedControls.has(control)) lockedControls.set(control, control.disabled);
+          control.disabled = true;
+        } else if (lockedControls.has(control)) {
+          control.disabled = lockedControls.get(control);
+          lockedControls.delete(control);
+        }
+      }
+    };
+
+    const setStatus = (message, isError = false) => {
+      showDiagnostics(null);
+      status.textContent = message;
+      status.classList.toggle('product-fetch-error', isError);
+    };
+
+    const fillGeneratedField = (input, value, previousValue) => {
+      if (typeof value !== 'string') return previousValue;
+      if (!input.value || input.value === previousValue) input.value = value;
+      return value;
+    };
+
+    const fetchDetails = async (candidate, force = false) => {
+      const productUrl = candidate.trim();
+      if (!productUrl) {
+        lastRequestedUrl = '';
+        activeRequest?.abort();
+        activeRequest = undefined;
+        setFetching(false);
+        form.removeAttribute('aria-busy');
+        setStatus('');
+        return;
+      }
+      if (!/^https?:\/\//i.test(productUrl)) {
+        setStatus(
+          'That link doesn’t look right. Use an address beginning with http:// or https://.',
+          true
+        );
+        return;
+      }
+      if (!force && productUrl === lastRequestedUrl) return;
+
+      lastRequestedUrl = productUrl;
+      activeRequest?.abort();
+      const controller = new AbortController();
+      activeRequest = controller;
+      setFetching(true);
+      // The add page remains partly interactive. Marking the whole form busy also
+      // prevents screen readers from announcing its live progress message.
+      if (!fetchingPanel) form.setAttribute('aria-busy', 'true');
+      setStatus(fetchingPanel ? 'Fetching product details…' : 'Looking at that page…');
+
+      try {
+        const body = new FormData();
+        body.set('productUrl', productUrl);
+        const response = await fetch('/product-details', {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body,
+          signal: controller.signal
+        });
+        let result;
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error('We couldn’t read that page.');
+        }
+
+        if (!response.ok) {
+          if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
+          setStatus(
+            typeof result?.error === 'string' ? result.error : 'We couldn’t read that page.',
+            true
+          );
+          showDiagnostics(result?.diagnostics);
+          return;
+        }
+
+        if (!result || typeof result !== 'object') {
+          throw new Error('We couldn’t read that page.');
+        }
+
+        if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
+
+        urlInput.value = result.productUrl;
+        generatedTitle = fillGeneratedField(titleInput, result.title, generatedTitle);
+        generatedPrice = fillGeneratedField(priceInput, result.price, generatedPrice);
+        generatedImageUrl = fillGeneratedField(imageInput, result.imageUrl, generatedImageUrl);
+        imagePreviewUpdates.get(imageInput)?.();
+        setStatus(
+          result.aiAssisted
+            ? 'We filled what we could find, with a little AI help. Check the details before adding.'
+            : 'We filled what the page shared. Check the details before adding.'
+        );
+      } catch (error) {
+        if (activeRequest !== controller || urlInput.value.trim() !== productUrl) return;
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setStatus(error instanceof Error ? error.message : 'We couldn’t read that page.', true);
+      } finally {
+        if (activeRequest === controller) {
+          activeRequest = undefined;
+          setFetching(false);
+          form.removeAttribute('aria-busy');
+        }
+      }
+    };
+
+    urlInput.addEventListener('paste', () => {
+      // Paste fires before the browser updates the input. Waiting one task also
+      // handles replacing a selection or pasting into a partly completed URL.
+      setTimeout(() => void fetchDetails(urlInput.value), 0);
+    });
+    urlInput.addEventListener('input', () => {
+      showDiagnostics(null);
+      if (!urlInput.value.trim()) void fetchDetails('');
+    });
+    urlInput.addEventListener('change', () => void fetchDetails(urlInput.value));
+    fetchButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      void fetchDetails(urlInput.value, true);
+    });
+    form.addEventListener('submit', (event) => {
+      const submitter = event.submitter;
+      if (!(submitter instanceof HTMLButtonElement) || submitter.value !== 'add-item') return;
+
+      // The add response is authoritative from here. Do not let an earlier lookup
+      // finish against a cleared form or leave duplicate feedback beside it.
+      activeRequest?.abort();
+      activeRequest = undefined;
+      lastRequestedUrl = '';
+      setFetching(false);
+      form.removeAttribute('aria-busy');
+      setStatus('');
+    });
+
+    cancelFetchButton?.addEventListener('click', () => {
+      activeRequest?.abort();
+      activeRequest = undefined;
+      lastRequestedUrl = '';
+      setFetching(false);
+      form.removeAttribute('aria-busy');
+      setStatus('Enter the product details below.');
+      titleInput.focus();
+    });
+
+    if (form.dataset.productAutoFetch === 'true') {
+      delete form.dataset.productAutoFetch;
+      void fetchDetails(urlInput.value);
+    }
+  }
 }
+
+enhanceProductForms();
+
+// React Router can mount a fresh form after navigation or Back without loading
+// this script again. Enhance each DOM form once, after it has been committed.
+new MutationObserver((records) => {
+  const selector = '[data-product-import-form], [data-product-image-field]';
+  if (
+    records.some((record) =>
+      Array.from(record.addedNodes).some(
+        (node) =>
+          node instanceof HTMLElement && (node.matches(selector) || node.querySelector(selector))
+      )
+    )
+  )
+    enhanceProductForms();
+}).observe(document.body, { childList: true, subtree: true });

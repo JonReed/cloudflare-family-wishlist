@@ -100,8 +100,11 @@ The extraction entry point remains `app/lib/product-metadata.ts`, with implement
 `app/lib/product-metadata/`. Keep dependencies one-way and retain the public entry point for callers.
 
 Product metadata lookup is progressive enhancement. Keep the ordinary `fetch-product` form intent
-working without JavaScript, and keep `public/product-import.js` limited to the same-origin convenience
-layer. Any outbound page fetch must preserve the timeout, response-byte cap, manual redirect checks,
+working without JavaScript. The `/add?url=` loader must render without fetching the external page;
+`data-product-auto-fetch` starts a lookup after hydration, and failed form submissions must not
+automatically start another lookup. Keep `public/product-import.js` limited to the same-origin convenience
+layer, and initialise each new form once when client navigation mounts it as well as on first load.
+Any outbound page fetch must preserve the timeout, response-byte cap, manual redirect checks,
 public-target checks, member-scoped D1 lookup budget and credential-free request in
 `app/lib/product-metadata.ts`. AI extraction must
 remain optional, receive only reduced public-page text, accept only source-supported values and never

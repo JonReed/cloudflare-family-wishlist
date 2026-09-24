@@ -79,8 +79,13 @@ enforcement cannot disagree.
    creating an item.
 6. `/share-target` extracts a validated web link from Android share parameters and redirects to
    `/add?url=`. That add route is also the landing route for the iPhone/iPad Share Sheet Shortcut,
-   copied links and the desktop bookmarklet. It loads an editable product draft and all family list
-   choices; its action inserts one independent item per selected list with a guarded D1 statement.
+   copied links and the desktop bookmarklet. It immediately renders the shared URL and all family list
+   choices. After hydration, the product helper requests details through `/product-details`, filling
+   empty fields. During lookup, product fields and saving are disabled; notes, priority and wishlist
+   choices remain editable. **Enter details myself** cancels the lookup and ignores late results.
+   Completion or failure unlocks the product fields. Without JavaScript, **Fill from
+   link** performs the lookup through the ordinary form action. Saving inserts one independent item
+   per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
 8. A read-only shared-list request skips identity validation only when its method and path exactly
    match the public route boundary. It hashes the URL secret and runs a separate D1 query that does

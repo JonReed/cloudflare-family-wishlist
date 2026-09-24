@@ -431,6 +431,42 @@
   white-space: nowrap;
 }
 
+.product-fetching-panel:not([hidden]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: var(--warm-white);
+}
+
+.product-fetching-panel p {
+  margin: 0.4rem 0;
+}
+
+.product-fetching-spinner {
+  flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.2rem;
+  border: 2px solid var(--line);
+  border-top-color: var(--leaf);
+  border-radius: 50%;
+  animation: product-fetch-spin 900ms linear infinite;
+}
+
+@keyframes product-fetch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-fetching-spinner {
+    animation: none;
+  }
+}
+
 .form-alert {
   margin: 0 0 2rem;
   border: 1px solid rgb(157 73 54 / 0.4);
