@@ -20,7 +20,11 @@ must not receive independent changes. Fork owners are responsible for their own 
    [fresh-account procedure](FRESH_DEPLOYMENT_ACCEPTANCE.md) remains follow-up verification.
 2. Set `package.json` and both package version entries in `package-lock.json` to the intended release
    version, commit them, and rerun the gates. The promotion script rejects a tag whose version differs
-   from either file. In GitHub, prepare release notes explaining changes, migrations, installer fixes
+   from either file. Update the [family user guide](USER_GUIDE.md) for changed workflows and the
+   [security record](SECURITY_REVIEW.md) with the exact reviewed range and verification limits.
+   The brochure website links to these records on `stable` and to GitHub's latest release; it does not
+   need a rebuild just to update release evidence. Material product/privacy changes still need a
+   brochure review. In GitHub, prepare release notes explaining changes, migrations, installer fixes
    and any operator action. Use the [v1.0.0 notes](releases/v1.0.0.md) as a structural reference. Choose
    the exact tested commit on `main` and a new tag named `vMAJOR.MINOR.PATCH`, for example `v1.0.0`.
 3. Publish the release as a normal release. Drafts and prereleases do not advance `stable`.

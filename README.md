@@ -52,7 +52,7 @@ The app has no advertising or analytics scripts and does not add affiliate codes
 Links you paste may already contain tracking parameters; Cloudflare still processes requests to
 host and protect your installation.
 
-**Ready for everyday family use.** [v1.0.0 is released](docs/releases/v1.0.0.md), with private sign-in,
+**Ready for everyday family use.** See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest), with private sign-in,
 shared wishlists, surprise-preserving gifts and public viewing links. The optional
 [automatic upstream updater](docs/INSTALLATION_UPDATES.md) remains experimental.
 
@@ -77,7 +77,7 @@ the beginning of a list; optional notes, pictures and GBP price guidance make ch
 
 Claim a gift, mark it bought or change your mind. Buying something never silently removes the wish:
 its owner decides when it is no longer needed. Core forms work even without client JavaScript.
-See the [complete product guide](docs/PRODUCT.md) for the everyday workflows and privacy model.
+See the [family user guide](docs/USER_GUIDE.md) for everyday workflows and who can see what.
 
 ## Why Cloudflare rather than a home server or VPS?
 
@@ -140,6 +140,7 @@ should explain that distinction before choosing an update route.
 - [Install and deploy](docs/DEPLOYMENT.md) — start with a free Cloudflare account, understand the
   live allowances, and finish with Access, D1, Browser Run, Workers AI and automatic deployments
   configured.
+- [Family user guide](docs/USER_GUIDE.md) — add ideas, coordinate gifts, edit wishes and share a list.
 - [Product model](docs/PRODUCT.md) — who the application serves, core workflows and focused scope.
 - [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
 - [Development guide](docs/DEVELOPMENT.md) — local setup, testing and safe change recipes.
@@ -226,10 +227,11 @@ in your quote; ongoing maintenance, updates and support are agreed separately.
 
 ## Security
 
-An [AI-assisted adversarial security review](docs/SECURITY_REVIEW.md) was performed with OpenAI
-Daybreak Blue on 1 September 2026. All five original findings were fixed, and the final review of
-commit `ad9571c` found no remaining actionable findings in the reviewed source. The transparent
-report preserves the evidence, remediation record, exact commits, scope and review boundaries.
+The [security review record](docs/SECURITY_REVIEW.md) documents AI-assisted source reviews, including
+OpenAI Daybreak Blue, with exact commits, findings, fixes and verification limits. Consult that record
+alongside the [release notes](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest)
+for the version you plan to run. Source reviews are not independent certification or a check of your
+live Cloudflare configuration.
 
 Suspected vulnerabilities have a dedicated private reporting route in [SECURITY.md](SECURITY.md).
 

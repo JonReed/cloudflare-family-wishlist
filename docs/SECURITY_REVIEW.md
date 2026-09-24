@@ -108,7 +108,7 @@ deployed headers, sessions, D1 instance, GitHub settings and Cloudflare Builds c
 following the acceptance checks in [DEPLOYMENT.md](DEPLOYMENT.md). Together, the source review and
 deployment checks provide complementary evidence at both layers.
 
-### Proposed v1.1.0 release-diff review
+### v1.1.0 release-diff review
 
 - **Range:** `v1.0.0` (`df0f5598eabf3ad4b87561ec5cc0ca50897f4f48`) through
   `b60c801524e0e3f805504ded8b7bc38e00ed5f00` on `main`.

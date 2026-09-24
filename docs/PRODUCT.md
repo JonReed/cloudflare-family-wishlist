@@ -164,10 +164,9 @@ agreement rather than an ordinary implementation detail.
 - removable, read-only sharing links for sharing one person's gift ideas outside the family, with
   their narrow Cloudflare Access exception configured automatically.
 
-Next milestones:
-
-- executing and recording the published fresh-deployment acceptance walkthrough; and
-- the first tagged release.
+See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest)
+and [family user guide](USER_GUIDE.md). The stricter fresh-account acceptance walkthrough and genuine
+scheduled updater delivery remain follow-up verification; see [release readiness](RELEASE_READINESS.md).
 
 ## Focused product scope
 

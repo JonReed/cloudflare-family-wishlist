@@ -74,4 +74,5 @@ happens directly on `main`, and each step keeps the application deployable with 
 - [ ] Verify the optional updater's complete scheduled delivery path; live Cloudflare build delivery is already proven.
 - [x] Complete installation walkthroughs and accept the recorded evidence for the first core release; see [release scope](RELEASE_READINESS.md#first-release-scope).
 - [ ] Extend acceptance evidence to the strict brand-new-account walkthrough without repairs.
-- [ ] Publish and verify the first tagged release; see the [v1.0.0 release record](releases/v1.0.0.md).
+- [x] Publish and promote the first tagged release; see the [v1.0.0 release record](releases/v1.0.0.md)
+      and its successful [stable-promotion workflow](https://github.com/JonReed/cloudflare-family-wishlist/actions/runs/34165841018).
