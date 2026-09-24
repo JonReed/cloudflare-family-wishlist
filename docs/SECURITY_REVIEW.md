@@ -11,7 +11,8 @@ The original review found five actionable issues: one high-severity, deployment-
 weakness; two medium availability and revocation weaknesses; and two low-severity recovery and
 supply-chain gaps. Those findings were fixed and re-reviewed. A final Daybreak Blue review of commit
 `ad9571c91bc7b5eb4cf50bb63a7ba64292d99584` found no remaining actionable security findings in the
-reviewed source.
+reviewed source. A further release-candidate diff review from `v1.0.0` to `b60c801524e0e3f805504ded8b7bc38e00ed5f00`
+found no concrete plausible vulnerabilities in the changes proposed for v1.1.0.
 
 | Severity | Original | Remaining |
 | -------- | -------: | --------: |
@@ -106,6 +107,32 @@ The review remained source-led. Operators complete the picture for their own liv
 deployed headers, sessions, D1 instance, GitHub settings and Cloudflare Builds configuration by
 following the acceptance checks in [DEPLOYMENT.md](DEPLOYMENT.md). Together, the source review and
 deployment checks provide complementary evidence at both layers.
+
+### Proposed v1.1.0 release-diff review
+
+- **Range:** `v1.0.0` (`df0f5598eabf3ad4b87561ec5cc0ca50897f4f48`) through
+  `b60c801524e0e3f805504ded8b7bc38e00ed5f00` on `main`.
+- **Review date:** 24 September 2026.
+- **Methods:** Codex Security diff scan of all 16 changed source files, followed by an independent,
+  read-only OpenAI Daybreak Blue review of the exact Git diff and its supporting controls.
+- **Result:** No concrete plausible security vulnerabilities found in the reviewed changes. No source
+  fix was required by these reviews.
+- **Verification:** `npm run quality` passed at the reviewed commit with 423 tests and a production
+  build; `npm run audit` on 24 September found zero known vulnerabilities at the configured moderate
+  threshold.
+
+The review traced asynchronous product lookup through authentication, same-origin and body-size
+checks, the per-member lookup budget, public-target and redirect validation, response bounds, and the
+Browser Run/AI and image-proxy boundaries. It checked the new purchase-state action against the
+claimant-scoped D1 update and verified that owner-facing wishlist results still omit claim data. It
+also examined organiser-only family admission, edit/remove dialogs, native form fallbacks, rendering
+of untrusted strings and URLs, CSP, and the changed dependency lockfile. The lockfile changes update
+integrity-pinned development/build packages; runtime dependencies and `package.json` did not change.
+
+This was a source review of the release diff. It did not inspect live Access policies, cookie settings,
+deployed response headers, production D1, Cloudflare Builds, or an independent household installation.
+Those deployment checks remain the responsibility of each operator. The review applies to the exact
+commit above; a later release commit needs its own gates and a check of any intervening changes.
 
 ## Resolved findings and evidence
 
