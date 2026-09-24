@@ -204,7 +204,9 @@ public visitor cannot do.
 Member navigation uses paper gift tags with a visible cotton-string loop through each tag hole and a
 clear active state. The grid always begins at the left edge of the family board, including when it
 contains a single tag, and a single tag stays tag-sized rather than stretching across the page. Tags
-should remain compact enough for at least seven to share a typical desktop row when space permits.
+should be short and compact enough for at least seven to share a typical desktop row when space permits,
+with three equal columns on phones. Keep a minimum 44px touch height and reserve space below each row
+for the string. Clip only the paper background to the tag shape, never the string or focus outline.
 They may wrap into additional rows and must work with long display names. Supporting copy is
 deliberately sparse: only the signed-in member's tag carries **My wishlist**; other tags rely on the
 member's name alone. Every tag should lift on hover, including inactive tags, and switching lists must
