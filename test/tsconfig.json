@@ -58,6 +58,7 @@
     "../app/components/wishlist/item-fields.tsx",
     "../app/components/wishlist/form-fields.tsx",
     "../app/components/wishlist/claim-controls.tsx",
+    "../app/components/wishlist/more-actions.tsx",
     "../app/components/wishlist/item-row.tsx",
     "../app/lib/product-url.ts",
     "../app/lib/public-share-path.ts",

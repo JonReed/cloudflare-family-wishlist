@@ -466,7 +466,7 @@ export async function setOwnClaimState(
     .bind(state, targetItemId, actorId)
     .run();
 
-  requireChanged(result, 'Only the person getting this gift can mark it as bought.');
+  requireChanged(result, 'Only the person getting this gift can update its status.');
 }
 
 export async function unclaimWishlistItem(

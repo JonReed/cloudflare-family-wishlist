@@ -2,100 +2,56 @@ import type { FamilyWishlist, WishlistItem } from '../../lib/db/wishlists';
 import { InPlaceActionForm } from '../in-place-action-form';
 import { wishlistFormAction, ActionFields } from './form-fields';
 
-export function ClaimControls({
-  wishlist,
-  item
-}: {
-  wishlist: FamilyWishlist;
-  item: WishlistItem;
-}) {
-  if (wishlist.isOwn || item.claimVisibility === 'hidden') return null;
+type ClaimProps = { wishlist: FamilyWishlist; item: WishlistItem };
 
-  if (!item.claim) {
-    return (
-      <InPlaceActionForm
-        method="post"
-        action={wishlistFormAction(wishlist.id)}
-        actionKey={`claim:${item.id}`}
-      >
-        {({ isPending }) => (
-          <>
-            <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-            <button
-              name="intent"
-              value="claim-item"
-              className="button-secondary"
-              disabled={isPending}
-            >
-              {isPending ? 'Saving…' : 'I’ll get this'}
-            </button>
-          </>
-        )}
-      </InPlaceActionForm>
-    );
-  }
-
-  const isPurchased = item.claim.state === 'purchased';
-  const claimStatus = item.claim.isClaimedByViewer
-    ? isPurchased
+export function ClaimStatus({ wishlist, item }: ClaimProps) {
+  if (wishlist.isOwn || item.claimVisibility === 'hidden' || !item.claim) return null;
+  const bought = item.claim.state === 'purchased';
+  const text = item.claim.isClaimedByViewer
+    ? bought
       ? 'You’ve bought this'
       : 'You’re getting this'
-    : isPurchased
+    : bought
       ? `${item.claim.claimedByDisplayName} has bought this`
       : `${item.claim.claimedByDisplayName} is getting this`;
-
   return (
-    <div className="claim-note">
-      <p>
-        <span className="claim-tick" aria-hidden="true">
-          ✓
-        </span>
-        {claimStatus}
-      </p>
-      {item.claim.isClaimedByViewer ? (
-        <div className="claim-actions">
-          {!isPurchased ? (
-            <InPlaceActionForm
-              method="post"
-              action={wishlistFormAction(wishlist.id)}
-              actionKey={`purchase:${item.id}`}
-            >
-              {({ isPending }) => (
-                <>
-                  <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-                  <button
-                    name="intent"
-                    value="mark-purchased"
-                    className="button-small"
-                    disabled={isPending}
-                  >
-                    {isPending ? 'Saving…' : 'I’ve bought it'}
-                  </button>
-                </>
-              )}
-            </InPlaceActionForm>
-          ) : null}
-          <InPlaceActionForm
-            method="post"
-            action={wishlistFormAction(wishlist.id)}
-            actionKey={`unclaim:${item.id}`}
+    <p className="wish-gift-status" role="status">
+      {text}
+    </p>
+  );
+}
+
+export function ClaimControls({ wishlist, item }: ClaimProps) {
+  if (wishlist.isOwn || item.claimVisibility === 'hidden') return null;
+  if (item.claim && !item.claim.isClaimedByViewer) return null;
+  const bought = item.claim?.state === 'purchased';
+  const intent = !item.claim ? 'claim-item' : bought ? 'mark-not-purchased' : 'mark-purchased';
+  const label = !item.claim ? 'I’ll get this' : bought ? 'Mark as not bought' : 'Mark as bought';
+  return (
+    <InPlaceActionForm
+      method="post"
+      action={wishlistFormAction(wishlist.id)}
+      actionKey={`gift:${item.id}`}
+      className="wish-gift-actions"
+    >
+      {({ isPending, submittedIntent }) => (
+        <>
+          <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+          <button
+            name="intent"
+            value={intent}
+            className={bought ? 'button-text' : 'button-quiet'}
+            disabled={isPending}
           >
-            {({ isPending }) => (
-              <>
-                <ActionFields wishlistId={wishlist.id} itemId={item.id} />
-                <button
-                  name="intent"
-                  value="unclaim-item"
-                  className="button-quiet"
-                  disabled={isPending}
-                >
-                  {isPending ? 'Saving…' : 'I’m not getting this'}
-                </button>
-              </>
-            )}
-          </InPlaceActionForm>
-        </div>
-      ) : null}
-    </div>
+            {isPending && submittedIntent === intent ? 'Saving…' : label}
+          </button>
+          {item.claim && !bought ? (
+            <button name="intent" value="unclaim-item" className="button-text" disabled={isPending}>
+              {isPending && submittedIntent === 'unclaim-item' ? 'Saving…' : 'Cancel claim'}
+            </button>
+          ) : null}
+        </>
+      )}
+    </InPlaceActionForm>
   );
 }

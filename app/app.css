@@ -640,12 +640,6 @@
   display: none;
 }
 
-.share-panel summary::before {
-  margin-right: 0.35rem;
-  content: '↗';
-  text-decoration: none;
-}
-
 .share-panel[open] summary {
   color: var(--rust);
 }
@@ -829,10 +823,6 @@
   border-top: 0;
 }
 
-.wish-row-with-claim {
-  grid-template-columns: minmax(0, 1fr) max-content;
-}
-
 .wish-row::before {
   position: absolute;
   top: 1.65rem;
@@ -875,7 +865,7 @@
   grid-column: 2;
 }
 
-.wish-content > .wish-footer:has(details[open]) {
+.wish-content > .wish-footer:has(.wish-item-actions > details[open]) {
   grid-column: 1 / -1;
 }
 
@@ -889,6 +879,7 @@
   }
 }
 
+.wish-overview,
 .wish-copy {
   min-width: 0;
 }
@@ -954,12 +945,13 @@
   display: contents;
 }
 
-.wish-footer > .wish-item-actions {
-  flex: 1 0 auto;
+.wish-more {
+  position: relative;
   margin-left: auto;
+  flex: none;
 }
 
-.wish-footer > .wish-item-actions:has(> details[open]) {
+.wish-more:has(> .wish-item-actions > details[open]) {
   flex-basis: 100%;
   min-width: 0;
 }
@@ -994,39 +986,72 @@
   background: var(--leaf-dark);
 }
 
-.wish-claim {
-  max-width: 12rem;
-  align-self: start;
-  justify-self: end;
-}
-
-.claim-note {
-  border-left: 3px solid var(--leaf);
-  padding-left: 0.8rem;
-}
-
-.claim-note p {
-  margin: 0;
+.wish-gift-status {
+  margin: 0.6rem 0 0;
   color: var(--leaf);
   font-size: 0.82rem;
-  font-weight: 800;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-.claim-tick {
-  margin-right: 0.35rem;
+.wish-price {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
-.claim-actions,
+.wish-gift-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.65rem;
+}
+
+.wish-gift-actions .in-place-action-error {
+  flex-basis: 100%;
+  max-width: none;
+}
+
+.button-text,
+.wish-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  border: 0;
+  padding: 0.5rem 0.35rem;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.button-text:hover,
+.wish-more > summary:hover {
+  color: var(--leaf);
+}
+
+.button-text:focus-visible,
+.wish-more > summary:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 3px;
+}
+
+.wish-more > summary::-webkit-details-marker {
+  display: none;
+}
+
 .form-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
   margin-top: 0.8rem;
-}
-
-.claim-actions {
-  justify-content: flex-end;
 }
 
 .in-place-action-error {
@@ -1039,37 +1064,20 @@
 }
 
 .wish-item-actions {
-  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  column-gap: 0.5rem;
+  gap: 0.25rem;
 }
 
-.wish-item-actions > details,
-.wish-item-actions > details::details-content {
-  display: contents;
-}
-
-/* Flatten the open panels into the shared grid without exposing closed forms. */
-.wish-item-actions > details:not([open]) > form {
-  display: none;
-}
-
-.wish-item-actions > details > summary {
-  grid-row: 1;
-}
-
-.wish-item-actions .edit-panel > summary,
-.wish-item-actions > .edit-panel.action-dialog-control {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.wish-item-actions .remove-wish-panel > summary,
-.wish-item-actions > .remove-wish-panel.action-dialog-control {
-  grid-column: 3;
-  grid-row: 1;
+.wish-more:has(.action-dialog-control) > .wish-item-actions {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  right: 0;
+  width: 11rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  box-shadow: 3px 4px 0 rgb(48 51 41 / 0.12);
 }
 
 .wish-item-actions form {
@@ -1095,10 +1103,6 @@
 }
 
 .edit-saved-status {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  justify-self: end;
-  margin-top: 0.5rem;
   color: var(--leaf);
   font-size: 0.78rem;
   font-weight: 800;
@@ -1159,9 +1163,10 @@ html.has-action-dialog {
 .wish-item-actions > details > summary {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
+  width: 100%;
   min-height: 44px;
-  border: 1px solid rgb(48 51 41 / 0.3);
+  border: 0;
   border-radius: 2px;
   padding: 0.5rem 0.8rem;
   background: transparent;
@@ -1191,7 +1196,7 @@ html.has-action-dialog {
   border-color: transparent;
   background: transparent;
   color: var(--muted);
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 0.2rem;
 }
 
@@ -2330,10 +2335,6 @@ button:disabled {
   .wish-row {
     grid-template-columns: 1fr;
     gap: 1.3rem;
-  }
-
-  .wish-claim {
-    justify-self: start;
   }
 }
 

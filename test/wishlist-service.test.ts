@@ -290,6 +290,12 @@ describe('wishlist service', () => {
         isClaimedByViewer: true
       }
     });
+    await setOwnClaimState(env.DB, giver.id, itemId!, 'claimed');
+    const restored = (await listFamilyWishlists(env.DB, giver.id)).find(
+      (list) => list.owner.id === owner.id
+    )?.items[0];
+    expect(restored).toMatchObject({ claim: { state: 'claimed', claimedByMemberId: giver.id } });
+    expect((await listFamilyWishlists(env.DB, owner.id))[0]?.items[0]).not.toHaveProperty('claim');
   });
 
   it('prevents owners, competing gift-givers and non-claimants changing a claim', async () => {
@@ -306,6 +312,9 @@ describe('wishlist service', () => {
     await claimWishlistItem(env.DB, firstGiver.id, itemId!);
     await expect(claimWishlistItem(env.DB, secondGiver.id, itemId!)).rejects.toThrow('already');
     await expect(setOwnClaimState(env.DB, secondGiver.id, itemId!, 'purchased')).rejects.toThrow(
+      'person getting this gift'
+    );
+    await expect(setOwnClaimState(env.DB, secondGiver.id, itemId!, 'claimed')).rejects.toThrow(
       'person getting this gift'
     );
     await expect(unclaimWishlistItem(env.DB, secondGiver.id, itemId!)).rejects.toThrow(

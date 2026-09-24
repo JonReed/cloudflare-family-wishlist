@@ -71,6 +71,7 @@ export function ActionDialog({
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
   const baseline = useRef('');
   const previousFocus = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -79,6 +80,16 @@ export function ActionDialog({
     if (!open) return;
     document.documentElement.classList.add('has-action-dialog');
     return () => document.documentElement.classList.remove('has-action-dialog');
+  }, [open]);
+
+  useEffect(() => {
+    if (open || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    const menu = triggerRef.current?.closest<HTMLDetailsElement>('.wish-more');
+    if (menu) {
+      menu.open = false;
+      menu.querySelector('summary')?.focus({ preventScroll: true });
+    } else triggerRef.current?.focus({ preventScroll: true });
   }, [open]);
 
   useEffect(() => {
@@ -174,8 +185,8 @@ export function ActionDialog({
             else requestClose();
           }}
           onClose={() => {
+            restoreFocus.current = true;
             setOpen(false);
-            triggerRef.current?.focus({ preventScroll: true });
           }}
         >
           <h2 id={titleId} tabIndex={-1} data-dialog-initial-focus={!compact ? '' : undefined}>

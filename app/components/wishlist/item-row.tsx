@@ -1,7 +1,8 @@
 import type { FamilyWishlist, WishlistItem } from '../../lib/db/wishlists';
 import { useCallback } from 'react';
 import { productImagePath } from '../../lib/product-image';
-import { ClaimControls } from './claim-controls';
+import { ClaimControls, ClaimStatus } from './claim-controls';
+import { WishMoreActions } from './more-actions';
 import { EditWishForm } from '../edit-wish-form';
 import { wishlistFormAction, ActionFields } from './form-fields';
 import { ItemFields } from './item-fields';
@@ -70,34 +71,40 @@ export function WishlistItemRow({
           />
         ) : null}
 
-        <div className="wish-copy">
-          <div className="wish-heading">
-            <h3>{item.title}</h3>
-            {item.priority === 'normal' ? null : (
-              <span className={`priority priority-${item.priority}`}>
-                {priorityLabels[item.priority]}
-              </span>
-            )}
-          </div>
+        <div className="wish-overview">
+          <div className="wish-copy">
+            <div className="wish-heading">
+              <h3>{item.title}</h3>
+              {item.priority === 'normal' ? null : (
+                <span className={`priority priority-${item.priority}`}>
+                  {priorityLabels[item.priority]}
+                </span>
+              )}
+            </div>
 
-          {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
+            {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
+            {item.priceAmountMinor !== null && item.priceCurrency ? (
+              <p className="wish-price">
+                About {formatPrice(item.priceAmountMinor, item.priceCurrency)}
+              </p>
+            ) : null}
+            <ClaimStatus wishlist={wishlist} item={item} />
+          </div>
         </div>
 
         <div className="wish-footer">
           <div className="wish-meta">
-            {item.priceAmountMinor !== null && item.priceCurrency ? (
-              <span>About {formatPrice(item.priceAmountMinor, item.priceCurrency)}</span>
-            ) : null}
             {item.productUrl ? (
               <a href={item.productUrl} target="_blank" rel="noreferrer">
                 See where to find it <span aria-hidden="true">↗</span>
               </a>
             ) : null}
           </div>
-          <div className="wish-item-actions">
-            <span className="edit-saved-status" role="status" aria-live="polite">
-              {wasJustEdited ? 'Changes saved.' : ''}
-            </span>
+          <ClaimControls wishlist={wishlist} item={item} />
+          <span className="edit-saved-status" role="status" aria-live="polite">
+            {wasJustEdited ? 'Changes saved.' : ''}
+          </span>
+          <WishMoreActions>
             <ActionDialog
               className="edit-panel"
               title="Edit this wish"
@@ -161,15 +168,9 @@ export function WishlistItemRow({
               onRemovalStart={onRemovalStart}
               onRemovalError={onEditError}
             />
-          </div>
+          </WishMoreActions>
         </div>
       </div>
-
-      {hasClaimControls ? (
-        <div className="wish-claim" aria-live="polite">
-          <ClaimControls wishlist={wishlist} item={item} />
-        </div>
-      ) : null}
     </li>
   );
 }

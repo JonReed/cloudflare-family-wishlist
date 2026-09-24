@@ -95,7 +95,8 @@ stale or missing list must not leave only some of the selected lists updated.
 ### Coordinate a gift
 
 On somebody else's list, a member can claim an unclaimed item, release their own claim, or mark their
-claim as purchased. Other gift-givers can see who has claimed it and its state.
+claim as purchased. They can mark it as not bought again without releasing their claim.
+Other gift-givers can see who has claimed it and its state.
 
 On the owner's list, claim information is absent—not blurred, redacted or hidden with CSS. This rule
 applies to rendered HTML, loader data, future APIs, logs and error details.

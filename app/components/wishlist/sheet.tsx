@@ -59,9 +59,7 @@ export function WishlistSheet({
     if (document.activeElement !== document.body) return;
     const nextId = removal.candidates.find((id) => wishlist.items.some((item) => item.id === id));
     const target = nextId
-      ? sheet.querySelector<HTMLElement>(
-          `[data-wish-id="${nextId}"] .edit-panel > .action-dialog-trigger, [data-wish-id="${nextId}"] .edit-panel > summary`
-        )
+      ? sheet.querySelector<HTMLElement>(`[data-wish-id="${nextId}"] .wish-more > summary`)
       : (sheet.querySelector<HTMLElement>('.empty-list') ??
         sheet.querySelector<HTMLElement>('.wishlist-heading h2'));
     target?.focus({ preventScroll: true });

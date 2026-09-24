@@ -134,18 +134,21 @@ the title and “Add a wish” shortcut rather than stacking all three tools ver
 The active wishlist heading is a modest serif section title, not a display headline: cap it at
 2rem on desktop and use 1.65rem on mobile, with a shallow top inset so wishes begin sooner.
 
-In the saved list, group an outlined “Edit this wish” button and a quieter, underlined “Remove” text
-action on the right of the same wrapping footer as the price and shop link. Do not reserve an extra
-row for editing controls when they fit alongside the metadata. Keep their touch targets at least 44px high.
-When a picture or gift-status column leaves too little room, let the footer span the item content's
+In the saved list, keep price with the title and notes. Show gift status as a quiet sentence below
+the details, without a boxed panel or heavy vertical rule. The wrapping action line contains the
+shop link and relevant buying controls, with a small “Edit this wish ▾” disclosure at the right for Edit and
+Remove. Keep touch targets at least 44px high. The footer must reach the same right edge whether a
+wish is unclaimed, claimed or bought. Opening the disclosure must not resize the row when JavaScript is available;
+support outside-click and Escape dismissal and ordinary Tab navigation rather than ARIA menu roles.
+When a picture leaves too little room, let the footer span the item content's
 full width; use the available content width rather than only the viewport to choose this layout.
 Give the “See where to find it” shop link a filled evergreen treatment and retain its external-link
 arrow, making the buying route more prominent than list maintenance. Keep it a semantic link, including
-on the read-only shared list. Apply the same Edit/Remove hierarchy to the no-JavaScript disclosure
-summaries. Opening the editor must
+on the read-only shared list. Without JavaScript, the action dropdown and its nested edit/remove disclosures open
+ordinary inline forms. Opening the enhanced editor must
 not change the position or width of the image, metadata or claim controls above it. With JavaScript,
-saving closes the editor, updates the wish in place, shows “Changes saved.” below the controls,
-and returns keyboard focus to that control. Opening an editor clears the previous confirmation.
+saving closes the editor and dropdown, updates the wish in place, shows “Changes saved.” in the footer,
+and returns keyboard focus to “Edit this wish”. Opening an editor clears the previous confirmation.
 A failed save keeps the editor open with its draft and moves focus to its local error; an
 unenhanced save retains the ordinary form redirect. Label only the exceptional **Top wish** and
 **Nice to have** priorities; ordinary wishes need no “Would love” marker. Present top wishes first,
@@ -159,7 +162,7 @@ backdrop clicks. If an edit has changed, ask whether to keep editing or discard 
 While a save or removal is pending, keep the dialog open and disable repeat actions. Without
 JavaScript or native dialog support, retain the ordinary inline disclosures and forms.
 
-Put a quiet **Remove** control beside **Edit this wish**, outside the editor. It names the wish,
+Put **Remove** below **Edit this wish** inside the dropdown, outside the editor. It names the wish,
 explains that removal cannot be undone, and requires **Yes, remove this wish** before submitting.
 Cancel is initially focused in the removal dialog. Closing the confirmation cancels. This follows
 the same two-step pattern as stopping sharing and
@@ -183,8 +186,9 @@ not replace the wish name, and repeated adjacent alt text should be avoided.
 
 ### Quietly buying a gift
 
-On someone else's list, “I’ll get this” is a direct, reversible action. The person choosing it can
-mark the gift bought or leave it for someone else. Choices made by another person are informative
+On someone else's list, “I’ll get this” is a compact secondary action. A claimed gift shows
+“You’re getting this”, with **Mark as bought** and a quiet **Cancel claim** text action. A bought gift
+shows “You’ve bought this” and **Mark as not bought**, which retains the claim. Choices made by another person are informative
 rather than actionable. When JavaScript is available, these small actions update in place with a
 local pending state and an error beside the affected wish. The same controls must remain ordinary
 server forms without JavaScript; optimistic presentation must never override the server's answer to

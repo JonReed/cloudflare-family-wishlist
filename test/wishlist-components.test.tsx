@@ -49,7 +49,7 @@ function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
 }
 
 describe('extracted wishlist components', () => {
-  it('groups buying details and management controls in one footer', () => {
+  it('keeps price with details and puts buying and edit dropdown controls in one footer', () => {
     const html = rowHtml({
       ...ownItem,
       productUrl: 'https://example.com/book',
@@ -58,7 +58,11 @@ describe('extracted wishlist components', () => {
     });
     expect(html).toContain('<div class="wish-footer"><div class="wish-meta">');
     expect(html).toContain('About £15.00');
-    expect(html).toMatch(/See where to find it.*?<\/a><\/div><div class="wish-item-actions">/);
+    expect(html.indexOf('About £15.00')).toBeLessThan(html.indexOf('class="wish-footer"'));
+    expect(html).toContain('class="wish-more"');
+    expect(html).toContain(
+      '<summary><span>Edit this wish <span aria-hidden="true">▾</span></span></summary>'
+    );
   });
 
   it('keeps saved feedback outside the edit control and preserves the external shop link', () => {
@@ -87,6 +91,58 @@ describe('extracted wishlist components', () => {
     expect(html).toContain('priority-high');
     expect(html).toContain('value="claim-item"');
     expect(html).toContain('I’ll get this');
+    expect(html.indexOf('class="wish-footer"')).toBeLessThan(html.indexOf('value="claim-item"'));
+  });
+
+  it.each(['claimed', 'purchased'] as const)(
+    'separates own %s status from compact actions',
+    (state) => {
+      const html = rowHtml(
+        {
+          ...ownItem,
+          claimVisibility: 'visible',
+          claim: {
+            state,
+            claimedByMemberId: 'giver',
+            claimedByDisplayName: 'Alex',
+            isClaimedByViewer: true
+          }
+        },
+        false
+      );
+      expect(html).toContain('class="wish-gift-status"');
+      expect(html.indexOf('class="wish-gift-status"')).toBeLessThan(
+        html.indexOf('class="wish-footer"')
+      );
+      if (state === 'claimed') {
+        expect(html).toContain('Mark as bought');
+        expect(html).toContain('Cancel claim');
+      } else {
+        expect(html).toContain('Mark as not bought');
+        expect(html).toContain('value="mark-not-purchased"');
+        expect(html).not.toContain('value="unclaim-item"');
+      }
+    }
+  );
+
+  it('shows another giver’s status without any gift mutation controls', () => {
+    const html = rowHtml(
+      {
+        ...ownItem,
+        claimVisibility: 'visible',
+        claim: {
+          state: 'claimed',
+          claimedByMemberId: 'giver',
+          claimedByDisplayName: 'Alex',
+          isClaimedByViewer: false
+        }
+      },
+      false
+    );
+    expect(html).toContain('Alex is getting this');
+    expect(html).not.toContain('value="claim-item"');
+    expect(html).not.toContain('value="unclaim-item"');
+    expect(html).not.toContain('value="mark-purchased"');
   });
 
   it('preserves add-field hooks and the ordering of priority choices', () => {

@@ -161,6 +161,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       case 'mark-purchased':
         await setOwnClaimState(env.DB, member.id, formString(formData, 'itemId'), 'purchased');
         return { wishlistId, updated: 'purchase' as const };
+      case 'mark-not-purchased':
+        await setOwnClaimState(env.DB, member.id, formString(formData, 'itemId'), 'claimed');
+        return { wishlistId, updated: 'purchase' as const };
       case 'unclaim-item':
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         return { wishlistId, updated: 'unclaim' as const };

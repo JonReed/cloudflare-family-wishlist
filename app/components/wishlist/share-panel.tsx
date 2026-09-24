@@ -52,6 +52,7 @@ export function ShareWishlistPanel({
       data-share-panel
     >
       <summary>
+        <span aria-hidden="true">↗</span>{' '}
         {active
           ? `${linkCount} sharing ${linkCount === 1 ? 'link' : 'links'} active`
           : 'Share this list'}
