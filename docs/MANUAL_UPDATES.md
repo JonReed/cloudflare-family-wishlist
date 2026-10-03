@@ -61,9 +61,10 @@ Open [the latest release](https://github.com/JonReed/cloudflare-family-wishlist/
 
 Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) and select your
 wishlist app. Check that its website address is the one your family uses; website addresses are
-listed under **Settings → Domains & Routes** if you cannot see yours on the overview.
+listed under **Domains** if you cannot see yours on the overview. Older dashboard layouts call
+this **Settings → Domains & Routes**.
 
-Open the app's **Bindings** tab. Look for **DB**, labelled **D1 database**. That is the stored data
+Open the app's **Settings → Bindings** section (or **Bindings** tab in older layouts). Look for **DB**, labelled **D1 database**. That is the stored data
 used by this website. Follow the database link. If it is not clickable, note its displayed name,
 open [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) and select that exact name.
 
@@ -156,7 +157,7 @@ node -e "const s=JSON.parse(require('node:fs').readFileSync('.wishlist-installat
 
 Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) and select your
 wishlist app by the website address your family uses. Check the **Website name** printed by the
-command against the name at the top of that Cloudflare page. Open **Bindings** and check that **DB**
+command against the name at the top of that Cloudflare page. Open **Settings → Bindings** (or the **Bindings** tab in older layouts) and check that **DB**
 points to the **Database name** printed by the command.
 
 **Done when:** both names match. Keep the terminal output for step 11. The command reads the saved

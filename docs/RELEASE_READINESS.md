@@ -115,3 +115,28 @@ The historical bootstrap evidence above belongs to a different delivery implemen
 be used to claim that the new fork workflow's scheduled delivery has passed. A disposable household
 must still demonstrate a scheduled run, release delivery, deployment failure and recovery before
 that claim can be made. See [fresh-deployment acceptance](FRESH_DEPLOYMENT_ACCEPTANCE.md).
+
+### Live fork delivery check — v1.1.1 candidate
+
+On 3 October, a disposable household repository and a separate Worker/D1 database exercised
+candidate `0d79dd413e63a1b808c06282541f4b7a5cf8d789`. The household started at `v1.1.0` with
+12 migrations, two fictional members, two lists, one wish and one purchased claim.
+
+| Check                           | Observed result                                                                                                                                                                                                                                                                               |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline deployment             | Cloudflare build `90c2896d-f42d-4733-90fa-92e2315e058f` deployed v1.1.0 successfully.                                                                                                                                                                                                         |
+| Manual release update           | GitHub run `37127907430` copied the candidate and Cloudflare build `42c49a27-d19a-476e-9c96-08dea427309a` deployed it. A separate unreleased change on source `main` was excluded; household workflows were preserved.                                                                        |
+| Migration and data preservation | Build applied migration 0013. Every seeded row matched its pre-update value; SQLite quick check returned `ok` and foreign-key check returned no violations.                                                                                                                                   |
+| Failed build                    | An intentionally failing build command on the disposable Worker caused Cloudflare build `8f3fdb27-f95d-4394-bd1a-67a112877219` and GitHub run `37128189072` to fail. The updater reported that the update was incomplete. The previous Worker version and all database rows stayed unchanged. |
+| Retry                           | Restoring `npm run build` and running the same update workflow again succeeded: GitHub run `37128320062`, Cloudflare build `c6ce3b06-98c5-406d-8f81-5bd22a32965d`. Data and integrity checks still matched.                                                                                   |
+| Scheduled delivery              | Pending: the test workflow is enabled with the opt-in variable set, but no timer-triggered run has yet been observed. Manual runs are not scheduler evidence.                                                                                                                                 |
+
+The fixture uses the candidate's updater and build-verification scripts unchanged, with a wrapper
+selecting a disposable upstream repository. Its timer is accelerated to five minutes; the shipped
+workflow checks every six hours. These differences allow controlled releases without publishing an
+untested application release. The tests use synthetic data and the application's normal fail-closed
+response without Access configuration; they do not repeat authenticated family workflows or new-account
+onboarding. Production Cloudflare resources were not changed by this test.
+
+The disposable resources remain in place for the pending timer check. v1.1.1 remains a draft until
+scheduled delivery has been observed and the final repository gates pass.

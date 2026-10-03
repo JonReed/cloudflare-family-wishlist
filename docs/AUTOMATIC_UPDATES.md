@@ -38,7 +38,8 @@ Cloudflare calls a hosted app a **Worker**. Here, that means your existing wishl
 
 Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) and select your
 wishlist app. Check that its website address matches the address your family normally uses. If the
-address is not on the overview, open **Settings → Domains & Routes** to see its website addresses.
+address is not on the overview, open **Domains** to see its website addresses. In older versions
+of the dashboard, this is under **Settings → Domains & Routes**.
 
 **Done when:** you have opened the Cloudflare page for your existing wishlist website. Keep this
 tab open for steps 2–11. If you cannot find that website, check which account you are signed into;
@@ -169,15 +170,18 @@ the database service that stores your family lists.
 
 ## 10. Disable preview builds
 
-In the same Worker's **Settings → Builds → Branch control**, turn off non-production branch
-builds and save. These are previews of other branches; they must not update your family database.
+In the same Worker's **Settings → Builds**, select **Previews Base** and turn off
+**Builds for Preview branches**. Save if a **Save** button appears. In older dashboard layouts,
+this switch is under **Branch control** and is called non-production branch builds.
+These are previews of other branches; they must not update your family database.
 
 **Done when:** the setting for non-production branch builds is off. Updates to other branches
 will not run this website's update command.
 
 ## 11. Remove build path filters
 
-In the same Worker's **Settings → Builds → Build watch paths**, keep the default that includes
+In the same Worker's **Settings → Builds**, select **Production**, then find **Build watch paths**.
+Keep the default that includes
 all files. Remove custom include/exclude filters if you previously added them, then save.
 
 **Done when:** there are no custom exclusions, and the include setting covers all files. This
