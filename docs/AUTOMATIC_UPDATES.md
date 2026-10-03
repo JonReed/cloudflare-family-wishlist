@@ -5,7 +5,7 @@ for you. Once set up, it checks for a new release every six hours and updates th
 your family already uses.
 
 Prefer to choose when updates happen? Follow [manual updates](MANUAL_UPDATES.md). Manual GitHub
-updates use steps 1–15 below but skip step 16. Enabling Actions alone does not enable the schedule.
+updates use steps 1–15 below and skip steps 16 and 18. Step 17’s failure notifications are useful for both choices. Enabling Actions alone does not enable the schedule.
 
 ## Before you start
 
@@ -28,9 +28,9 @@ Whenever this guide says “your GitHub repository”, it means your own copy.
 
 Already using the app? Start with [Choose your update option](UPDATES.md).
 
-**Verification status:** the update tools have passed local tests. A complete scheduled update on
-a separate household installation has not yet been verified. These instructions should not be read
-as a claim that automatic updates have already been proven to work for every household.
+**Verification status:** a separate household installation received a real scheduled release update,
+deployed it through Cloudflare and preserved its database. See [the live test record](RELEASE_READINESS.md#verified-native-scheduled-delivery-3-october-2026).
+Complete step 18 to verify the connection for your own installation.
 
 ## 1. Open your wishlist website in Cloudflare
 
@@ -260,7 +260,8 @@ Look for **Automatic release check**, open it, and confirm the event is **schedu
 **update** job.
 
 The schedule is 00:37, 06:37, 12:37 and 18:37 UTC each day. GitHub may deliver a run late or
-occasionally drop one during high load; these times are not a delivery deadline.
+occasionally drop one during high load; these times are not a delivery deadline. The first run
+can take several hours to appear. You do not need to leave your computer on.
 
 **Done when:** **Get the next tested release** and **Check the Cloudflare build** are green in
 that scheduled run. A **Manual update** run or a skipped job does not verify automatic updates.

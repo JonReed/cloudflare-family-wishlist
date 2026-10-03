@@ -65,7 +65,8 @@ Choose how to receive releases:
 The original standard setup required manual updates: Cloudflare could deploy your repository, but
 publishing an upstream release did not update it. Existing users can keep updating manually or
 [enable automatic updates](docs/UPDATES.md). A separate experimental updater was available
-for some older installations. The new fork updater still requires live scheduled end-to-end verification.
+for some older installations. The current fork updater has passed a live scheduled release,
+Cloudflare deployment and data-preservation check; see [the evidence](docs/RELEASE_READINESS.md#verified-native-scheduled-delivery-3-october-2026).
 
 ## Turn a shopping link into a useful wish
 

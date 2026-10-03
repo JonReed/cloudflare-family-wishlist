@@ -129,7 +129,7 @@ candidate `0d79dd413e63a1b808c06282541f4b7a5cf8d789`. The household started at `
 | Migration and data preservation | Build applied migration 0013. Every seeded row matched its pre-update value; SQLite quick check returned `ok` and foreign-key check returned no violations.                                                                                                                                   |
 | Failed build                    | An intentionally failing build command on the disposable Worker caused Cloudflare build `8f3fdb27-f95d-4394-bd1a-67a112877219` and GitHub run `37128189072` to fail. The updater reported that the update was incomplete. The previous Worker version and all database rows stayed unchanged. |
 | Retry                           | Restoring `npm run build` and running the same update workflow again succeeded: GitHub run `37128320062`, Cloudflare build `c6ce3b06-98c5-406d-8f81-5bd22a32965d`. Data and integrity checks still matched.                                                                                   |
-| Scheduled delivery              | Pending: the test workflow is enabled with the opt-in variable set, but no timer-triggered run has yet been observed. Manual runs are not scheduler evidence.                                                                                                                                 |
+| Scheduled delivery              | Passed on 3 October: genuine schedule run `37146969466` installed a published test release and Cloudflare build `4f87c48f-9348-475a-88bb-ad909609169b` deployed it. See the detailed record below.                                                                                            |
 
 The fixture uses the candidate's updater and build-verification scripts unchanged, with a wrapper
 selecting a disposable upstream repository. The initial timer used five-minute intervals; the corrected native-scheduler test uses
@@ -138,8 +138,8 @@ untested application release. The tests use synthetic data and the application's
 response without Access configuration; they do not repeat authenticated family workflows or new-account
 onboarding. Production Cloudflare resources were not changed by this test.
 
-The disposable resources remain in place for the pending timer check. v1.1.1 remains a draft until
-scheduled delivery has been observed and the final repository gates pass.
+The scheduled-delivery result is recorded below. Repeat the repository gates on the final release
+commit before publication.
 
 ### Scheduler correction, 3 October 2026
 
@@ -151,7 +151,7 @@ deployment; merely omitting it would leave the old timer registered.
 The independent scheduler diagnostic had been disabled after only a short observation window, so
 it did not establish that GitHub's scheduler was broken. The original missing scheduled run remains
 unexplained. The corrected live test keeps the real update workflow enabled and distinguishes a
-real `schedule` event from manual dispatch. Publication still requires that live acceptance result.
+real `schedule` event from manual dispatch. The later passing result is recorded below.
 
 The corrected implementation passed all 557 application tests and eight updater integration tests,
 formatting, lint, type checks, script checks and production build; the dependency audit found no
@@ -166,6 +166,35 @@ matched the previous snapshot; integrity checks passed.
 A real `v1.1.1` release was then published **only in the disposable source repository**.
 Its **Release to stable** run `37136487286` passed the same quality and audit gates as this project
 and promoted `stable` to the exact tagged commit `247835bc8d254623a6c0fa653c2aa1cae715f384`.
-The household fixture has not been manually updated to that release: it is reserved for the genuine
-scheduled-delivery acceptance check. At 16:23 UTC, neither the household nor the separate public
-scheduler diagnostic had received a `schedule` event. The project release remains a draft.
+The household fixture was left for the genuine scheduled-delivery acceptance check rather than
+being manually updated to that release. At 16:23 UTC, neither the household nor the separate public
+scheduler diagnostic had received a `schedule` event. The project release was kept as a draft while
+that check remained outstanding.
+
+### Verified native scheduled delivery, 3 October 2026
+
+The disposable source published test release `v1.1.2` with a distinct application version. Its
+[release gate](https://github.com/JonReed/wishlist-release-test-source-20261003/actions/runs/37142793083)
+passed and promoted `stable` to the exact tag commit `da0608338759c85aa90ebdc53ef85b3160c405d5`.
+This version number belongs only to the fixture; the project release candidate remains `v1.1.1`.
+
+At 19:11:02 UTC, [household run 37146969466](https://github.com/JonReed/wishlist-release-test-household-20261003/actions/runs/37146969466)
+started with GitHub's actual `event=schedule`. No manual dispatch triggered it. The household schedule
+had remained unchanged since 15:56:55 UTC and no manual household update had run since 16:09 UTC.
+The independent public diagnostic received its first scheduled event at 19:10:18 UTC.
+
+| Assertion                      | Result                                                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Released source selected       | Updater reported `updated` from exact source `da0608338759c85aa90ebdc53ef85b3160c405d5`.                                                 |
+| Household version advanced     | Deployment commit `8a8d44da0f669453c7b4e3a0490c32856b9b0ae6` contains package version `1.1.2`, replacing `1.1.1`.                        |
+| Cloudflare deployment verified | Build `4f87c48f-9348-475a-88bb-ad909609169b` succeeded for that exact household commit.                                                  |
+| New version serving            | Worker version `ebe42cc2-9300-4166-b966-79dde629cbfa` received 100% of traffic at 19:12:03 UTC, replacing the captured baseline version. |
+| Database preserved             | All seeded members, lists, wishes, claims and 13 migration records matched the previous snapshot exactly.                                |
+| Integrity preserved            | SQLite quick check returned `ok`; foreign-key check returned no violations.                                                              |
+
+The first event arrived about three hours fourteen minutes after the native schedule was restored.
+No intervening household configuration repair caused it to start. The observations establish delayed
+event delivery; they do not identify GitHub's internal cause or guarantee punctual future runs.
+Automatic release delivery has now passed the live check. The test still uses synthetic data and
+fail-closed unauthenticated responses; it does not replace the earlier authenticated-family tests or
+claim a fresh-account onboarding walkthrough.

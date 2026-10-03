@@ -95,7 +95,14 @@ until the workflow is updated. The current workflow defaults to manual mode when
 
 Local real-Git integration tests cover repeated releases, preserved workflows/settings, installations
 ahead of stable, customisation conflicts, dirty/invalid states, concurrent pushes and the inactivity
-keepalive. Cloudflare build result classification is tested separately. Earlier bootstrap tests proved
-that a GitHub bot push can trigger Cloudflare Builds, but they do not prove this fork workflow's
-scheduled end-to-end path. Observe that path on a disposable household installation before claiming
-unattended delivery has passed. Failed builds must remain visible on subsequent updater runs.
+keepalive. Cloudflare build result classification is tested separately.
+
+On 3 October 2026, a genuine GitHub `schedule` event updated a disposable household to a published,
+gate-passed release, triggered Cloudflare Builds and deployed the new version to 100% of traffic.
+All seeded database rows and migration records were preserved. Separate live checks also covered a
+failed build and successful manual retry. See [the evidence](RELEASE_READINESS.md#verified-native-scheduled-delivery-3-october-2026).
+
+The first native event arrived roughly three hours fourteen minutes after the schedule was restored,
+without another household configuration change. This establishes automatic delivery, not a timing
+guarantee or the reason for GitHub's delay. Keep the first-run check and timing limitations in the
+household guide. Failed builds must remain visible on subsequent updater runs.
