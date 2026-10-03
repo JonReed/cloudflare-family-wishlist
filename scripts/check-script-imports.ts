@@ -1,5 +1,11 @@
 import './check-setup.ts';
 import './configure-access-sharing.ts';
+import './configure-access-session.ts';
+import './finish-access-setup.ts';
+import './private-token-prompt.ts';
+import './setup-household.ts';
+import './setup-access-application.ts';
+import './installation-cf.ts';
 import './installation-config.ts';
 import './installation-wrangler.ts';
 import './deploy-production.ts';

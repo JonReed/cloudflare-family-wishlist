@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { wranglerInvocation } from './installation-wrangler.ts';
 import { pathToFileURL } from 'node:url';
 import { prepareInstallationConfig } from './installation-config.ts';
 
@@ -64,11 +65,11 @@ if (entryPoint && import.meta.url === pathToFileURL(entryPoint).href) {
       throw new Error('Supply the full desired application commit SHA.');
     const config = prepareInstallationConfig({ required: true });
     const read = (args: string[]): unknown => {
-      const result = spawnSync(
-        process.platform === 'win32' ? 'npx.cmd' : 'npx',
-        ['--no-install', 'wrangler', ...args, '--config', config, '--json'],
-        { encoding: 'utf8', timeout: 60_000 }
-      );
+      const invocation = wranglerInvocation([...args, '--config', config, '--json']);
+      const result = spawnSync(invocation.executable, invocation.args, {
+        encoding: 'utf8',
+        timeout: 60_000
+      });
       if (result.error || result.status !== 0)
         throw new Error(
           'Could not read deployment status. Check Wrangler authentication and account access.'

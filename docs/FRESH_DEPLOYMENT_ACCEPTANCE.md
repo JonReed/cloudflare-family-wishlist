@@ -30,22 +30,37 @@ record.
 ## Procedure
 
 1. Start with a clean checkout of the tested commit and no project-specific environment variables.
-2. Follow [Install and deploy](DEPLOYMENT.md) from the prerequisites through automatic deployments,
-   in order and without undocumented corrections.
-3. At step 10, keep all four setup environment variables exported and run:
+   Record the operating system, shell, Node, npm, Wrangler and `cf` versions. Run separate
+   walkthroughs on Windows PowerShell (and Command Prompt if `npm.ps1` is blocked), macOS Terminal
+   and a Linux terminal. A source-level Windows launcher test is not a Windows walkthrough.
+2. Follow [Install and deploy](DEPLOYMENT.md) from tools through the family checks,
+   in order and without undocumented corrections. Use one command per step. Include GitHub
+   deployments only when testing that optional route.
+3. At step 16, run `npm run setup:check -- --before-login` before configuring Access. Require the
+   first-login schema and deployed D1 UUID checks to pass. At step 20, use the private prompt in:
 
    ```sh
-   npm run setup:check
+   npm run setup:access -- .private/access-setup.json
    ```
 
-   Save the pass/fail lines, but never shell history or environment output. The command is read-only
-   and must report no pending D1 migrations, all required bindings on every traffic-bearing Worker
-   version, the 30-day Access session and exact narrow public-sharing applications.
+   Save pass/fail lines without recording token input. The final checks must report no pending D1
+   migrations, the intended database on every traffic-bearing version, all runtime bindings,
+   the 30-day Access session and exact narrow public-sharing applications.
 
-4. Exercise every item in the installation guide's final acceptance checklist using the three test
+   After configuration, repeat in read-only mode:
+
+   ```sh
+   npm run setup:access -- .private/access-setup.json --check
+   ```
+
+   Check that no remote resources, policies or Worker settings change. Close the terminal between
+   selected steps and verify that the saved files allow resumption. Interrupt a database or Access
+   create once; rerunning must inspect live state and avoid duplicates.
+
+4. Exercise installation guide steps 21–29 using the three test
    identities. In particular, verify that the unrelated address cannot enter and that a wishlist
    owner never receives their own item's claim or purchase state.
-5. Verify the build uses its `WISHLIST_INSTALLATION` settings without a tracked household-specific
+5. If GitHub deployments are in scope, verify the build uses its `WISHLIST_INSTALLATION` settings without a tracked household-specific
    change to `wrangler.jsonc`. Push one harmless documentation-only commit to the disposable fork. Confirm exactly one successful
    Cloudflare Build and that the existing Worker remains reachable.
 6. Re-run `npm run setup:check` without the Access environment variables. Confirm the Wrangler, D1 and
@@ -63,13 +78,18 @@ Create a release issue or private test note containing:
 ```text
 Commit:
 Date and tester:
+Operating system and shell:
+Node, npm, Wrangler and cf versions:
 Cloudflare account ID (non-secret):
 Worker name and hostname:
 D1 name and ID:
 Access application ID:
 Optional custom hostname tested: yes/no
 Installation guide completed without correction: pass/fail
-setup:check with Access environment: pass/fail
+Before-login database/schema checks: pass/fail
+setup:access full checks: pass/fail
+setup:access --check makes no remote changes: pass/fail
+Interrupted setup resumes without duplicates: pass/fail
 Final acceptance checklist: pass/fail
 Cloudflare Build from disposable fork: pass/fail
 setup:check without Access environment: pass/fail

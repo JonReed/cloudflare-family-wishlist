@@ -503,6 +503,12 @@ ignored `.wishlist-installation.json` or the build variable `WISHLIST_INSTALLATI
 configuration. The production script rejects a build for a different installation before running
 any remote migration. See [Installation settings](INSTALLATION_CONFIG.md).
 
+The setup sequence verifies the member schema and the actual deployed D1 UUID before first login.
+`setup:access-app` uses the wider `cf` API CLI to provision or verify an exact Worker destination and
+email-code policies. `setup:access` checks that boundary before applying sessions/sharing and
+installing all six runtime settings over Wrangler stdin. The scoped token is not written locally.
+Wrangler subprocesses use the installed Node entry on every OS, avoiding Windows command shims.
+
 `main` is connected to Cloudflare Builds for the reference deployment. Application deployments are
 automatic after a push; pending D1 migrations run through `deploy:production` before Worker deployment. Initial
 Access, DNS and token setup remain separate operations. The setup command and first viewing-link

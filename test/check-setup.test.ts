@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import { env } from 'cloudflare:workers';
 
-import { checkSetup, parseSetupConfiguration, type WranglerRunner } from '../scripts/check-setup';
+import {
+  checkSetup,
+  FIRST_LOGIN_SCHEMA_QUERY,
+  parseSetupConfiguration,
+  type WranglerRunner
+} from '../scripts/check-setup';
 
 const configuration = {
   accountId: '0123456789abcdef0123456789abcdef',
@@ -21,6 +27,12 @@ const requiredBindings = [
   'INITIAL_ORGANISER_EMAIL'
 ];
 
+function deployedBindings(names = requiredBindings) {
+  return names.map((name) =>
+    name === 'DB' ? { name, type: 'd1', id: configuration.databaseId } : { name, type: 'test' }
+  );
+}
+
 function runner(overrides: Record<string, string> = {}): WranglerRunner {
   return (args) => {
     const command = args.join(' ');
@@ -32,11 +44,14 @@ function runner(overrides: Record<string, string> = {}): WranglerRunner {
         name: configuration.databaseName
       }),
       'd1 migrations list DB --remote': '✅ No migrations to apply!',
+      [`d1 execute DB --remote --json --command ${FIRST_LOGIN_SCHEMA_QUERY}`]: JSON.stringify([
+        { results: [], success: true }
+      ]),
       'deployments status --json': JSON.stringify({
         versions: [{ version_id: 'version-one', percentage: 100 }]
       }),
       'versions view version-one --json': JSON.stringify({
-        resources: { bindings: requiredBindings.map((name) => ({ name, type: 'test' })) }
+        resources: { bindings: deployedBindings() }
       }),
       ...overrides
     };
@@ -49,6 +64,11 @@ function runner(overrides: Record<string, string> = {}): WranglerRunner {
 }
 
 describe('setup checker', () => {
+  it('compiles the readiness query against the actual migrated D1 schema without returning family rows', async () => {
+    const result = await env.DB.prepare(FIRST_LOGIN_SCHEMA_QUERY).all();
+    expect(result.success).toBe(true);
+    expect(result.results).toEqual([]);
+  });
   it('parses comments and trailing commas from wrangler JSONC', () => {
     expect(
       parseSetupConfiguration(`{
@@ -99,7 +119,7 @@ describe('setup checker', () => {
         configuration,
         runner({
           'versions view version-one --json': JSON.stringify({
-            resources: { bindings: bindings.map((name) => ({ name })) }
+            resources: { bindings: deployedBindings(bindings) }
           })
         }),
         {}
@@ -120,7 +140,7 @@ describe('setup checker', () => {
             ]
           }),
           'versions view version-two --json': JSON.stringify({
-            resources: { bindings: bindings.map((name) => ({ name })) }
+            resources: { bindings: deployedBindings(bindings) }
           })
         }),
         {}
@@ -134,5 +154,89 @@ describe('setup checker', () => {
         ACCESS_MANAGEMENT_API_TOKEN: 'secret-test-token'
       })
     ).rejects.toThrow('ACCESS_MANAGEMENT_ACCOUNT_ID');
+  });
+
+  it('checks database readiness before Access settings exist without calling that a finished installation', async () => {
+    await expect(
+      checkSetup(
+        configuration,
+        runner({
+          'versions view version-one --json': JSON.stringify({
+            resources: { bindings: deployedBindings(['DB', 'AI', 'BROWSER']) }
+          })
+        }),
+        {},
+        undefined,
+        { beforeLogin: true }
+      )
+    ).resolves.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('member, wishlist and invitation schema'),
+        expect.stringContaining('Access setup is still required')
+      ])
+    );
+  });
+
+  it.each([
+    { name: 'DB', type: 'd1', id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+    { name: 'DB', type: 'plain_text', text: configuration.databaseId },
+    { name: 'DB', type: 'd1' }
+  ])('rejects a deployed database mismatch even when every binding name exists', async (db) => {
+    await expect(
+      checkSetup(
+        configuration,
+        runner({
+          'versions view version-one --json': JSON.stringify({
+            resources: {
+              bindings: [...deployedBindings().filter((binding) => binding.name !== 'DB'), db]
+            }
+          })
+        }),
+        {}
+      )
+    ).rejects.toThrow('different D1 database');
+  });
+
+  it.each([
+    'no such column: first_signed_in_at',
+    'no such table: wishlists',
+    'no such table: family_invitations'
+  ])(
+    'stops before deployment inspection when first-login readiness fails with %s',
+    async (failure) => {
+      const base = runner();
+      const calls: string[] = [];
+      await expect(
+        checkSetup(
+          configuration,
+          (args) => {
+            calls.push(args.join(' '));
+            return args[1] === 'execute' ? { status: 1, stdout: '', stderr: failure } : base(args);
+          },
+          {}
+        )
+      ).rejects.toThrow(failure);
+      expect(calls).not.toContain('deployments status --json');
+    }
+  );
+
+  it('rejects deep Access checks against another account before calling its API', async () => {
+    const session = vi.fn();
+    const sharing = vi.fn();
+    await expect(
+      checkSetup(
+        configuration,
+        runner(),
+        {
+          ACCESS_MANAGEMENT_ACCOUNT_ID: 'a'.repeat(32),
+          ACCESS_MANAGEMENT_APPLICATION_ID: '870fa30d-1350-4d8c-92e6-7f005f6f878f',
+          ACCESS_MANAGEMENT_API_TOKEN: 'secret-test-token',
+          WISHLIST_PUBLIC_HOSTNAMES: 'wishlist.example.com'
+        },
+        { session, sharing }
+      )
+    ).rejects.toThrow('does not match the installation account');
+    expect(session).not.toHaveBeenCalled();
+    expect(sharing).not.toHaveBeenCalled();
   });
 });

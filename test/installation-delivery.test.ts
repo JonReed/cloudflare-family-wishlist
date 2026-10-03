@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildEnvironment,
+  npmInvocation,
   installationFingerprint,
   validateBuildReceipt
 } from '../scripts/build-installation';
@@ -26,6 +27,13 @@ const receipt = {
 };
 
 describe('installation delivery boundaries', () => {
+  it('launches npm with Node rather than a Windows command shim, preserving spaced paths as one argument', () => {
+    expect(npmInvocation(['run', 'build'], '/tools with spaces/npm-cli.js')).toEqual({
+      executable: process.execPath,
+      args: ['/tools with spaces/npm-cli.js', 'run', 'build']
+    });
+    expect(() => npmInvocation([], '')).toThrow('npm script');
+  });
   it('does not pass deployment or repository credentials into public source builds', () => {
     expect(
       buildEnvironment({

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { wranglerInvocation } from './installation-wrangler.ts';
 import { parseJsoncObject } from './jsonc.ts';
 import { prepareInstallationConfig } from './installation-config.ts';
 import { spawnSync } from 'node:child_process';
@@ -49,6 +50,21 @@ const ACCESS_CHECK_ENVIRONMENT = [
   'WISHLIST_PUBLIC_HOSTNAMES'
 ] as const;
 
+export const FIRST_LOGIN_SCHEMA_QUERY = `
+  SELECT members.id, members.email, members.display_name, members.role,
+    members.disabled_at, members.first_signed_in_at,
+    wishlists.id AS wishlist_id, wishlists.owner_member_id,
+    family_invitations.email AS invitation_email,
+    family_invitations.display_name AS invitation_name,
+    family_invitations.status AS invitation_status, family_invitations.access_policy_id
+  FROM members
+  LEFT JOIN wishlists ON wishlists.owner_member_id = members.id
+  LEFT JOIN family_invitations ON family_invitations.email = members.email COLLATE NOCASE
+  LIMIT 0
+`
+  .replace(/\s+/g, ' ')
+  .trim();
+
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -96,8 +112,8 @@ export function parseSetupConfiguration(source: string): SetupConfiguration {
 }
 
 function runWrangler(args: string[]): WranglerResult {
-  const executable = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const result = spawnSync(executable, ['--no-install', 'wrangler', ...args], {
+  const invocation = wranglerInvocation(args);
+  const result = spawnSync(invocation.executable, invocation.args, {
     encoding: 'utf8',
     env: { ...process.env, NO_COLOR: '1' }
   });
@@ -162,7 +178,8 @@ export async function checkSetup(
   configuration: SetupConfiguration,
   runner: WranglerRunner = runWrangler,
   env: NodeJS.ProcessEnv = process.env,
-  accessChecks: AccessChecks = { session: checkAccessSession, sharing: checkPublicSharingAccess }
+  accessChecks: AccessChecks = { session: checkAccessSession, sharing: checkPublicSharingAccess },
+  options: { beforeLogin?: boolean } = {}
 ): Promise<string[]> {
   const messages: string[] = [];
 
@@ -198,16 +215,54 @@ export async function checkSetup(
   }
   messages.push('The remote D1 database has no pending migrations.');
 
+  // A migration ledger alone does not prove the schema the first login needs exists.
+  // LIMIT 0 checks member, wishlist and invitation columns without reading any family records.
+  const schema = jsonOutput(runner, [
+    'd1',
+    'execute',
+    'DB',
+    '--remote',
+    '--json',
+    '--command',
+    FIRST_LOGIN_SCHEMA_QUERY
+  ]);
+  if (
+    !Array.isArray(schema) ||
+    schema.length !== 1 ||
+    !isRecord(schema[0]) ||
+    schema[0].success !== true ||
+    !Array.isArray(schema[0].results) ||
+    schema[0].results.length !== 0
+  ) {
+    throw new Error(
+      'Could not verify the first-login database schema. Inspect migrations before signing in.'
+    );
+  }
+  messages.push(
+    'The member, wishlist and invitation schema required for first sign-in is readable.'
+  );
+
   const deployment = jsonOutput(runner, ['deployments', 'status', '--json']);
   const versionIds = trafficVersionIds(deployment);
   for (const versionId of versionIds) {
     const bindings = bindingsFromVersion(
       jsonOutput(runner, ['versions', 'view', versionId, '--json'])
     );
+    const databases = bindings.filter((binding) => binding.name === 'DB');
+    if (
+      databases.length !== 1 ||
+      databases[0].type !== 'd1' ||
+      databases[0].id !== configuration.databaseId
+    ) {
+      throw new Error(
+        `Traffic-bearing Worker version ${versionId} uses a different D1 database. Rebuild and deploy with this installation's settings before signing in.`
+      );
+    }
     const bindingNames = new Set(
       bindings.flatMap((binding) => (typeof binding.name === 'string' ? [binding.name] : []))
     );
-    const missingBindings = REQUIRED_BINDINGS.filter((name) => !bindingNames.has(name));
+    const required = options.beforeLogin ? ['DB', 'AI', 'BROWSER'] : REQUIRED_BINDINGS;
+    const missingBindings = required.filter((name) => !bindingNames.has(name));
     if (missingBindings.length > 0) {
       throw new Error(
         `Traffic-bearing Worker version ${versionId} is missing bindings: ${missingBindings.join(', ')}.`
@@ -215,7 +270,9 @@ export async function checkSetup(
     }
   }
   messages.push(
-    'Every traffic-bearing Worker version has the required D1, AI, Browser and Access bindings.'
+    options.beforeLogin
+      ? 'Every traffic-bearing Worker version uses the intended D1 database and has AI and Browser bindings. Access setup is still required.'
+      : 'Every traffic-bearing Worker version uses the intended D1 database and has the required AI, Browser and Access bindings.'
   );
 
   const supplied = ACCESS_CHECK_ENVIRONMENT.filter((name) => Boolean(env[name]?.trim()));
@@ -233,6 +290,9 @@ export async function checkSetup(
   }
 
   const sessionConfiguration = readAccessSessionConfiguration(env);
+  if (sessionConfiguration.accountId !== configuration.accountId) {
+    throw new Error('The Access setup account does not match the installation account.');
+  }
   await accessChecks.session(sessionConfiguration);
   const hostnames = [
     ...new Set(
@@ -251,10 +311,23 @@ export async function checkSetup(
 
 async function main(): Promise<void> {
   try {
+    const args = process.argv.slice(2);
+    if (args.includes('--help')) {
+      console.log(
+        'Usage: npm run setup:check [-- --before-login]\n--before-login checks D1, migrations and deployed database identity before Access bindings exist. It does not certify sign-in.'
+      );
+      return;
+    }
+    if (args.some((arg) => arg !== '--before-login'))
+      throw new Error('Unknown setup:check argument. Use --help.');
     const configPath = prepareInstallationConfig({ required: true });
     const configuration = parseSetupConfiguration(readFileSync(configPath, 'utf8'));
-    const messages = await checkSetup(configuration, (args) =>
-      runWrangler([...args, '--config', configPath])
+    const messages = await checkSetup(
+      configuration,
+      (args) => runWrangler([...args, '--config', configPath]),
+      process.env,
+      undefined,
+      { beforeLogin: args.includes('--before-login') }
     );
     for (const message of messages) console.log(`✓ ${message}`);
   } catch (error) {

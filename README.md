@@ -45,7 +45,7 @@ useful. Buying plans stay hidden from the person receiving the gift.
 
 Run your own independent installation in your own Cloudflare account. No always-on home server,
 application password database or separate AI account to manage. A normal family deployment is
-designed for the free tier; [hosting allowances and limits](docs/DEPLOYMENT.md#what-cloudflare-provides)
+designed for the free tier; [hosting allowances and limits](docs/CLOUDFLARE_OPERATIONS.md#what-cloudflare-provides)
 still apply.
 
 The app has no advertising or analytics scripts and does not add affiliate codes to shop links.
@@ -94,35 +94,33 @@ exports and tested recovery remain important.
 The trade-off is a Cloudflare-specific application, dependent on its availability, policies and data
 processing. This is not an offline or home-server deployment. See the
 [architecture rationale](docs/ARCHITECTURE.md#why-cloudflare) and
-[hosting allowances](docs/DEPLOYMENT.md#what-cloudflare-provides).
+[hosting allowances](docs/CLOUDFLARE_OPERATIONS.md#what-cloudflare-provides).
 
 ## Install with Codex
 
-You can ask Codex to guide you through the [installation guide](docs/DEPLOYMENT.md). Open a local
-checkout of this repository in Codex and paste:
+Open this project in Codex or another coding assistant and paste:
 
 ```text
-Help me install Family Wishlist in my own Cloudflare account. Follow AGENTS.md and
-docs/AGENT_INSTALLATION.md, using the wishlist-install skill if available. Check what
-is already set up, confirm my intended account and organiser email, and explain the
-plan before creating resources. Use the free-tier setup and a workers.dev address
-unless I choose otherwise. Keep a resumable checklist and verify the complete family
-sign-in and deployment flow. Tell me what I need to do myself and anything unverified.
+Help me set up Family Wishlist in my own Cloudflare account. Follow AGENTS.md,
+docs/DEPLOYMENT.md and docs/AGENT_INSTALLATION.md. Work through one step at a time,
+run the commands and check each result. First confirm my intended Cloudflare account
+and organiser email, then explain the resources you will create. Use the free setup
+and a workers.dev address. Handle the configuration yourself; ask me to complete
+browser sign-in, account consent, private token entry and email codes when needed.
+Verify the deployed database before first login, then check sign-in, invitations,
+gift privacy and public sharing. Keep a private progress note so we can resume.
 ```
 
-No extra plugin is needed. The small installation skill is included in the repository; if it is not
-listed, ask Codex to read `.agents/skills/wishlist-install/SKILL.md` directly. The same
-[agent installation guide](docs/AGENT_INSTALLATION.md) can be followed by other coding assistants.
+The [step-by-step guide](docs/DEPLOYMENT.md) also works without an assistant. It includes commands
+for installing Wrangler and the Cloudflare CLI, direct dashboard links, Windows instructions and
+checks after each stage. The setup commands save settings and find Cloudflare IDs for you.
 
-You still handle account sign-in, passkeys, email codes, payment details if Cloudflare requests them,
-and permission approvals yourself. Do not paste credentials into chat. Codex needs access to your
-local checkout and authorised tools to perform setup; where a dashboard is unavailable it can guide
-you through that step. Codex access is separate from the app's expected Cloudflare running costs.
-
-Cloudflare Builds deploys changes to **your connected repository**; it does not automatically keep a
-fork up to date. The separate [upstream updater](docs/INSTALLATION_UPDATES.md) has passed real build
-and migration tests, but scheduled delivery and clean-account acceptance remain unverified. Codex
-should explain that distinction before choosing an update route.
+No additional plugin is required. The repository includes an
+[installation skill](.agents/skills/wishlist-install/SKILL.md) for assistants that support skills.
+Keep API tokens and email codes out of chat; enter the scoped token through the command's hidden
+terminal prompt. The initial installation does not require a fork or automatic updater. Add
+[GitHub deployments](docs/CLOUDFLARE_OPERATIONS.md#connect-automatic-deployments) after sign-in works
+if you want them. Builds deploys changes in your connected repository; upstream updating is separate.
 
 ## Stack
 
@@ -137,9 +135,9 @@ should explain that distinction before choosing an update route.
 
 ## Documentation
 
-- [Install and deploy](docs/DEPLOYMENT.md) — start with a free Cloudflare account, understand the
-  live allowances, and finish with Access, D1, Browser Run, Workers AI and automatic deployments
-  configured.
+- [Set up your own](docs/DEPLOYMENT.md) — one action per step, copyable commands for Windows, macOS
+  and Linux, and checks before first login.
+- [Cloudflare operations](docs/CLOUDFLARE_OPERATIONS.md) — allowances, GitHub deployments and custom domains.
 - [Family user guide](docs/USER_GUIDE.md) — add ideas, coordinate gifts, edit wishes and share a list.
 - [Product model](docs/PRODUCT.md) — who the application serves, core workflows and focused scope.
 - [Architecture](docs/ARCHITECTURE.md) — request lifecycle, data model and privacy boundaries.
@@ -192,9 +190,9 @@ Cloudflare configuration.
 `main` is the development channel and continues to power the reference installation. `stable` is the recommended release channel: publishing a stable GitHub release runs both repository gates and advances it to the tested tagged commit. The first successful release creates the branch. See [Release channels](docs/RELEASES.md) for promotion, channel selection and the remaining independent-account delivery work. Fork owners manage their own updates.
 
 A normal family installation runs with a free Cloudflare account and the included `workers.dev`
-address; a paid plan and custom domain are optional. The [installation guide](docs/DEPLOYMENT.md) starts before account setup, links to the current
-Workers, D1, Browser Run, Workers AI, Access and Builds allowances, and explains what happens if a
-free limit is reached.
+address; a paid plan and custom domain are optional. The [installation guide](docs/DEPLOYMENT.md) starts before account setup. The
+[operations reference](docs/CLOUDFLARE_OPERATIONS.md#what-cloudflare-provides) covers allowances and
+what happens if a free limit is reached.
 
 Configure Cloudflare Access with an **exact email allow-list** before adding family data. One-time PIN
 provides the friendly sign-in method, while exact-email rules keep admission invitation-only.

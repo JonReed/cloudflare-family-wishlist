@@ -1,628 +1,392 @@
-<p align="center">
-  <img src="../public/favicon.svg" width="72" height="72" alt="Family Wishlist gift mark">
-</p>
+# Set up your family's wishlist
 
-<h1 align="center">Install and deploy</h1>
+This guide creates a private wishlist in **your own Cloudflare account**. You will get a free website
+address, email-code sign-in and a wishlist for each invited family member. Cloudflare runs the app
+and stores its database. You do not need to know Cloudflare beforehand.
 
-<p align="center"><strong>One household. One Cloudflare deployment. No server to maintain.</strong></p>
+Follow the steps in order. Each numbered step has one action. Run each command separately and wait
+for it to finish. If a command fails, stop at that step; see [When something fails](#when-something-fails).
+You can close the terminal between steps. Keep the downloaded project folder so you can resume.
 
-This guide starts with an empty Cloudflare account and ends with a private family wishlist that
-deploys from GitHub. Each household gets an independent deployment, invitation-only membership and
-Cloudflare-managed sign-in.
+**Windows:** use PowerShell. **macOS:** use Terminal. **Linux:** use your terminal. The command blocks
+below work in all three. On Windows, if PowerShell says `npm.ps1 cannot be loaded`, use Command Prompt
+instead; these commands work there too. You do not need to change your computer's execution policy.
+To open it on Windows, open Start and search for **PowerShell** or **Command Prompt**. On macOS,
+press Command–Space, search for **Terminal**, then press Enter. Paste only the command inside a code
+box, without the surrounding text or backticks.
 
-Using Codex or another coding assistant? Start with [Install with Codex](../README.md#install-with-codex)
-and the [agent installation checklist](AGENT_INSTALLATION.md). They use this guide as the source of
-truth; no separate plugin or installer is required.
+An AI assistant can follow the same steps. Give it [these agent instructions](AGENT_INSTALLATION.md)
+and the [starting prompt](../README.md#install-with-codex). You complete browser sign-in, account
+consent, payment entry and email codes yourself. Keep API tokens out of chat.
 
-The normal installation uses only Cloudflare's free plans. A domain is optional because every
-Cloudflare account can publish the Worker at a free `workers.dev` address. If you later attach a
-custom domain, the same Worker-level Access policy protects it.
+A normal household is intended to fit Cloudflare's free plans. A domain and paid plan are optional.
+Cloudflare may request payment details for **Zero Trust Free**, its sign-in service. Check that you
+selected Free before agreeing. [Allowances and running costs](CLOUDFLARE_OPERATIONS.md#what-cloudflare-provides).
 
-> [!NOTE]
-> **Expected running cost: £0 for a normal family.** The free `workers.dev` address and Cloudflare's
-> free plans provide everything required. A paid plan and custom domain remain optional. Cloudflare
-> currently asks for payment details when a Zero Trust Free organisation is created, while confirming
-> that the Free selection is not charged.
+## Get the tools and project
 
-Cloudflare changes dashboard wording and allowances over time. The figures below were checked on
-3 September 2026; follow the linked Cloudflare pages when a current dashboard differs from this
-guide.
+### 1. Install Node.js
 
-## The route through setup
+Download and run the **Node.js 24 LTS** installer from [nodejs.org](https://nodejs.org/en/download).
+Keep npm enabled in the installer. If you already have Node.js 22.22 or newer, you can use it.
 
-1. **Prepare the account and source** — fork the project, choose a `workers.dev` address and bind
-   Wrangler to the right Cloudflare account.
-2. **Create the data and application** — provision D1, keep or disable the included AI assistance, run
-   the checks and make the first deployment.
-3. **Make it private** — put the whole Worker behind an exact-email Access policy, then configure the
-   Worker's own JWT validation.
-4. **Finish family setup** — give the organiser scoped invitation access, connect GitHub Builds and
-   run the acceptance checks. A custom domain remains optional.
+**Done when:** the installer finishes. Open a new terminal after installing.
 
-## What Cloudflare provides
+### 2. Install Git
 
-| Service                                                                                      | What this application uses it for                                | Current free allowance                                                                                                                                                        |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Workers](https://developers.cloudflare.com/workers/platform/limits/)                        | React Router server rendering, validation and product-page fetch | 100,000 requests per day, 10 ms CPU per request and 50 external subrequests per request                                                                                       |
-| [D1](https://developers.cloudflare.com/d1/platform/pricing/)                                 | Members, wishlists, items, claims and lookup budgets             | 5 million rows read and 100,000 rows written per day; [500 MB per database, 5 GB total and 10 databases](https://developers.cloudflare.com/d1/platform/limits/)               |
-| [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/)                 | AI-assisted product-detail enrichment                            | 10,000 Neurons per day; the default [Gemma model remains available on Workers Free](https://developers.cloudflare.com/changelog/post/2026-07-28-models-require-workers-paid/) |
-| [Browser Run](https://developers.cloudflare.com/browser-run/pricing/)                        | Rendered-page assistance for difficult product pages             | 10 browser minutes per day; [one Quick Action every 10 seconds](https://developers.cloudflare.com/browser-run/limits/) on Workers Free                                        |
-| [Cloudflare Access](https://www.cloudflare.com/plans/zero-trust-services/)                   | Exact-email admission and email one-time PIN login               | $0 for up to 50 users                                                                                                                                                         |
-| [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/limits-and-pricing/) | Build and deploy each push to `main`                             | 3,000 build minutes per month, one concurrent build and a 20-minute limit per build                                                                                           |
+Use the installer for your operating system from [git-scm.com](https://git-scm.com/downloads).
+On Windows, the default installer choices are sufficient for this guide.
 
-The compact platform footprint keeps setup simple: Workers, D1, Browser Run, Workers AI, Access and
-Builds cover the complete product. Product pictures remain remote HTTPS resources and are delivered
-through the bounded same-origin Worker proxy. Read-only viewing links use a separate per-link image budget.
-Their picture route also applies a lower capability-holder budget so one recipient cannot normally
-consume the list-wide allowance for everyone else.
+**Done when:** the installer finishes. Close and reopen your terminal so it can find Git.
 
-Most allowances in the table are shared by all projects in one Cloudflare account. The CPU limit is
-per Worker request and the 500 MB D1 limit is per database. If the account already runs busy Workers,
-databases or AI applications, check its dashboards rather than assuming the whole allowance remains
-available to this family.
+### 3. Download the project
 
-### Why a family should fit
-
-The Workers and D1 allowances are several orders of magnitude above normal traffic from one
-household. D1 scales to zero and has no data-transfer fee. Claims and wishlist items are small rows,
-and the application's indexed queries avoid large table scans.
-
-Browser Run and Workers AI are not called for every page. Ordinary bounded fetching and retailer
-fallbacks run first. Browser Run is attempted once only when the result is blocked or unusable; its
-Quick Action blocks heavy image, media and font downloads and reuses Cloudflare's short content cache.
-It may still be identified and blocked as automation, in which case the form remains available.
-
-Deterministic retailer rules, JSON-LD, Open Graph and visible product fields then run before AI. AI
-receives a reduced excerpt only when a title or GBP price is still missing. The default model
-currently costs 9,091 Neurons per million input tokens and 27,273 per
-million output tokens. An illustrative upper-sized English prompt with 4,000 input tokens plus the
-application's maximum 180-token output is about 41 Neurons, or roughly 240 such AI-assisted lookups inside the
-daily free allocation. URLs and languages tokenise differently, so that is a scale estimate rather
-than a guaranteed request count, but it leaves ample room for ordinary family use.
-
-When AI reaches its allocation or cannot enrich a page, the deterministic draft stays ready for the
-person to finish. The application also gives each member 12 product lookups per minute.
-The same-origin picture proxy separately allows 60 image fetches per member per minute and 500 per
-UTC day, which is ample for ordinary family browsing while bounding free-tier abuse.
-
-Free-plan limits protect the account from automatic paid overages. Services resume after the relevant
-allowance reset; Workers, D1 and Workers AI daily allowances reset at 00:00 UTC. If you deliberately upgrade to Workers Paid, consult the
-[current Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) because usage
-above included allowances can then be billed.
-
-The product degrades predictably if an allowance is reached:
-
-- a request exceeding the per-request Workers CPU limit receives a clear platform error, while the
-  daily request allowance resumes after its reset;
-- D1 operations resume after the daily reset or after storage space is freed;
-- Browser Run and Workers AI remain optional enhancements—the deterministic scraper and manual form
-  continue to work;
-- the last successful deployment keeps running if the Builds allowance is reached; and
-- the Access Free plan is intended for at most 50 users, far beyond one household.
-
-The 10 ms Workers CPU limit is per request, not a daily pool. Waiting for D1, product pages or AI does
-not count as CPU time. If Cloudflare consistently reports error `1102`, inspect CPU use before deciding
-whether this household needs Workers Paid.
-
-## Before you begin
-
-You need:
-
-- a [Cloudflare account](https://dash.cloudflare.com/sign-up); the default Workers Free plan is enough;
-- a GitHub account and a fork of this repository if you want automatic deployments;
-- Git, Node.js 24 (Node.js 22.22 or newer is supported) and npm 11 or newer on the setup computer; and
-- the exact email address of the first family organiser.
-
-A custom domain is optional. If you want one, it must be an active zone in the same Cloudflare account
-before you attach it to the Worker. Domain registration itself is not part of the free allowances.
-
-The Zero Trust Free payment-details requirement is separate from upgrading the account to Workers
-Paid.
-
-## 1. Fork, clone and install the project
-
-Fork the repository on GitHub, then clone your fork. Use your fork's address in place of the example:
+In your terminal, run:
 
 ```sh
-git clone https://github.com/YOUR-NAME/cloudflare-family-wishlist.git
+git clone https://github.com/JonReed/cloudflare-family-wishlist.git
+```
+
+**Done when:** a folder named `cloudflare-family-wishlist` exists. If it already exists from an
+interrupted setup, keep it and continue there; do not clone over it.
+
+### 4. Open that folder in the terminal
+
+```sh
 cd cloudflare-family-wishlist
+```
+
+**Done when:** the terminal prompt ends in `cloudflare-family-wishlist`. Run every remaining command
+from this folder. An AI assistant should use the same folder as its workspace.
+
+### 5. Install the project's tools, including Wrangler
+
+```sh
 npm ci
 ```
 
-`npm ci` installs the checked-in Wrangler 4 release locally. No global Wrangler installation is
-required. Confirm the local tools before changing Cloudflare:
+This installs the tested Wrangler version and prepares the application's generated types. Wrangler
+is Cloudflare's tool for deploying this project and managing its database.
+
+**Done when:** the command finishes without an error. The guide uses `npx wrangler` to select the
+project's tested version. A separate [global Wrangler installation](#optional-global-wrangler-installation)
+is optional.
+
+### 6. Install Cloudflare's wider CLI
 
 ```sh
-node --version
-npm --version
-npx wrangler --version
+npm install --global cf@1.0.0-beta.12
 ```
 
-If you do not want GitHub deployment, download or clone the source directly and follow the same CLI
-steps. You can run `npm run deploy` manually for future releases.
+The `cf` CLI manages Cloudflare account resources, including the sign-in rules. This is the beta
+version checked for this guide on 3 October 2026. [Official CLI instructions](https://developers.cloudflare.com/cf/get-started/).
 
-## 2. Create the Cloudflare account and Workers subdomain
+**Done when:** installation succeeds. If npm reports `EACCES` or a permission error, follow
+[npm's global-install permission repair](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally/),
+then repeat this step. Reinstalling the same macOS/Linux system installer may keep the same error.
 
-Create or sign in to the Cloudflare account that will own this family's deployment. In **Workers &
-Pages**, complete the Workers onboarding and choose the account's [`workers.dev` subdomain](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/)
-if Cloudflare asks for one. The final free address will look like:
+## Choose your Cloudflare account
 
-```text
-https://cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev
-```
+### 7. Create a Cloudflare account
 
-The address works immediately, with no website or DNS changes required.
+Open [Cloudflare account signup](https://dash.cloudflare.com/sign-up) in your browser.
+If you have an account, [sign in](https://dash.cloudflare.com/login) instead.
 
-## 3. Authenticate Wrangler to the correct account
+**Done when:** you can see the account dashboard. Use the account that should own your family's data.
 
-Use a directory-bound named profile to give every command from this checkout a clear, consistent
-Cloudflare account:
+### 8. Finish Workers onboarding
+
+Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages).
+Select your household account. If asked, choose the account's free `workers.dev` subdomain.
+This becomes part of your website address.
+
+**Done when:** Workers & Pages opens for that account. You do not need to create a Worker in the
+browser; the deployment command will do that.
+
+### 9. Sign Wrangler in
 
 ```sh
-npx wrangler auth create family-wishlist
-npx wrangler auth activate family-wishlist /absolute/path/to/cloudflare-family-wishlist
+npx wrangler login
+```
+
+Approve the request in the browser using the account from step 7.
+
+**Done when:** Wrangler reports that you are logged in.
+
+### 10. Check the account Wrangler can use
+
+```sh
 npx wrangler whoami
 ```
 
-The first command opens Cloudflare authorization in a browser. Check the account name and copy the
-account ID printed by `whoami`. Wrangler currently labels named profiles experimental, but this
-repository pins a release that supports them. If profile creation is unavailable, use
-`npx wrangler login` and make the `whoami` check before every remote command.
+Find your intended account in the output. Keep its **Account ID** handy: it is a 32-character value,
+not your email address or account name. If the account is absent, repeat step 9 with the correct login.
 
-Keep `wrangler.jsonc` unchanged: it contains shared defaults, not deployment identifiers.
+**Done when:** your intended account appears. If several accounts appear, step 12 will explicitly
+select one; setup does not assume the first is correct.
 
-Use the physical directory path for a profile binding (`pwd -P` on macOS/Linux), especially for a
-temporary checkout. For example, macOS resolves `/tmp` to `/private/tmp`; binding the alias can leave
-a command in the physical directory using a different default profile. Recheck `whoami` from the
-actual deployment directory before any remote operation, and stop if the identity differs.
-
-Copy `installation.example.json` to `.wishlist-installation.json`, set `accountId` to your account
-ID and choose `workerName`. Complete the database fields in the next step. This local file is ignored
-by Git. See [Installation settings](INSTALLATION_CONFIG.md) for the configuration boundary and the
-one-time transition for existing installations.
-
-## 4. Create and migrate D1
-
-Create one database. `weur` is a sensible location hint for a UK or European family; choose another
-[D1 location hint](https://developers.cloudflare.com/d1/configuration/data-location/) if appropriate.
+### 11. Sign `cf` in
 
 ```sh
-npx wrangler d1 create cloudflare-family-wishlist --location weur
+cf auth login
 ```
 
-Copy the UUID into `databaseId` in `.wishlist-installation.json` and set `databaseName` to the name
-you created. Then validate settings, generate bindings and apply every checked-in migration:
+Approve the browser request using the same Cloudflare login. `cf` keeps separate credentials from
+Wrangler, so completing step 9 does not complete this step.
+
+**Done when:** `cf` reports a successful login. If `cf` opens Cloud Foundry instead, use `cloudflare auth login`;
+the Cloudflare npm package installs both command names.
+
+## Create and check the app
+
+### 12. Save your household settings and create its database
 
 ```sh
-npm run installation:configure
-npm run cf-typegen
-npm run db:migrate:remote
+npm run setup:config
 ```
 
-Applying remote migrations changes the production database. On a new empty database this is expected.
-For later upgrades, migration files form an append-only history. A fresh installation and an existing
-installation both use the same single command above: Wrangler records and applies each pending
-numbered file in order. Preserve applied filenames and contents so every installation can advance
-cleanly.
+Paste the Account ID from step 10 when asked. Choose an unused app name, for example
+`reed-family-wishlist`, or press Enter for `family-wishlist`. The command shows the selected account
+before asking to create its database. Type `yes` only when it is correct.
 
-Local development is optional during installation. To test against an isolated local D1 database:
+If a database with that name already exists, the command shows its ID and asks before reusing it.
+If this is a different project, stop and choose a different name. On a resumed setup, saved settings
+must still match the live database.
 
-```sh
-npm run db:migrate:local
-npm run dev
-```
+**Done when:** it reports that household settings are saved and the database identity is verified.
+The command writes the configuration for you; you do not edit `wrangler.jsonc` or copy database IDs.
 
-The localhost build uses a fixed local-only identity. It does not use production family data or
-consume Browser Run or Workers AI.
-
-## 5. Understand the included browser and AI bindings
-
-The checked-in `BROWSER` binding uses Browser Run's `content` Quick Action only after ordinary
-product-page fetching fails. It needs no API token or separate resource creation. Local development
-does not consume the remote allowance; production deployments attach the binding automatically.
-The browser receives only the public product URL and never the signed-in person's cookies or Access
-assertion.
-
-Workers AI is included directly through the checked-in `AI` binding, with no separate API key or
-model deployment. These non-secret settings live in `wrangler.jsonc`:
-
-- `PRODUCT_AI_ENABLED` is `true` by default; set it to `false` for deterministic extraction only.
-- `PRODUCT_AI_MODEL` defaults to `@cf/google/gemma-4-26b-a4b-it`. The application also accepts
-  `@cf/zai-org/glm-4.7-flash`; both are currently available on Workers Free.
-
-Cloudflare's model catalogue spans free and paid availability, so confirm the
-[current Workers AI catalog and pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/) before choosing a different model.
-An unrecognised configured value falls back to the checked-in Gemma model.
-
-AI contributes only to an editable draft; the family member remains in control of every saved wish.
-The ordinary page result remains available whenever enrichment is unavailable.
-
-## 6. Check and make the first deployment
-
-Run the repository gates before publishing:
+### 13. Check the application
 
 ```sh
 npm run quality
+```
+
+**Done when:** formatting, linting, types, tests and the production build all pass.
+
+### 14. Check dependencies
+
+```sh
 npm run audit
 ```
 
-Then deploy:
+**Done when:** the audit succeeds. If it fails, keep the error and stop; do not use `npm audit fix --force`
+as a setup step.
+
+### 15. Deploy
 
 ```sh
 npm run deploy
 ```
 
-Wrangler prints the new `workers.dev` address. Before Access is configured, opening it should return:
+Approve applying the database migrations if Wrangler asks. The command builds the app, applies
+pending migrations to the selected database, then deploys the Worker. A Worker is simply the app
+running on Cloudflare.
 
-```text
-503 Authentication is not configured.
-```
+**Done when:** deployment succeeds and prints an `https://...workers.dev` address. Keep that address.
+The site deliberately refuses to open until sign-in is configured; do not try to log in yet.
 
-That intentional response confirms the Worker reaches its authentication gate while the application
-waits safely for Access configuration. It does not verify database connectivity; the later setup
-checks and authenticated flows do that. Keep the application's JWT validation as the complementary
-identity check behind Access.
-
-## 7. Enable Zero Trust Free and one-time PIN login
-
-In the Cloudflare dashboard, open **Zero Trust** and create a Zero Trust organisation:
-
-1. choose a unique team name, which creates `YOUR-TEAM.cloudflareaccess.com`;
-2. select **Zero Trust Free**;
-3. complete the requested payment details; Cloudflare says the Free plan remains $0; and
-4. finish onboarding without installing the Cloudflare One Client—the family uses browser login only.
-
-New Zero Trust organisations no longer enable email one-time PIN automatically. Under **Integrations
-→ Identity providers**, add **One-time PIN**. Cloudflare sends login codes itself, so this project does
-not need an email provider. See Cloudflare's [one-time PIN setup and behaviour](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/one-time-pin/).
-
-## 8. Put the whole Worker behind Access
-
-Use Cloudflare's Worker-level integration rather than protecting only one hostname:
-
-First, in **Zero Trust → Access controls → Policies**, create a reusable policy with action
-**Allow** and an **Include → Emails** rule containing only the organiser's exact email address.
-Give it a recognisable name and leave its policy session duration unset so it inherits the
-application session. The Worker's quick-setup dialog can select this policy, but cannot create an
-exact-email rule itself. Do not choose its whole-email-domain or Cloudflare-account presets.
-
-1. go to **Workers & Pages** and select your Worker;
-2. open its **Access** tab;
-3. select **Protect this Worker behind Access**;
-4. choose **All traffic**, not previews only;
-5. select the exact-email reusable policy you just created; and
-6. apply Access.
-
-Then open **Manage Access app** from the Worker's Access tab. Under **Authentication → Identity**,
-turn off **Accept all available identity providers**, select only **onetimepin**, and save.
-The quick-setup dialog does not offer this login-method setting.
-
-Worker-level Access protects the production Worker, its `workers.dev` address, custom domains, routes
-and preview deployments together. Cloudflare documents this as the safest and most straightforward
-way to protect a Worker in [Cloudflare Access for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/).
-
-Pair **One-time PIN** with an Include rule containing the organiser's exact email address. OTP is the
-friendly authentication mechanism; exact-email rules keep the admission list invitation-only.
-
-In the Access application's advanced cookie settings, keep `HttpOnly` enabled and set the application
-cookie's `SameSite` attribute to **Lax**. The Worker independently rejects cross-origin mutations.
-The setup command in step 10 applies the intended **30-day** application session after the scoped
-Access API token exists; member policies inherit that value rather than defining shorter sessions.
-
-At this point an unauthenticated request should redirect to Cloudflare's login page:
+### 16. Check the database used by the deployed app
 
 ```sh
-curl -sSI https://cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev/
+npm run setup:check -- --before-login
 ```
 
-## 9. Configure the Worker's Access JWT validation
+**Done when:** the database, migrations, first-login schema and deployed database identity checks pass.
+The output will say Access setup is still required. That is expected at this stage.
 
-Access now welcomes the intended organiser and protects the edge. The Worker returns its safe setup
-response until it knows which Access issuer and application audience to trust.
+## Set up private sign-in
 
-Find these values in Cloudflare:
+### 17. Create a Zero Trust Free organisation
 
-- `ACCESS_TEAM_DOMAIN`: the complete team domain from Zero Trust settings, for example
-  `your-team.cloudflareaccess.com`;
-- `ACCESS_AUD`: the **Application Audience (AUD) Tag** shown in the Access application's details;
-- `INITIAL_ORGANISER_EMAIL`: the exact email address in the organiser-only Allow policy.
+Open [Cloudflare Zero Trust](https://one.dash.cloudflare.com/). Choose the same account as step 10.
+Follow the onboarding screens: choose a team name and select **Free**. Complete any account consent
+or payment-details request yourself. You do not need to install WARP or the Cloudflare One Client.
 
-Add all three as ordinary text variables under **Workers & Pages → your Worker → Settings → Variables and
-Secrets**. They are deployment identifiers rather than passwords. Keep them out of reusable upstream
-source so forks cannot accidentally trust the wrong Access application.
+**Done when:** the Zero Trust dashboard opens for that account.
+[Cloudflare's onboarding instructions](https://developers.cloudflare.com/cloudflare-one/setup/).
 
-Set `INITIAL_ORGANISER_EMAIL` before attempting the first OTP login. It may instead be stored as an
-encrypted Worker secret, but it must still contain the same complete email address.
-
-The Worker creates the first member only when the authenticated email exactly matches
-`INITIAL_ORGANISER_EMAIL`. Log in now using that address and confirm that an empty wishlist appears.
-A mistaken broader Access policy therefore cannot decide who becomes organiser.
-
-Every request is checked twice: Access validates its policy at the edge, then the Worker validates the
-JWT signature, issuer, audience, expiry, subject and email before touching D1.
-
-## 9a. Enable read-only viewing links
-
-Family Wishlist can make a removable sharing link for one person's list. Relatives and friends can
-enjoy that list without joining the private family space. A narrow exception to the Worker-level
-Access rule enables this safely. Step 10 runs the repository's
-idempotent configuration command, and the create-link action verifies the same configuration again
-before it stores a token.
-
-| Path               | Why it is public                            |
-| ------------------ | ------------------------------------------- |
-| `/shared/*`        | Hashed sharing-link list and picture routes |
-| `/shared-assets/*` | Compiled stylesheets only                   |
-| `/favicon.svg`     | Data-free application mark                  |
-
-The command creates one self-hosted Access application per production hostname, containing exactly
-those three public destinations and one **Bypass → Everyone** policy. A `workers.dev` hostname and a
-custom hostname are configured separately because an Access application supports at most five
-destinations. A link is built from whichever configured hostname the signed-in family member visits.
-
-Path-based Access rules take precedence over the broader Worker rule. Cloudflare documents that
-hierarchy in [Cloudflare Access for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/#understand-access-hierarchy)
-and the narrow public-endpoint pattern in
-[Common Access policies](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/common-policies/#bypass-a-public-endpoint).
-Cloudflare cautions that Bypass disables Access enforcement and Access request logging, which is why
-these paths must not be widened.
-
-The Worker remains a second boundary. It skips JWT validation only for GET or HEAD requests matching
-the exact shared-list or shared-picture shapes. A POST, a neighbouring path or any other dynamic route
-still requires Access. Static asset paths contain no family data. Shared secrets are 128-bit random
-values stored only as SHA-256 hashes in D1; public queries never join claims; responses are not cached
-or indexed; and revoking one link invalidates only that link immediately.
-
-Keep the Bypass precisely scoped to the three listed destinations. The general image proxy, all forms
-and every authenticated page remain behind Access.
-
-The configuration is deliberately fail-closed. If an application with the managed name exists but
-its destinations or policy differ, setup and link creation stop and ask the operator to review it;
-they do not silently widen or overwrite an Access boundary. When upgrading an older installation,
-remove manually created `/assets/*`, `/app.webmanifest` and `/icons/*` bypasses after the automated
-application has been verified. `/assets/*` can contain authenticated browser JavaScript and must not
-remain public.
-
-## 10. Allow the organiser to invite family members
-
-This step unlocks the complete multi-person family experience by letting **Your family** update both
-Access and the application's invitation state safely.
-
-Create a [custom Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with:
-
-- permission **Account → Access: Apps and Policies → Edit**; and
-- account resource limited to the account containing this Worker.
-
-Use the narrowly scoped custom token and store it as an encrypted Worker secret. In the Worker
-dashboard's **Variables and Secrets** settings, add:
-
-| Binding name                       | Type   | Value                                           |
-| ---------------------------------- | ------ | ----------------------------------------------- |
-| `ACCESS_MANAGEMENT_API_TOKEN`      | Secret | the narrowly scoped custom API token            |
-| `ACCESS_MANAGEMENT_ACCOUNT_ID`     | Text   | the account ID in your installation settings    |
-| `ACCESS_MANAGEMENT_APPLICATION_ID` | Text   | the UUID of the Worker-level Access application |
-
-The application UUID is in **Zero Trust → Access controls → Applications → your application**. It is
-different from the audience tag.
-
-If you prefer the CLI, use the private interactive prompt for the token so it never enters shell
-history:
+### 18. Configure email-code sign-in
 
 ```sh
-npm run installation:wrangler -- secret put ACCESS_MANAGEMENT_API_TOKEN
+npm run setup:access-app
 ```
 
-Do not pipe or pass the token as a command argument. The deployment command uses `--keep-vars`, so
-later source deployments preserve dashboard-managed variables and secrets.
+Enter the exact email address you will use as organiser, then paste the site address from step 15.
+Review the displayed account and app name before typing `yes`.
 
-Apply and verify the 30-day Access application session from this checkout. Export the two public
-identifiers and list every production hostname, then read the API token privately so it does not
-enter shell history:
+The command uses `cf` to find your deployed app, enable one-time PIN if needed, and create or verify
+Access protection for **all traffic** to that Worker. Only exact family email addresses are admitted.
+It saves the IDs privately for the next command; you do not find an audience tag in the dashboard.
 
-Worker-level Access applications may have no hostname `domain` field: their Worker destination
-defines the protected traffic. The session setup supports that shape and preserves the destination,
-audience, login methods, cookie settings and attached policies while updating the duration.
+**Done when:** it reports that exact-email Worker protection is verified. If existing rules conflict,
+it stops and identifies the problem rather than replacing them. Keep those resources while investigating.
+
+### 19. Create the token used for family invitations
+
+Open [Cloudflare API tokens](https://dash.cloudflare.com/profile/api-tokens), choose **Create Token**,
+then **Create Custom Token**. Name it `Family Wishlist invitations`.
+
+Set **Permissions** to **Account → Access: Apps and Policies → Edit**. Set **Account Resources** to
+**Include → Specific account → your household account**. Continue to the summary and create the token.
+
+**Done when:** Cloudflare displays the new token. Keep that page open for step 20. Do not paste the
+token into chat, a command argument or a project file. The app keeps it as an encrypted Worker secret.
+[Cloudflare's token instructions](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/).
+
+### 20. Finish the app's sign-in configuration
 
 ```sh
-export ACCESS_MANAGEMENT_ACCOUNT_ID="YOUR-ACCOUNT-ID"
-export ACCESS_MANAGEMENT_APPLICATION_ID="YOUR-ACCESS-APPLICATION-UUID"
-export WISHLIST_PUBLIC_HOSTNAMES="cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev"
-read -s ACCESS_MANAGEMENT_API_TOKEN
-export ACCESS_MANAGEMENT_API_TOKEN
-npm run access:configure-session
-npm run access:configure-sharing
-npm run setup:check
-unset ACCESS_MANAGEMENT_API_TOKEN
+npm run setup:access -- .private/access-setup.json
 ```
 
-If a custom hostname already exists, include it in the comma-separated value, for example
-`cloudflare-family-wishlist.YOUR-SUBDOMAIN.workers.dev,wishlist.example.com`. The sharing command is
-idempotent: it confirms an exact existing application without writing. It never prints the token.
-First-time concurrent runs converge by re-reading Cloudflare after a create conflict.
+Paste the token into the terminal's **hidden input** prompt and press Enter. Nothing appearing while
+you paste is expected. An AI assistant should let you enter it yourself, or use an already authorised
+secret store.
 
-`npm run setup:check` is read-only. It checks the authenticated account, generated binding types,
-remote D1 identity and migration state, every traffic-bearing deployed version's binding names, the
-30-day session and the exact public-sharing applications. It never prints binding values or the API
-token. Run it before unsetting the four setup environment variables to include the deeper Access API
-checks; without them it still checks Wrangler, D1 and the deployed Worker.
+The command rechecks the database and exact sign-in rules, sets the 30-day session, configures the
+three public viewing-link paths, and installs all six app settings together. It obtains the correct
+Access audience directly from Cloudflare. No `export`, `read -s` or `unset` commands are needed.
 
-The session command reads the application before changing it, retains its destinations, attached policies,
-identity providers and cookie controls, and reads it again afterward. It is idempotent: rerunning it
-reports the existing 30-day value without writing. Cloudflare policy durations should remain **Same
-as application session duration** so organiser and invited-member policies inherit the same value.
+**Done when:** the infrastructure checks pass. This still needs a real browser login in step 21.
 
-Verify the public edge rule without needing a real sharing secret. The deliberately invalid 22-character
-token must reach the Worker and return `404`; a redirect to Access means setup is incomplete:
+## Try it with your family
+
+### 21. Sign in as the organiser
+
+Open the site address from step 15 in a private/incognito browser window. Enter the exact organiser
+email from step 18 and enter the emailed Cloudflare code yourself.
+
+**Done when:** your empty wishlist appears. If you see “Something went a bit wonky”, follow the recovery
+instructions below; do not disable sign-in protection.
+
+### 22. Invite one person
+
+In the app, open **Your family** and add one trusted person's name and exact email address.
+
+**Done when:** they appear as **Not signed in yet** and their wishlist is available. Use **Copy
+invitation** to share the address privately with them. The app does not send an invitation email itself.
+
+### 23. Add a wish to their list
+
+Choose the invited person's list and add a test wish before they sign in.
+
+**Done when:** the wish appears on their list.
+
+### 24. Have that person sign in
+
+Ask them to open the invitation and sign in with their own email code.
+
+**Done when:** they have the same wishlist and test wish, and **Your family** shows **Joined**.
+
+### 25. Check that a claim stays secret
+
+On their test wish, choose **I’ll get this** while signed in as yourself. Have them refresh their list.
+
+**Done when:** you can see your claim and they cannot.
+
+### 26. Check that a purchase stays secret
+
+On that test wish, choose **Mark as bought** while signed in as yourself.
+
+**Done when:** you can see it is bought, and they still cannot see the purchase state after refreshing.
+
+### 27. Check a public viewing link
+
+On the test list, choose **Share this list**, name the link `Setup test`, then copy it.
+
+**Done when:** that copied link opens in a signed-out private browser without login and has no
+editing or gift-claim controls.
+
+### 28. Stop sharing the test link
+
+In **Profile**, find `Setup test`, choose **Stop sharing this link**, then confirm with
+**Yes, stop sharing this link**.
+
+**Done when:** the old link no longer opens the list in a signed-out browser.
+
+### 29. Check that another email cannot enter
+
+Try an email address you control that has not been invited, using a signed-out private browser.
+
+**Done when:** that address cannot reach the family lists. Cloudflare's login screen may give a generic
+response; receiving an email alone is not evidence of admission.
+
+The basic installation is complete after these checks pass. Add other family members through
+**Your family**. [Everyday use](USER_GUIDE.md) explains adding wishes, sharing lists and saving from a phone.
+
+## When something fails
+
+Keep the project folder and existing Cloudflare resources. Fix the failed step and repeat it.
+The setup commands inspect saved and live state before proceeding. A failed deployment does not
+undo database migrations; do not delete the database to start over.
+
+| What you see                                          | What to do next                                                                                             |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `npm.ps1 cannot be loaded` on Windows                 | Open Command Prompt, enter the project folder with `cd`, then run the same command.                         |
+| `node`, `npm` or `git` is not recognised              | Complete steps 1–2, close the terminal and open a new one.                                                  |
+| `cf` is not recognised                                | Repeat step 6, then open a new terminal.                                                                    |
+| `Wrangler is not signed in to the selected account`   | Repeat steps 9–10; use the intended account ID.                                                             |
+| Database creation was interrupted                     | Rerun step 12. It checks whether that database was created before offering another create.                  |
+| Missing installation settings or invalid placeholders | Run step 12. The old example JSON is not a working configuration.                                           |
+| Deployed app uses a different D1 database             | Check the household settings, rerun step 15, then repeat step 16.                                           |
+| No such table / no such column / pending migrations   | Run the migration command below, then repeat step 16.                                                       |
+| `cf` cannot read Zero Trust                           | Check step 17 and repeat step 11. Wrangler login does not sign `cf` in.                                     |
+| Existing Access configuration conflicts               | Stop and inspect the application named in the error. Do not create another or broaden the email rule.       |
+| Token request gets 401 or 403                         | Check step 19's permission and specific account. Enter the corrected token at step 20.                      |
+| “Authentication is not configured”                    | Finish steps 18–20 before trying to sign in.                                                                |
+| “Something went a bit wonky” after the email code     | Run the two read-only checks below. A missing migration or wrong database can cause the first page to fail. |
+
+Migration repair, using the saved household database:
 
 ```sh
-curl -sS -o /dev/null -w '%{http_code}\n' \
-  https://YOUR-PRODUCTION-HOST/shared/aaaaaaaaaaaaaaaaaaaaaa
+npm run db:migrate:remote
 ```
 
-Open **Your family**, add one test address and confirm that:
-
-1. it appears as **Not signed in yet**, with a wishlist available immediately;
-2. **Copy invitation** includes the application address and exact sign-in email;
-3. an unrelated address receives no OTP and cannot enter; and
-4. add a wish before that person signs in; after they complete OTP, they appear as **Joined** with
-   the same wishlist and wish. Any claim remains hidden from them.
-
-For an existing deployment, apply migration `0012_invited_wishlists.sql` before deploying code that
-uses `first_signed_in_at`. It also creates wishlists for existing completed invitations; pending,
-cleanup-required and revoked invitations are excluded. Remote migration requires operator approval.
-
-The application creates one exact-email Access policy, records the waiting invitation in D1 and gives
-the organiser a warm, ready-to-send message for their preferred private channel.
-
-## 11. Connect automatic deployments
-
-The project has two update channels: `stable` for tested releases (recommended) and `main` for
-people who deliberately want changes before release. The reference installation stays on `main`.
-The first successful stable release creates `stable`; until then this guide's fork-based setup is
-the available installation route. See [RELEASES.md](RELEASES.md).
-
-Cloudflare Builds watches a branch in the repository connected through your authorised GitHub
-integration. It does not subscribe to upstream releases or keep a fork synchronised. A public
-repository is not automatically available for every unrelated account to connect. Independent-account
-updates from upstream have an [installation bootstrap](INSTALLATION_UPDATES.md). Its real Cloudflare
-build and pending-migration path have passed, but a timer-triggered updater run and clean-account
-acceptance remain unverified. The steps below configure a self-managed fork.
-
-**Automatic deployment is not automatic upstream updating.** With a fork, you choose when to sync
-upstream changes; Builds then applies pending migrations and deploys them. With the separate
-version-pin updater, a scheduled GitHub workflow checks upstream and changes the installation's pin;
-Builds then builds that pinned source. Follow [INSTALLATION_UPDATES.md](INSTALLATION_UPDATES.md) only
-when choosing that route, including its different deploy command and current verification limits.
-
-The first CLI deployment created the correctly named Worker and its bindings. Connect that existing
-Worker to your fork rather than importing a second Worker.
-
-Do not commit installation-specific settings. Before the first build, add a build text variable named
-`WISHLIST_INSTALLATION` containing the complete JSON from `.wishlist-installation.json`. The build
-merges those identifiers with shared configuration. The local settings, generated
-`wrangler.installation.json` and `worker-configuration.d.ts` are ignored and must not be committed.
-
-Account and database IDs are safe identifiers. Keep Access API tokens, `.env`, `.dev.vars`, database
-exports and other secrets in their dedicated private stores.
-
-Now connect the build:
-
-1. go to **Workers & Pages → your Worker → Settings → Builds**;
-2. select **Connect** and authorise Cloudflare's GitHub integration for your fork;
-3. use production branch `main`;
-4. use build command `npm run build`;
-5. use deploy command `npm run deploy:production`; and
-6. use repository root `/`.
-
-The build API token must include Account / D1 / Edit for this deployment's account as well as its
-existing Worker deployment permissions. Review it in **Settings → Builds → API token**. Never add
-the token to the repository. The `DB` binding generated from installation settings determines
-which database receives migrations; the release script verifies that it matches the built Worker.
-
-Disable preview builds for the simple direct-to-`main` workflow. Never use `deploy:production` or
-`db:migrate:remote` in non-production builds against the production binding. If previews are needed,
-give them a separate Worker, database and credentials.
-
-Workers Builds now deploys each push to `main`. Cloudflare's [Git integration guide](https://developers.cloudflare.com/workers/ci-cd/builds/)
-requires the Worker name in the dashboard to match `workerName` in the installation settings.
-
-Production Builds now run the repository's release script after a successful build:
-
-```sh
-npm run deploy:production
-```
-
-It applies only pending D1 migrations, then deploys with `--keep-vars`. A failed migration stops
-deployment; a release without database changes simply skips migrations. Existing installations need
-to change their production deploy command once and verify the token's D1 permission. Future updates
-to the tracked branch then require no separate migration command. Fork owners still need to sync
-upstream updates into their fork; account/database settings stay separate from shared source.
-
-Migrations must remain compatible with the old Worker, which continues serving traffic until the
-new deployment succeeds. Use additive changes first and remove old columns only in a later release.
-A successful migration is not undone if deployment fails or Worker code is rolled back. Do not
-automatically restore the database or delete migration history; fix the failure and retry the build.
-
-Apply all pending migrations before the matching application code reaches production. Existing
-migrations include family roles, invitation admission and revocation state, item images, product
-lookup limits, product-image budgets and hashed sharing links. Migration `0010` replaces the early
-single-link table with the named, five-link structure. Existing experimental sharing addresses stop
-working when it is applied and must be made again; the application does not carry those early links
-forward under invented names. The shared-image requester-limit migration is also required before
-deploying its matching code. Migration `0011` refreshes SQLite planner statistics after the indexes
-introduced by the earlier migrations.
-
-## 12. Add a custom domain (optional)
-
-The free `workers.dev` address is sufficient. For a friendlier address, first add a domain to the same
-Cloudflare account as an active zone. Then open **Workers & Pages → your Worker → Settings → Domains &
-Routes → Add → Custom Domain** and enter a hostname such as `wishlist.example.com`.
-
-Cloudflare creates the DNS record and certificate. A custom domain cannot replace an existing CNAME
-and must belong to a zone you control. See Cloudflare's [Custom Domains requirements](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
-
-Links and Add from anywhere derive their origin from the current request. The first viewing link
-created while visiting the custom hostname automatically creates and verifies that hostname's narrow
-public Access application. To verify it before family use, rerun
-`npm run access:configure-sharing -- wishlist.example.com` with the three Access management values
-exported as in step 10.
-
-## 13. Verify the installation
-
-Before relying on the installation, verify all of these:
-
-- a signed-out browser is redirected to Access;
-- an Access-authenticated email other than `INITIAL_ORGANISER_EMAIL` cannot bootstrap an empty
-  deployment;
-- only exact email addresses added by the organiser receive a usable OTP;
-- the main Access application has a 30-day session and its family policies inherit that duration;
-- the organiser and invited member each receive exactly one wishlist;
-- an ordinary wish can be added, edited and deleted;
-- **Fill from link** only prefills an editable draft and manual entry still works;
-- a blocked or JavaScript-only test product either receives a Browser Run draft or returns to manual
-  entry without exposing infrastructure details;
-- an optional product picture is served from the application's `/product-image` address;
-- one family member can claim an item and the wishlist owner cannot see that claim or purchase state;
-- the invalid-token `curl` in step 10 returns `404`, not an Access redirect;
-- a viewing link opens in a signed-out private browser and contains no edit or claim controls;
-- Profile lists every active sharing link by its private name and **Stop sharing this link** stops only the selected link
-  immediately;
-- one wishlist can hold five independently working sharing links, and its popup replaces the creation
-  form with removal guidance while five are active;
-- a signed-out request to `/`, `/product-image` or a POST beneath `/shared/` still requires Access;
-- removing an ordinary member denies their next request and signs existing application sessions out;
-- `/family` is available only to the organiser; and
-- a push to `main` completes one Cloudflare build and deployment.
-
-Check D1 migrations at any time with:
+Read-only database/deployment check:
 
 ```sh
 npm run setup:check
 ```
 
-For release-level validation of the guide itself, follow the
-[fresh-deployment acceptance procedure](FRESH_DEPLOYMENT_ACCEPTANCE.md). It records evidence against
-a disposable Cloudflare account while keeping the reference family deployment completely separate.
+Read-only Access check (enter the same scoped token privately when asked):
 
-Usage is visible in **Workers & Pages → your Worker**, **D1 → your database**, **Browser Run**,
-**Workers AI**, and **Workers Builds**. These dashboards are the source of truth for the account's
-remaining allowances.
+```sh
+npm run setup:access -- .private/access-setup.json --check
+```
 
-## Updating an installation
+If those pass but login still fails, [open your Worker](https://dash.cloudflare.com/?to=/:account/workers-and-pages)
+and inspect **Logs** for the failed request. Share the error type and step number with your assistant
+or maintainer. Keep tokens, email codes, Access assertions, family data and sharing-link secrets out
+of reports. The generic “wonky” message alone does not identify the cause.
 
-Follow [Backup, restore and upgrade](BACKUP_RESTORE_UPGRADE.md). It covers the pre-update recovery
-point, required checks, migration ordering, post-deployment verification and the important boundary
-between rolling back Worker code and restoring D1 data. Preserve every applied migration as part of
-the installation's reliable upgrade history.
+Use `npm run db:migrate:remote` with this version of the project. Its Windows launcher has been fixed.
+A bare `npx wrangler d1 migrations apply DB --remote` does not select the generated household config.
+If troubleshooting with Wrangler directly, use the installation wrapper:
 
-## Removing a family member
+```sh
+npm run installation:wrangler -- d1 migrations apply DB --remote
+```
 
-The organiser can choose **Remove access** beside an ordinary member on **Your family**. The
-interface asks for explicit confirmation and explains the effect before the action is submitted. The
-application then immediately disables that identity in D1, deletes its exact-email Access policy and
-revokes every session for this Access application. Everyone is signed out once so no previously
-issued token can outlive the change. The removed person's wishlist and historical data remain in D1.
+## Updates and optional features
 
-If Cloudflare is temporarily unavailable, the disabled member still cannot enter the application and
-the row changes to **Removal needs attention**. Choose **Finish removal** when Cloudflare is available.
-Interrupted additions similarly appear as **Invitation needs attention** with a safe repair action.
+The initial setup does not require a GitHub fork, custom domain or automatic updater.
+
+- [Back up and update your installation](BACKUP_RESTORE_UPGRADE.md).
+- [Connect GitHub deployments or add a custom domain](CLOUDFLARE_OPERATIONS.md#connect-automatic-deployments).
+- [Cloudflare allowances and optional product-import services](CLOUDFLARE_OPERATIONS.md#what-cloudflare-provides).
+- [Installation settings](INSTALLATION_CONFIG.md), if you need to move or restore the setup computer.
+
+### Optional global Wrangler installation
+
+If you also want a standalone `wrangler` command outside this project, install the checked version:
+
+```sh
+npm install --global wrangler@4.147.0
+```
+
+Continue using `npx wrangler` inside this project so its lockfile selects the version.
+
+The commands and failure checks have local automated coverage. A fresh-account walkthrough on
+Windows, macOS and Linux is still required before claiming the complete journey works on each.
+[FRESH_DEPLOYMENT_ACCEPTANCE.md](FRESH_DEPLOYMENT_ACCEPTANCE.md) defines that check.

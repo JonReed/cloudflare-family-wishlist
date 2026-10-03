@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import { resolve } from 'node:path';
 
 import {
   installationWranglerConfig,
   parseInstallationSettings,
   readInstallationSettings
 } from '../scripts/installation-config';
-import { installationWranglerArgs } from '../scripts/installation-wrangler';
+import { installationWranglerArgs, wranglerInvocation } from '../scripts/installation-wrangler';
 import { deployProduction } from '../scripts/deploy-production';
 
 const installation = {
@@ -32,6 +33,21 @@ const shared = JSON.stringify({
 });
 
 describe('installation settings', () => {
+  it('launches the installed Wrangler JS with Node instead of a Windows command shim', () => {
+    const invocation = wranglerInvocation(
+      ['d1', 'migrations', 'apply', 'DB', '--remote'],
+      '/checkout with spaces'
+    );
+    expect(invocation.executable).toBe(process.execPath);
+    expect(invocation.args).toEqual([
+      resolve('/checkout with spaces/node_modules/wrangler/bin/wrangler.js'),
+      'd1',
+      'migrations',
+      'apply',
+      'DB',
+      '--remote'
+    ]);
+  });
   it('accepts a complete installation without changing shared bindings or application settings', () => {
     expect(parseInstallationSettings(JSON.stringify(installation))).toEqual(installation);
     const config = installationWranglerConfig(shared, installation);
@@ -99,7 +115,18 @@ describe('installation settings', () => {
       '--config',
       'installation.json'
     ]);
-    for (const flag of ['--config', '--config=other.json', '-c', '--env', '--env=staging', '-e']) {
+    for (const flag of [
+      '--config',
+      '--config=other.json',
+      '-c',
+      '-cother.json',
+      '-hc',
+      '--env',
+      '--env=staging',
+      '-e',
+      '-estaging',
+      '-he'
+    ]) {
       expect(() => installationWranglerArgs(['deploy', flag], 'installation.json')).toThrow();
     }
   });

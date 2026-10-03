@@ -22,8 +22,13 @@ settings alongside operational records; database exports remain separate.
 
 ## Local setup
 
-Copy `installation.example.json` to `.wishlist-installation.json`, then replace the placeholders
-with the values from your account and newly created D1 database. Run:
+For a new household, use `npm run setup:config` from the [setup guide](DEPLOYMENT.md). It
+selects the account explicitly, creates or verifies D1 and writes the ignored settings. No JSON
+editing is required. The Access setup commands save non-secret IDs in `.private/access-setup.json`
+and install runtime settings through a hidden token prompt; they do not save the token locally.
+
+For an automated build or an existing installation whose IDs are already known, write the four
+verified fields shown in `installation.example.json` to `.wishlist-installation.json`. Run:
 
 ```sh
 npm run installation:configure
@@ -45,8 +50,11 @@ npm run deploy
 
 The last two commands mutate Cloudflare and require the operator's normal approval. The wrapper
 selects the generated configuration. Do not supply `--config` or `--env`; use another complete
-installation file or build variable for another deployment. For initial authentication or creating
-D1 before its ID exists, ordinary `npx wrangler` remains available after verifying the account/profile.
+installation file or build variable for another deployment. For initial authentication, ordinary `npx wrangler login` remains available.
+`setup:config` explicitly selects the chosen account for D1 creation before its UUID exists.
+The Wrangler wrapper launches the installed JavaScript entry with Node, including on Windows;
+it does not execute `npx.cmd` directly. Use `npm run installation:cf -- <resource command>` for
+account-scoped `cf` operations with the saved account. `cf` and Wrangler need separate logins.
 
 ## Cloudflare Builds
 

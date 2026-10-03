@@ -1,11 +1,12 @@
 import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { prepareInstallationConfig } from './installation-config.ts';
 
 export function installationWranglerArgs(args: string[], configPath: string): string[] {
   if (!args.length) throw new Error('Supply a Wrangler command.');
-  if (args.some((arg) => /^(?:-c|--config|-e|--env)(?:=|$)/.test(arg))) {
+  if (args.some((arg) => /^--(?:config|env)(?:=|$)|^-[^-]*[ce]/.test(arg))) {
     throw new Error(
       'Choose an installation through its settings, not a config or environment override.'
     );
@@ -14,17 +15,22 @@ export function installationWranglerArgs(args: string[], configPath: string): st
 }
 
 export function runWrangler(args: string[]): void {
-  const result = spawnSync(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['--no-install', 'wrangler', ...args],
-    {
-      stdio: 'inherit',
-      env: process.env
-    }
-  );
+  const invocation = wranglerInvocation(args);
+  const result = spawnSync(invocation.executable, invocation.args, {
+    stdio: 'inherit',
+    env: process.env
+  });
   if (result.error) throw result.error;
   if (result.status !== 0)
     throw new Error(`Wrangler failed (${result.status ?? result.signal ?? 'unknown'}).`);
+}
+
+/** Node cannot exec Windows .cmd files directly. Launch the installed JS entry on every OS. */
+export function wranglerInvocation(args: string[], directory = process.cwd()) {
+  return {
+    executable: process.execPath,
+    args: [resolve(directory, 'node_modules/wrangler/bin/wrangler.js'), ...args]
+  };
 }
 
 const entryPoint = process.argv[1];

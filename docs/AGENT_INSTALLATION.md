@@ -1,124 +1,293 @@
-# Agent-assisted installation
+# Instructions for the assistant installing Family Wishlist
 
-This guide helps Codex or another assistant install one household's Family Wishlist, or resume an
-interrupted setup. It is a checklist around [DEPLOYMENT.md](DEPLOYMENT.md), not a second installer.
-That guide owns setup commands, permission requirements and the final acceptance checks. Read its
-relevant sections before acting, and retrieve current official Cloudflare documentation when the
-dashboard or installed command differs. Do not guess a replacement security setting.
+Use [the setup guide](DEPLOYMENT.md) as the shared human/agent sequence. Take one step at a time,
+check its result, then continue. Do the terminal work yourself when tools are available. Ask the
+owner to act only for missing account choices, sign-in, service consent, payment entry, secret entry
+or browser email codes. Do not send them a collection of Cloudflare concepts to interpret.
 
-For the copyable starting prompt, see [Install with Codex](../README.md#install-with-codex).
-The repository includes a small [installation skill](../.agents/skills/wishlist-install/SKILL.md).
-Codex supports [repository-local skills](https://learn.chatgpt.com/docs/build-skills) and
-[AGENTS.md instructions](https://learn.chatgpt.com/docs/agent-configuration/agents-md); direct reading
-of this guide is sufficient when skill discovery is unavailable. No plugin is required.
+## Before creating anything
 
-## Establish the installation target
+Determine whether this is a new installation, a resumed setup or an upgrade. For an upgrade, use
+[BACKUP_RESTORE_UPGRADE.md](BACKUP_RESTORE_UPGRADE.md), not resource creation.
 
-Inspect the checkout, Git remotes, local installation settings and available authenticated tools
-without exposing secret values. Ask only for missing decisions:
+For installation, obtain only these missing decisions:
 
-- Is this a new installation, resumed setup, or an upgrade of an existing family instance?
-- Which Cloudflare account and GitHub owner/repository should own it?
-- What is the organiser's exact email address, and which Worker name and hostname should be used?
-- Which update route does the owner want?
+- the Cloudflare account that should own the app;
+- the organiser's exact sign-in email;
+- an unused Worker name (default `family-wishlist`); and
+- approval to create this household's Worker, D1 database, exact-email Access application and narrow
+  viewing-link exceptions on free plans.
 
-Prefer the documented free-tier setup and included `workers.dev` address unless the owner chooses
-otherwise. Paid services, domain registration and unrelated account changes require their own
-explicit authorisation; they are not implied by a request to install the application.
-Explain the proposed resources and changes and obtain approval for that scope before remote writes.
-Do not repeatedly ask for approval already given for the same scoped work. A diagnostic or planning
-request alone does not authorise installation.
+Use `workers.dev` and manual deployment initially. Offer a custom domain, fork or scheduled updater
+only after sign-in works and if the owner wants it. Do not infer the household account from the Git
+remote, existing maintainer credentials or a browser session. Do not alter paid plans, unrelated
+resources, DNS or account-wide protection.
 
-The reference maintainer's account, credentials and repository are not defaults for other families.
-Verify the active account from the actual working directory and compare it with the selected account
-ID before remote operations. Follow the deployment guide's profile guidance, including physical paths
-on macOS. A browser login does not prove the CLI is using the same account.
+Inspect `.wishlist-installation.json` and `.private/access-setup.json` if present. Do not print tokens
+or `.env` files. Check whether credential/account environment overrides are set without displaying
+secret values. `CLOUDFLARE_API_TOKEN` takes precedence over CLI profiles; do not assume that a new
+browser login changes the active token. Saved settings and live resource IDs must agree.
 
-## Choose the update route explicitly
+Once the owner has authorised the resources above, continue within that scope. The commands' `yes`
+prompts are target checks; an agent can answer them after comparing the account and resource to the
+approved plan. They do not require repeated permission requests.
 
-- **Self-managed fork:** follow [DEPLOYMENT.md](DEPLOYMENT.md). Cloudflare Builds automatically
-  deploys changes in the connected fork, including pending migrations. The owner still syncs upstream
-  changes into that fork.
-- **Version-pin installation:** follow [INSTALLATION_UPDATES.md](INSTALLATION_UPDATES.md) for the
-  small generated repository and its build commands; use the deployment guide for account, D1 and
-  Access prerequisites. Explain the current limits in [RELEASE_READINESS.md](RELEASE_READINESS.md)
-  before proceeding. It is not yet certified as a fully unattended installation.
+## Use the tools installed for this project
 
-If the owner prefers manual deployments, follow the deployment guide's CLI route and record that
-automatic deployments and upstream updates are not enabled; do not require a GitHub connection.
+Run each command separately from the checkout. There are no shell-specific exports, hidden Bash
+reads, command substitutions, pipelines or backslash line continuations in the normal flow.
+The same command blocks work in PowerShell, Command Prompt and Unix terminals.
 
-Do not mix the two repositories' deploy commands or connect a second Worker accidentally. Record the
-source version and selected channel. Verify a release or `stable` branch actually exists before
-offering it; do not invent a first release. For an existing installation upgrade, use
-[BACKUP_RESTORE_UPGRADE.md](BACKUP_RESTORE_UPGRADE.md) before changing data or code.
+| Purpose                                          | Command                                 | Required result                                                                |
+| ------------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------ |
+| Install project tools, including pinned Wrangler | `npm ci`                                | Dependencies and generated types complete                                      |
+| Optional global Wrangler installation            | `npm install --global wrangler@4.147.0` | Standalone Wrangler installed                                                  |
+| Install the checked Cloudflare CLI beta          | `npm install --global cf@1.0.0-beta.12` | Cloudflare `cf` installed                                                      |
+| Authenticate Wrangler                            | `npx wrangler login`                    | Owner completes browser consent                                                |
+| Inspect Wrangler identity                        | `npx wrangler whoami`                   | Intended account ID appears                                                    |
+| Authenticate the wider API CLI                   | `cf auth login`                         | Owner completes its separate browser consent                                   |
+| Inspect `cf` identity if needed                  | `cf auth whoami`                        | Correct login; later resource commands explicitly select the household account |
 
-## Keep one resumable checklist
+Retrieve current official docs if an installed command differs:
+[Wrangler](https://developers.cloudflare.com/workers/wrangler/commands/),
+[`cf` installation and credential order](https://developers.cloudflare.com/cf/get-started/),
+[`cf` resource commands](https://developers.cloudflare.com/cf/get-started/resources/).
 
-Keep a short private note at `.private/INSTALLATION_PROGRESS.md` in the application checkout (already
-ignored by Git), or in an owner-approved private location. It is an operational note, not executable
-configuration. Keep household settings in the location defined by
-[INSTALLATION_CONFIG.md](INSTALLATION_CONFIG.md); do not modify shared `wrangler.jsonc` to select an
-account or database.
+`cf` remains beta. It can manage API resources alongside this Wrangler project. Do not run `cf migrate`,
+`cf init` or replace the Vite/build/deployment configuration during installation. Use `npm run deploy`
+for the application; use `cf` for Access resources. The CLIs do not share login credentials.
 
-Record the selected account ID, repository, source commit, Worker name, D1 name/ID, hostname and Access
-application ID as they become known. Include each stage's status, dated evidence, any owner action
-needed and the next safe step. Do not record API tokens, assertions, passwords, OTPs, raw sharing
-links, family records or database exports. Keep the organiser's email in its intended configuration,
-not a public test report.
+## Prepare the database and deploy
 
-Use `not started`, `in progress`, `verified`, `blocked` or `skipped` for these stages:
+### A. Prepare household settings
 
-| Stage                             | Source of truth and completion evidence                                                              |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Account and checkout              | Deployment steps 1–3; supported tools, intended Git remote and matching account identity             |
-| Installation settings and D1      | Steps 3–5 and installation settings guide; matching database ID/name and migrations                  |
-| First deployment                  | Step 6; required gates pass and correct Worker deployed; expected fail-closed response before Access |
-| Private sign-in                   | Steps 7–9; exact-email policy, correct JWT configuration and organiser login                         |
-| Invitations and sharing           | Steps 9a–10; session/sharing configuration verified and invited member flow exercised                |
-| Automatic deployment/update route | Step 11 or version-pin guide; saved build configuration, successful actual build and deployment      |
-| Acceptance and handoff            | Step 13; recorded results, owner-only checks and any remaining limitations                           |
+```sh
+npm run setup:config
+```
 
-On resumption, read the note and verify current state before repeating a stage. List and inspect
-existing resources before creating them; a matching name alone is insufficient. Reuse only resources
-whose account, identifiers and intended purpose match. Do not overwrite conflicting configuration,
-create a duplicate to evade a failure, or delete resources to start again without approval.
+Run in an interactive terminal. Supply the approved account ID and Worker name. The command verifies
+Wrangler access to that account, selects it explicitly for database operations, lists D1 databases,
+then creates or explicitly reuses one. It reads the UUID from the live JSON response and writes the
+ignored installation file. It never edits shared `wrangler.jsonc`.
 
-## Use the existing tools and owner-assisted steps
+Do not accept reuse based on a name alone: compare the displayed account and UUID with the owner's
+intended resource or the existing private record. A saved mismatch must stop setup. On an interrupted
+create, rerun the command so it discovers the live database before trying another create.
 
-Reuse `installation:configure`, installation-aware Wrangler commands, `access:configure-session`,
-`access:configure-sharing` and `setup:check` as documented. Inspect a failure and re-read live state
-before retrying; do not repeatedly create resources or broaden permissions to make an error vanish.
-If completion needs a new permission, account choice or payment decision, explain the exact blocker
-and request that decision. Continue independent safe checks where useful.
+Before the first deploy, ensure the chosen Worker name is unused or explicitly belongs to the
+installation being resumed:
 
-The owner completes sign-in, passkeys, OTPs, payment entry and account consent in the service's own
-UI. Never ask them to paste secrets into chat or put a token in a command argument. Use the private
-input and secret-storage methods in the deployment guide. If browser control or a connector is
-unavailable, give the owner one precise dashboard step and verify the saved result afterward. Do not
-require a plugin to finish setup.
+```sh
+npm run installation:cf -- workers scripts search --name family-wishlist
+```
 
-Keep Access and application JWT validation enabled. The documented pre-Access `503` is an expected
-intermediate state, not a completed installation. Public sharing must retain only the exact narrow
-exceptions in the deployment guide. Missing permissions are not a reason to widen the email allow-list
-or expose private pages.
+Replace `family-wishlist` with the approved name. This API search includes partial matches; compare
+`script_name` exactly. Do not deploy over an unrelated Worker. The wrapper explicitly sets the account
+from installation settings, including when the login can access several accounts.
 
-## Verify and hand over
+For tools that cannot run interactive prompts, an agent may create D1 with `cf` using the approved
+account in the tool's environment, capture its JSON result, then write these four fields to
+`.wishlist-installation.json`:
 
-Run `setup:check` with the documented Access setup environment to include the deeper checks; if those
-values are unavailable, report the checks as skipped rather than claiming a complete pass. Follow
-the deployment guide's final acceptance list with owner-approved test identities and records. In
-particular, observe organiser sign-in, invitation and first login, a wish added before first login,
-unrelated-email denial, claim privacy and sharing/revocation. Do not request other people's login
-codes; have the owner or invited tester complete those steps.
+```json
+{
+  "accountId": "32-character account ID",
+  "workerName": "approved-worker-name",
+  "databaseId": "D1 UUID returned by Cloudflare",
+  "databaseName": "approved-database-name"
+}
+```
 
-Verify saved build settings and an actual build/deployment in the intended repository and account.
-A green GitHub updater job or changed version pin alone is not delivery evidence. A manually started
-job is not evidence that a schedule fired. Do not restore D1 automatically after a deployment failure;
-successful migrations are not undone by a failed Worker deployment.
+Those strings describe required values; they are not usable defaults. Write actual verified values,
+then run `npm run installation:configure`. Never ask a human to repair this JSON to make the agent's
+commands work. A complete `WISHLIST_INSTALLATION` build override takes precedence over the file;
+use one installation source at a time.
 
-End with the application address, selected update route, source version, verified checks, skipped or
-blocked checks, and where the private operational note lives. Explain how the owner invites family
-and how future updates arrive. Do not call setup complete while sign-in or a required check remains
-unverified. Offer to remove only specifically identified temporary test records with approval; retain
-the family's actual installation. For a requested disposable release test, use
-[FRESH_DEPLOYMENT_ACCEPTANCE.md](FRESH_DEPLOYMENT_ACCEPTANCE.md) and its separately scoped cleanup.
+### B. Run the quality gate
+
+```sh
+npm run quality
+```
+
+Stop on a failure. Do not skip tests to make deployment appear successful.
+
+### C. Run the dependency gate
+
+```sh
+npm run audit
+```
+
+Stop on a failure. Do not change dependencies with `audit fix --force` during setup.
+
+### D. Deploy the approved Worker
+
+```sh
+npm run deploy
+```
+
+The command verifies the built account, Worker and D1 target, applies pending migrations, then deploys
+with `--keep-vars`. Record the actual address printed. Do not manually apply SQL to the maintainer's
+reference account. A successful migration is not undone by a later deployment failure.
+
+### E. Verify first-login database readiness
+
+```sh
+npm run setup:check -- --before-login
+```
+
+Require no pending migrations, readable member/wishlist/invitation tables including
+`members.first_signed_in_at`, and the intended D1
+UUID on every traffic-bearing Worker version. The site should still fail closed before Access
+configuration. That intermediate state is not a completed installation.
+
+## Configure sign-in
+
+### F. Have the owner complete Zero Trust Free onboarding
+
+Give them [this direct link](https://one.dash.cloudflare.com/) and the exact selected account.
+They choose a team name, **Free**, and complete any account consent/payment entry. No WARP client is
+required. Verify that the organisation exists before continuing. Do not change an existing team's
+name or settings merely to fit an example.
+
+### G. Create or verify Worker-level email-code protection
+
+```sh
+npm run setup:access-app
+```
+
+In an interactive terminal, supply the approved organiser email and actual deployed address. This
+command uses the installed `cf` with the saved account explicitly selected. It reads all resource
+pages, finds the exact Worker ID, reuses or creates one `onetimepin` identity provider, then reuses or
+creates one self-hosted Access application. It verifies the application and attached policies and
+writes `.private/access-setup.json`.
+
+Its required configuration is:
+
+- one destination `{ "type": "worker", "worker_id": "the verified Worker ID" }`, protecting production
+  and previews; no `preview_worker`, `all_workers` or unrelated destinations;
+- only the verified one-time PIN provider in `allowed_idps`;
+- `session_duration: "720h"`, HttpOnly cookies and SameSite `lax`; and
+- Allow policies containing exact emails only, including the organiser, with no shorter policy session.
+
+On existing mismatches, stop and explain the precise conflicting resource. Do not widen or rewrite
+an admission rule to get through setup.
+
+For non-interactive tools, use the same `cf` resource operations through the installation wrapper.
+Discover a changed beta command with an anonymous resource/action query, inspect its help/schema,
+then preview its request before an authorised write:
+
+```sh
+cf cli search "create Access application for a Worker"
+```
+
+```sh
+cf schema zero-trust access applications create
+```
+
+Read operations used by the setup command:
+
+```sh
+npm run installation:cf -- zero-trust organization get
+```
+
+```sh
+npm run installation:cf -- zero-trust identity-providers list --page 1 --per-page 100
+```
+
+```sh
+npm run installation:cf -- zero-trust access applications list --page 1 --per-page 100
+```
+
+Continue pages until the list is complete. Never conclude that an app is absent from only its first
+page. Create only absent, approved resources. For request bodies, write non-secret JSON privately
+and pass `--body @.private/request.json`, avoiding shell-specific quoting. The exact app body is built
+by `accessApplicationBody()` in `scripts/setup-access-application.ts`; use it as the shared contract,
+not a remembered API signature. Check the installed `cf` help and official
+[Worker Access API examples](https://developers.cloudflare.com/workers/configuration/cloudflare-access/#protect-one-worker).
+
+After verified readback, save this **non-secret** setup file using actual values:
+
+```json
+{
+  "applicationId": "verified Access application UUID",
+  "workerId": "verified 32-character Worker ID",
+  "teamDomain": "actual-team.cloudflareaccess.com",
+  "hostname": "actual-worker.actual-subdomain.workers.dev",
+  "organiserEmail": "the owner's exact email",
+  "otpId": "verified onetimepin provider UUID"
+}
+```
+
+Store it at `.private/access-setup.json`. Do not confuse the application UUID with the audience tag,
+the Worker name with its ID, or the OTP provider type with its UUID. The next command reads the
+Access audience itself.
+
+### H. Have the owner create the scoped invitation token
+
+Give them [the token page](https://dash.cloudflare.com/profile/api-tokens) and these exact choices:
+**Create Token → Create Custom Token**, permission **Account → Access: Apps and Policies → Edit**,
+resource **Include → Specific account → the approved household account**.
+
+The token is separate from either CLI's login. Do not store the broad setup login as the application's
+runtime token. Let the owner keep the token page open for the next private terminal prompt.
+
+### I. Finish configuration and verify it before first login
+
+```sh
+npm run setup:access -- .private/access-setup.json
+```
+
+The owner enters the token in the hidden terminal prompt. When an authorised secret store already
+supplies it, the command can read `ACCESS_MANAGEMENT_API_TOKEN` from that process environment.
+Never place a token in a command argument, echoed pipeline, checklist or tool output.
+
+This command rechecks database readiness and exact Access rules, configures the 30-day session and
+narrow sharing exceptions, then sends all six runtime values to Wrangler over stdin in one bulk
+secret request. It does not write a secret file. It finally runs the full infrastructure checks,
+including the Access API checks. It is suitable for resuming a partially completed configuration.
+
+The public exception is exactly `/shared/*`, `/shared-assets/*` and `/favicon.svg` for the selected
+hostname. Do not expose `/assets/*`, private pages, the generic image proxy or whole domains.
+
+## Verify what the owner actually experiences
+
+Follow setup guide steps 21–29. Require observed organiser login, invitation, a wish prepared before
+first login, invited-member login to that same list, hidden claims/purchases, public sharing and
+revocation, and denial of an unrelated email. The owner/testers enter their own codes.
+
+A successful build or infrastructure check does not prove that OTP login works. Report incomplete
+browser checks explicitly. Do not diagnose “Something went a bit wonky” from the message alone.
+
+For a reported first-login failure, first run:
+
+```sh
+npm run setup:check
+```
+
+Then, with private token input:
+
+```sh
+npm run setup:access -- .private/access-setup.json --check
+```
+
+Inspect Worker logs only if those checks do not explain the failure. Report the failing layer and
+next action, omitting assertions, token values, sensitive query strings and family data. On this
+version, `npm run db:migrate:remote` launches the installed Wrangler JS with Node on every OS;
+a bare Wrangler migration command can bypass installation settings and must not be offered as a
+Windows workaround.
+
+## Leave a resumable handoff
+
+Keep a private note at `.private/INSTALLATION_PROGRESS.md` with the source commit, selected account,
+Worker name/ID, D1 name/ID, hostname, Access application/provider IDs and completed step numbers.
+Record the dated result of each check and the next action. Never put tokens, OTPs, assertions, raw
+sharing links, family records or exports in it.
+
+On resumption, verify live IDs before repeating creates. Treat conflict or ambiguous pagination as
+a reason to investigate, not a reason to create duplicates or delete resources.
+
+End with the site address, source version, verified checks, outstanding checks and how to invite
+family. State the update route accurately: this initial path uses manual deployment. GitHub Builds
+and the experimental upstream updater are separate choices in
+[CLOUDFLARE_OPERATIONS.md](CLOUDFLARE_OPERATIONS.md) and
+[INSTALLATION_UPDATES.md](INSTALLATION_UPDATES.md).

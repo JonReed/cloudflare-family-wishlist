@@ -80,6 +80,11 @@ function command(
   return result.stdout.trim();
 }
 
+export function npmInvocation(args: string[], npmEntry = process.env.npm_execpath) {
+  if (!npmEntry) throw new Error('Run the installation build/deploy through its npm script.');
+  return { executable: process.execPath, args: [npmEntry, ...args] };
+}
+
 export function runInstallation(mode: '--build' | '--deploy', root = process.cwd()): void {
   const config = parseUpdateConfiguration(
     readFileSync(resolve(root, 'updater.json'), 'utf8'),
@@ -88,7 +93,7 @@ export function runInstallation(mode: '--build' | '--deploy', root = process.cwd
   const settings = readInstallationSettings({ directory: root, required: true });
   if (!settings) throw new Error('Installation settings are required.');
   const receiptPath = resolve(root, receiptFile);
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const npm = npmInvocation([]);
   const env = {
     ...buildEnvironment(process.env),
     GIT_TERMINAL_PROMPT: '0',
@@ -121,8 +126,8 @@ export function runInstallation(mode: '--build' | '--deploy', root = process.cwd
       throw new Error('Fetched source does not match the pinned commit.');
     }
     console.log(`Building ${config.repository} at ${config.commit}.`);
-    command(npm, ['ci'], directoryPath, env);
-    command(npm, ['run', 'build'], directoryPath, env);
+    command(npm.executable, [...npm.args, 'ci'], directoryPath, env, 'npm ci');
+    command(npm.executable, [...npm.args, 'run', 'build'], directoryPath, env, 'npm run build');
     const receipt: BuildReceipt = {
       protocol: INSTALLER_PROTOCOL,
       repository: config.repository,
@@ -144,7 +149,7 @@ export function runInstallation(mode: '--build' | '--deploy', root = process.cwd
     throw new Error('The built checkout changed. Rebuild before deploying.');
   }
   // Only deployment receives the operator's credentials. The application validates its built target.
-  const result = spawnSync(npm, ['run', 'deploy:production'], {
+  const result = spawnSync(npm.executable, [...npm.args, 'run', 'deploy:production'], {
     cwd: directoryPath,
     stdio: 'inherit',
     timeout: 600_000,
