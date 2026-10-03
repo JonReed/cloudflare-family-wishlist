@@ -16,30 +16,39 @@ There is currently no in-app update notice.
 
 ## Choose how to run manual updates
 
-- **GitHub:** use the manual button in the same workflow used for automatic updates. Cloudflare
-  builds and deploys the tested release. This is the simpler repeatable route once connected.
-- **Your computer:** use the terminal procedure below. No GitHub Actions or Cloudflare Builds
-  connection is required. Keep the original project folder and its installation settings.
+- **In your browser:** press a button on GitHub to start the update. Cloudflare installs the new
+  release on your existing website. Use this route if you connected GitHub during setup.
+- **On your computer:** download and install the release with the commands below. Use this route
+  if you originally installed from your computer and still have the project folder.
 
-Both routes update your existing Worker and database. Do not run the new-household setup again.
+Both routes keep the website address and family lists you already use. You do not need to install
+a second website. Choose one route below; you do not need to follow both.
 
 ## Manual updates through GitHub
 
 ### One-time setup
 
-If your repository does not contain `.github/workflows/update-household.yml`, follow
-[setup steps 1–4](UPDATES.md#1-keep-your-installation-settings) to bring in the update tools.
-That initial setup brings in current `main`; subsequent runs select tested `stable` releases.
+Open [GitHub](https://github.com/) and select your copy of `cloudflare-family-wishlist`. GitHub
+calls this copy a **repository**. Its address contains your username or organisation name, rather
+than the project's `JonReed` username. Select **Actions** and look for **Update Family Wishlist**
+in the left sidebar.
 
-Complete [update connection steps 1–15](AUTOMATIC_UPDATES.md#1-open-your-existing-worker), including
+If that option is missing, complete [setup steps 1–4](UPDATES.md#1-keep-your-installation-settings)
+to add the update tool. That preparation currently downloads the project's development version;
+afterwards the update tool installs published releases. It will not replace a newer version with
+an older release.
+
+Complete [update connection steps 1–15](AUTOMATIC_UPDATES.md#1-open-your-wishlist-website-in-cloudflare), including
 the first manual run and app check. **Skip step 16** (the automatic schedule). Complete step 17
 to receive failure notifications. In your repository's
 **Settings → Secrets and variables → Actions → Variables**, leave `WISHLIST_AUTO_UPDATE` absent or
 set it to `false`. The workflow must remain enabled for its manual button to work.
 
-If you installed the earlier fork workflow that has no `WISHLIST_AUTO_UPDATE` condition, first
-update that workflow through the update setup guide. Setting a variable alone cannot change an old workflow.
-Until that is done, disable the old workflow in Actions to stop its schedule.
+If you previously enabled automatic updates using the older experimental setup, follow its
+[migration guide](INSTALLATION_UPDATES.md) before using this option. If you enabled the first version
+of **Update Family Wishlist** before the manual/automatic choice was added, update its files through
+[the setup guide](UPDATES.md) first. Until then, use **Disable workflow** in its GitHub Actions menu
+to stop automatic runs; changing a new setting cannot change how an old update tool behaves.
 
 ### Each time you want to update
 
@@ -49,21 +58,29 @@ Open [the latest release](https://github.com/JonReed/cloudflare-family-wishlist/
 
 **Done when:** you have checked whether the release asks for any preparation before updating.
 
-#### 2. Open your database
+#### 2. Find where your website stores its lists
 
-Open [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) and select the database
-named `databaseName` in your saved `.wishlist-installation.json`. Use the household's account.
+Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) and select your
+wishlist app. Check that its website address is the one your family uses; website addresses are
+listed under **Settings → Domains & Routes** if you cannot see yours on the overview.
 
-**Done when:** the database name and ID match your installation settings. Do not select a database
-based only on a similar name.
+Open the app's **Bindings** tab. Look for **DB**, labelled **D1 database**. That is the stored data
+used by this website. Follow the database link. If it is not clickable, note its displayed name,
+open [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) and select that exact name.
+
+**Done when:** you have opened the database linked to your existing wishlist website. You do not
+need to find a hidden file or guess which database belongs to the app.
 
 #### 3. Record the recovery time
 
-Open the database's **Time Travel** tab. Note the current UTC time in a private note so you can
-identify the point before this update if recovery is needed. Do not select **Restore**.
+Open the database's **Time Travel** tab. This is Cloudflare's way to return stored data to an
+earlier time if something goes wrong. Note the database name and the current date and time,
+including your time zone, in a private note. For example: “3 October 2026, 14:30, London time.”
+Do not select **Restore**; you are only recording when you are about to update.
 
-**Done when:** you have recorded the database ID and pre-update UTC time. For a portable SQL backup,
-use the optional export steps in [the backup guide](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point).
+**Done when:** you have a note identifying the database and the time before you updated. Cloudflare
+can use that time for recovery within its retention window. To also download a backup file, use
+[the optional export steps](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point).
 
 #### 4. Open the update workflow
 
@@ -83,18 +100,20 @@ current version for a retry. It will not downgrade newer code.
 
 #### 6. Check the build result
 
-Open the new run and wait for **Check the Cloudflare build** to succeed. This can take up to 25 minutes.
+Open the new entry in the list of runs, then open the job named **update**. Wait for its step
+**Check the Cloudflare build** to succeed. This can take up to 25 minutes.
 
 **Done when:** that check is green. A skipped job is not a successful update. If it fails, read the
-first error in that job, correct that cause and repeat step 5. Do not delete the database or reset the fork.
+first error and use [the update troubleshooting table](AUTOMATIC_UPDATES.md#if-a-step-fails) to
+find the next action. Repeat step 5 after fixing that cause. Keep your existing website and database.
 
 #### 7. Check your app
 
 Open your usual wishlist address and sign in.
 
 **Done when:** the family's existing lists and wishes are present. The footer shows the installed
-version; compare it with the release notes. If your installation was already ahead of the stable
-release, keeping that newer code is expected.
+version number; compare it with the release notes. If you installed a development version newer
+than the latest release, the tool keeps it until a newer release becomes available.
 
 GitHub's automatic schedule may be disabled after inactivity; manual runs do not require that schedule.
 
@@ -105,21 +124,21 @@ Run **one command at a time**. Stop if any command fails. On Windows, if PowerSh
 use Command Prompt instead. Use Node.js 24 and Git; [setup steps 1–2](DEPLOYMENT.md#1-install-nodejs)
 include their installers.
 
-This procedure is for a clean checkout that follows the project's Git history. A fork previously
-updated by the snapshot workflow, or a customised checkout, may not fast-forward. In that case use
-its GitHub update workflow or ask an assistant to preserve and review your changes. Do not force a
-merge, discard commits or reset the checkout. Keep any other deployment process idle while updating.
+Use the folder from your original installation. If you have edited the app's files yourself, or
+previously updated through GitHub, these commands may stop to protect those changes. Follow the
+message at that step; do not use commands that discard files. Do not start another update while
+following these steps.
 
 ### 1. Open the existing project folder
 
-Open a terminal in the folder used to install the app. If it is in the current directory, run:
+Find the `cloudflare-family-wishlist` folder downloaded during the original installation.
+On Windows, open it in File Explorer, click the address bar, type `cmd` and press Enter.
+On macOS, right-click it in Finder and choose **Services → New Terminal at Folder**.
+On Linux, right-click it and choose **Open in Terminal**, if your file manager offers it.
 
-```sh
-cd cloudflare-family-wishlist
-```
-
-**Done when:** you are in the existing checkout, not a new empty folder. If you no longer have it,
-recover the installation settings and use the [existing-installation guide](UPDATES.md).
+**Done when:** your terminal is open in that existing folder. Run every command below in this
+terminal. If you no longer have the folder, stop and use [the existing-installation guide](UPDATES.md)
+to recover your website settings.
 
 ### 2. Check for local changes
 
@@ -128,18 +147,24 @@ git status --short
 ```
 
 **Done when:** nothing is printed. If files are listed, stop and preserve those changes with an
-assistant. Ignored installation settings will not appear here; the next step checks them separately.
+assistant. Your saved website settings are kept separately; the next step displays those.
 
 ### 3. Check the saved installation settings
 
 ```sh
-node -e "console.log(require('node:fs').readFileSync('.wishlist-installation.json','utf8'))"
+node -e "const s=JSON.parse(require('node:fs').readFileSync('.wishlist-installation.json','utf8')); console.table({'Cloudflare account ID':s.accountId,'Website name':s.workerName,'Database name':s.databaseName,'Database ID':s.databaseId})"
 ```
 
-**Done when:** `accountId`, `workerName`, `databaseId` and `databaseName` identify your existing
-household. Keep a private backup of this file. If it is missing, recover the identifiers from your
-Worker's bindings or its `WISHLIST_INSTALLATION` build variable using
-[Installation settings](INSTALLATION_CONFIG.md). Do not create a new database or guess its ID.
+Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages) and select your
+wishlist app by the website address your family uses. Check the **Website name** printed by the
+command against the name at the top of that Cloudflare page. Open **Bindings** and check that **DB**
+points to the **Database name** printed by the command.
+
+**Done when:** both names match. Keep the terminal output for step 11. The command reads the saved
+settings for you; you do not need to find or edit the hidden settings file. If it reports `ENOENT`,
+stop: you may have opened the wrong folder. If the saved file is lost, follow
+[the settings recovery instructions](UPDATES.md#1-keep-your-installation-settings) rather than
+creating a new database or guessing the values.
 
 ### 4. Make a recovery point
 
@@ -149,44 +174,49 @@ Run this from the existing project folder before changing its source:
 npm run installation:wrangler -- d1 time-travel info DB
 ```
 
-**Done when:** Wrangler prints a recovery bookmark for your saved database. Keep the bookmark and
-current UTC time in a private note. If the older script fails on Windows, use browser steps 2–3
+**Done when:** the command prints a **bookmark**: a value Cloudflare can use to recover the data
+from this point in time. Copy that value into a private note with today's date and time. If the older script fails on Windows, use browser steps 2–3
 under **Each time you want to update** above to record a recovery time for the same database.
 Stop if you cannot verify the database. A portable SQL export is optional; see
 [the backup guide](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point).
 
-### 5. Download the tested release history
+### 5. Download the latest published release
 
 ```sh
 git fetch https://github.com/JonReed/cloudflare-family-wishlist.git stable
 ```
 
-**Done when:** the fetch succeeds. This only downloads source; it does not deploy anything.
+**Done when:** the command finishes without an error. It has downloaded the release files; your
+website has not changed yet.
 
-### 6. Check whether there are new release commits
+### 6. Check whether there is anything new to install
 
 ```sh
 git rev-list --count HEAD..FETCH_HEAD
 ```
 
-**Done when:** a positive number is printed. If it prints `0`, stop: your checkout already includes
-this release or is ahead of it. Do not downgrade to `stable`. If you only need to retry a failed
-deployment of this checkout, continue at step 9 after checking the previous error.
+**Done when:** the command prints a number greater than `0`. Continue to step 7.
+If it prints `0`, there are no newer release files to add to this folder. You can stop if the last
+installation succeeded. If an earlier attempt to publish these files failed, fix its reported error
+and retry from step 9.
 
 ### 7. Read the release notes
 
 Open [the latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest).
 Complete any preparation it requires before proceeding.
 
-### 8. Advance the checkout safely
+### 8. Put the release files into your project folder
 
 ```sh
 git merge --ff-only FETCH_HEAD
 ```
 
-**Done when:** the fast-forward succeeds. If it refuses, stop: your history has diverged or contains
-custom changes. Ask an assistant to review it. The command preserves ignored installation settings
-and does not deploy or push changes to GitHub.
+**Done when:** the command finishes without an error, usually showing **Fast-forward** and a list
+of changed files. Your saved website settings stay in place. Your live website has not changed yet.
+
+If it says it cannot fast-forward, stop: it cannot safely combine your copy with this release.
+Ask an assistant to check your existing changes, or use the GitHub update route if you set that up.
+Do not add `--force`, run a reset, or discard your changes.
 
 ### 9. Install the release's tools, including Wrangler
 
@@ -214,51 +244,60 @@ a browser login does not override an existing token.
 npm run installation:wrangler -- whoami
 ```
 
-**Done when:** the intended account ID matches the saved installation settings. Stop on a mismatch.
+**Done when:** the output lists the **Cloudflare account ID** shown in step 3. An account ID is the
+long value identifying your Cloudflare account. Compare the two values exactly. If the saved account
+is missing from this output, stop and sign in with the account used for your existing website.
 
-### 12. Check the source
+### 12. Check the downloaded app files
 
 ```sh
 npm run quality
 ```
 
-**Done when:** all checks and the production build succeed.
+**Done when:** the checks finish without an error and return you to the terminal prompt. This may
+take several minutes. If a check fails, stop and keep the error message for the person helping you.
 
-### 13. Check dependencies
+### 13. Check for known problems in the included software
 
 ```sh
 npm run audit
 ```
 
-**Done when:** the audit succeeds. If it fails, do not run `npm audit fix` on a release; report the
-failure and wait for reviewed guidance.
+**Done when:** the command finishes successfully. It checks the software packages included with
+the app for known security problems. If it fails, stop and report its output; do not run
+`npm audit fix`, which would change the downloaded release.
 
-### 14. Deploy to the existing household
+### 14. Publish the updated website
 
 ```sh
 npm run deploy
 ```
 
-This rebuilds using your installation settings, applies pending migrations to your existing D1
-and deploys the Worker while preserving runtime variables and secrets. Do not run a separate SQL
-migration command first.
+This is the step that changes your live website. It uses the saved settings checked in step 3,
+updates how the app stores data if the release needs that, and publishes the new version. Your
+website address, family lists and sign-in settings stay in place. No separate database command is needed.
 
-**Done when:** deployment succeeds and prints your existing Worker address. If deployment fails
-after migrations, keep the database and fix the reported error before retrying this step.
+**Done when:** the command reports a successful deployment and prints your website's Cloudflare
+address. If you normally use a custom domain, that address will still work too. If this step fails,
+keep the existing database and fix the reported error before retrying; some data changes may
+already have been applied.
 
-### 15. Check the deployment
+### 15. Check the published website settings
 
 ```sh
 npm run setup:check
 ```
 
-**Done when:** the account, database, migrations and deployed bindings checks pass. A message that
-deep Access checks were skipped is expected when no Access-check credentials were supplied.
+**Done when:** the command reports that the website and its database are correctly connected and
+that required database updates have been applied. It may say **Access checks skipped** because you
+have not supplied permission to inspect sign-in settings. In that case, check sign-in yourself in
+step 16. Stop on a failed check.
 
 ### 16. Check the app
 
 Open your usual address and sign in. Confirm existing lists and wishes remain, and check the footer
 version. Keep the updated checkout and its settings for the next release.
 
-**Done when:** the existing household works. A rollback of Worker code does not undo database
-migrations; use [the recovery runbook](BACKUP_RESTORE_UPGRADE.md) if recovery is needed.
+**Done when:** you can sign in at your usual address and see your family's existing lists and wishes.
+If the website does not work, keep the database and use [the recovery guide](BACKUP_RESTORE_UPGRADE.md).
+Reinstalling an older app version does not automatically undo changes to its stored data.

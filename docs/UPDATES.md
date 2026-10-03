@@ -79,7 +79,7 @@ conflicts, preserve your changes and resolve them with an assistant before proce
 
 ## 5. Set up your chosen option
 
-- **Automatic:** follow [automatic update setup](AUTOMATIC_UPDATES.md#1-open-your-existing-worker),
+- **Automatic:** follow [automatic update setup](AUTOMATIC_UPDATES.md#1-open-your-wishlist-website-in-cloudflare),
   including the step that enables the schedule.
 - **Manual through GitHub:** follow [manual update setup](MANUAL_UPDATES.md#one-time-setup),
   leaving the automatic schedule off.
