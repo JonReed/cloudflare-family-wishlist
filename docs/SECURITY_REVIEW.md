@@ -354,3 +354,20 @@ published release milestone:
 - [GitHub Actions security hardening](https://docs.github.com/en/code-security/tutorials/secure-your-organization/protect-against-threats)
 - [OWASP Cross-Site Request Forgery Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
 - [OWASP Cross-Site Scripting Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+## v1.1.1 release preparation
+
+The application range is `v1.1.0` through `808d593` (the last application/documentation commit before
+release preparation). Preparation after that point changes version metadata, release-only setup
+instructions, updater error links and a Git integration test; it adds no application permissions or
+dependency version changes.
+
+This preparation includes source inspection of returning-member activation, the additive
+`0013_family_share_links.sql` migration, public-share filtering and authenticated avatar retrieval.
+The automated suite covers upgrade data preservation, claim privacy, disabled members, shared
+images, invitation retries and avatar admission. The complete quality and audit gates are required
+again for the final release candidate.
+
+This is a release verification note, not a new independent security scan. The earlier external/AI
+review results above apply only to their stated ranges. Live scheduled update delivery and failure
+recovery remain publication blockers until separately recorded in `RELEASE_READINESS.md`.

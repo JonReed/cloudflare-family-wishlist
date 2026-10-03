@@ -200,3 +200,26 @@ await test('build verification requires the official Cloudflare check and succes
     'failed'
   );
 });
+
+await test('new household setup copies stable even when upstream main has unreleased work', () => {
+  const f = fixture();
+  const fresh = join(f.root, '..', 'fresh-household');
+  try {
+    f.commit(f.upstream, 'app.txt', 'unreleased development');
+    f.git(f.upstream, 'clone', '--branch', 'stable', '--single-branch', f.upstream, fresh);
+    f.git(fresh, 'branch', '-m', 'main');
+    f.git(fresh, 'remote', 'set-url', 'origin', f.remote);
+    f.git(fresh, 'push', '-u', 'origin', 'main');
+    assert.equal(f.git(fresh, 'rev-parse', 'HEAD'), f.initial);
+    assert.equal(readFileSync(join(fresh, 'app.txt'), 'utf8'), 'first release\n');
+    assert.equal(f.git(f.remote, 'rev-parse', 'main'), f.initial);
+    const released = f.release('next published release');
+    f.git(fresh, 'fetch', f.upstream, 'stable');
+    f.git(fresh, 'merge', '--ff-only', 'FETCH_HEAD');
+    f.git(fresh, 'push', '-u', 'origin', 'main');
+    assert.equal(f.git(f.remote, 'rev-parse', 'main'), released);
+    assert.equal(readFileSync(join(fresh, 'app.txt'), 'utf8'), 'next published release');
+  } finally {
+    f.cleanup();
+  }
+});

@@ -40,24 +40,26 @@ On Windows, the default installer choices are sufficient for this guide.
 
 **Done when:** the installer finishes. Close and reopen your terminal so it can find Git.
 
-### 3. Create your GitHub copy
+### 3. Create an empty GitHub repository
 
-Open [Fork this project](https://github.com/JonReed/cloudflare-family-wishlist/fork), sign in to
-GitHub and choose **Create fork**, copying only `main`. Keep the repository name
-`cloudflare-family-wishlist`. This copy receives future tested releases for your household.
+Open [Create a repository](https://github.com/new) and sign in to GitHub. Set **Repository name** to
+`cloudflare-family-wishlist`. Choose **Public** or **Private**, as you prefer. Leave **Add a README**,
+**Add .gitignore** and **Choose a license** off, then choose **Create repository**.
+This empty space will hold your household's copy of the published app.
 
-**Done when:** the repository address starts with your GitHub username.
+**Done when:** GitHub shows your empty repository and its address contains your own username.
+Keep this browser tab open. If you already have a household repository, keep it and use
+[the existing-installation instructions](UPDATES.md) instead of creating another.
 
-### 4. Download your copy
-
-Replace `YOUR-GITHUB-NAME` with the username shown on your fork, then run:
+### 4. Download the latest published release
 
 ```sh
-git clone https://github.com/YOUR-GITHUB-NAME/cloudflare-family-wishlist.git
+git clone --branch stable --single-branch https://github.com/JonReed/cloudflare-family-wishlist.git
 ```
 
-**Done when:** a folder named `cloudflare-family-wishlist` exists. If it already exists from an
-interrupted setup, keep it and continue there; do not clone over it.
+**Done when:** a folder named `cloudflare-family-wishlist` exists. `stable` contains the latest
+published release that passed the release checks. It does not contain later development changes.
+If the folder already exists from an interrupted setup, keep it and continue there.
 
 ### 5. Open that folder in the terminal
 
@@ -67,6 +69,37 @@ cd cloudflare-family-wishlist
 
 **Done when:** the terminal prompt ends in `cloudflare-family-wishlist`. Run every remaining command
 from this folder. An AI assistant should use the same folder as its workspace.
+
+### 5a. Name your household's branch
+
+```sh
+git branch -m main
+```
+
+**Done when:** the command finishes without an error. Your copy is now called `main`; its files
+still come from the published release downloaded in step 4.
+
+### 5b. Connect this folder to your GitHub repository
+
+Replace `YOUR-GITHUB-NAME` with the username shown on the repository you created in step 3:
+
+```sh
+git remote set-url origin https://github.com/YOUR-GITHUB-NAME/cloudflare-family-wishlist.git
+```
+
+**Done when:** the command finishes without an error. This changes where your copy will be uploaded;
+it does not change the app's files or any Cloudflare resources.
+
+### 5c. Upload the released app to your GitHub repository
+
+```sh
+git push -u origin main
+```
+
+Complete GitHub sign-in if asked. If Git rejects the push, stop and check the repository from step 3
+was empty and belongs to you. Do not use `--force` or discard an existing installation.
+
+**Done when:** refreshing your GitHub repository page shows the app's files on branch `main`.
 
 ### 6. Install the project's tools, including Wrangler
 

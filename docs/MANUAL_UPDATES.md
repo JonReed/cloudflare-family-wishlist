@@ -33,10 +33,9 @@ calls this copy a **repository**. Its address contains your username or organisa
 than the project's `JonReed` username. Select **Actions** and look for **Update Family Wishlist**
 in the left sidebar.
 
-If that option is missing, complete [setup steps 1–4](UPDATES.md#1-keep-your-installation-settings)
-to add the update tool. That preparation currently downloads the project's development version;
-afterwards the update tool installs published releases. It will not replace a newer version with
-an older release.
+If that option is missing, complete [setup steps 1–4f](UPDATES.md#1-keep-your-installation-settings)
+to add the update tool. Both that preparation and later updates use published releases. The tool will not replace a
+newer version with an older release.
 
 Complete [update connection steps 1–15](AUTOMATIC_UPDATES.md#1-open-your-wishlist-website-in-cloudflare), including
 the first manual run and app check. **Skip step 16** (the automatic schedule). Complete step 17

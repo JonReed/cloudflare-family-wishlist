@@ -1,10 +1,10 @@
 # Legacy installation-repository updater
 
-**New households:** use the application fork and [automatic release update guide](AUTOMATIC_UPDATES.md).
+**New households:** choose [manual or automatic updates](UPDATES.md).
 This page documents the earlier, separate bootstrap repository; it is not a second setup choice.
 
 **Existing bootstrap installations:** keep the current Worker, database and settings. Create an
-application fork from upstream `main`, then reconnect the existing Worker's Builds to that fork
+application repository from the published `stable` release using [setup steps 3–5c](DEPLOYMENT.md#3-create-an-empty-github-repository), then reconnect the existing Worker's Builds to that repository
 using [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md), including changing the deploy command to
 `npm run deploy:production` and retaining `WISHLIST_INSTALLATION`. Disable the old repository's
 **Check upstream updates** workflow before enabling the new **Update Family Wishlist** workflow.

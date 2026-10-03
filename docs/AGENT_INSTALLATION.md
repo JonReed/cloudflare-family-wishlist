@@ -60,6 +60,14 @@ Retrieve current official docs if an installed command differs:
 `cf init` or replace the Vite/build/deployment configuration during installation. Use `npm run deploy`
 for the application; use `cf` for Access resources. The CLIs do not share login credentials.
 
+## Start from released source
+
+Follow setup steps 3–5c: create an empty household GitHub repository, clone the upstream `stable`
+branch, rename the local branch to `main`, select the household remote and push normally. Do not
+fork or sync upstream `main` for installation. Existing installations use [UPDATES.md](UPDATES.md),
+which fast-forwards released source while preserving their saved settings and refuses conflicts.
+Do not downgrade an older development installation if it is newer than the latest release.
+
 ## Prepare the database and deploy
 
 ### A. Prepare household settings

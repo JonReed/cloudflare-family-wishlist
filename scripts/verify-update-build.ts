@@ -64,7 +64,7 @@ async function main() {
       );
     if (state === 'missing' && Date.now() - started > 180_000) {
       throw new Error(
-        'No Cloudflare build appeared. Connect this repository’s main branch to the existing Worker, disable build watch-path filters, then run this workflow again. See docs/REPAIR_UPDATES.md.'
+        'No Cloudflare build appeared. Connect this repository’s main branch to the existing Worker, disable build watch-path filters, then run this workflow again. See docs/UPDATES.md.'
       );
     }
     await setTimeout(15_000);

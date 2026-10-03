@@ -124,7 +124,7 @@ export function updateFork({
   );
   if (customised.status !== 0) {
     throw new Error(
-      'This fork contains application or configuration changes. Preserve them and follow docs/REPAIR_UPDATES.md before enabling automatic updates. No files were replaced.'
+      'This fork contains application or configuration changes. Preserve them and follow docs/UPDATES.md before enabling automatic updates. No files were replaced.'
     );
   }
   let status: ForkUpdateResult['status'];

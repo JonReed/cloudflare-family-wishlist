@@ -74,7 +74,7 @@ alone. It records the upstream SHA in `.wishlist-upstream.json`. Cloudflare Buil
 household commit with `npm run deploy:production` and the updater verifies Cloudflare's check result.
 
 The updater refuses downgrades, unrelated history, dirty checkouts and application customisations.
-It uses a normal push so concurrent owner commits are never force-overwritten. Initial setup from `main`
+It uses a normal push so concurrent owner commits are never force-overwritten. Older installations made from `main`
 can be ahead of stable: it waits for the next descendant release. A small activity commit after 28
 days without commits keeps public forks active; it also exercises the deployment connection.
 
