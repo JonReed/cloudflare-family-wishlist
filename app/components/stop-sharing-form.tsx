@@ -4,11 +4,15 @@ import { useFetcher } from 'react-router';
 export function StopSharingForm({
   shareLinkId,
   onRemovalStart,
-  onRemovalError
+  onRemovalError,
+  action = '/family',
+  intent = 'revoke-share-link'
 }: {
   shareLinkId: string;
   onRemovalStart: (id: string) => void;
   onRemovalError: () => void;
+  action?: string;
+  intent?: 'revoke-share-link' | 'revoke-family-share-link';
 }) {
   const fetcher = useFetcher<{ error?: string }>({ key: `stop-sharing:${shareLinkId}` });
   const markerRef = useRef<HTMLInputElement>(null);
@@ -31,7 +35,7 @@ export function StopSharingForm({
       <summary>Stop sharing this link</summary>
       <fetcher.Form
         method="post"
-        action="/profile"
+        action={action}
         aria-busy={isPending || undefined}
         onSubmit={(event) => {
           if (isPending) {
@@ -42,8 +46,8 @@ export function StopSharingForm({
           onRemovalStart(shareLinkId);
         }}
       >
-        <p>This link will stop working for everyone who has it. Your wishlist will stay here.</p>
-        <input type="hidden" name="intent" value="revoke-share-link" />
+        <p>This link will stop working for everyone who has it. Your wishlists will stay here.</p>
+        <input type="hidden" name="intent" value={intent} />
         <input type="hidden" name="shareLinkId" value={shareLinkId} />
         <input ref={markerRef} type="hidden" name="enhancedRemoval" defaultValue="false" />
         <button type="submit" className="button-danger" disabled={isPending}>

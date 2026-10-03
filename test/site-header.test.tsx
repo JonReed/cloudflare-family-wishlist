@@ -36,7 +36,7 @@ describe('SiteHeader', () => {
     expect(html).toContain('<strong>Jon Reed</strong>');
     expect(html).toContain('href="/">Wishlists</a>');
     expect(html).toContain('href="/bookmarklet">Add from anywhere</a>');
-    expect(html).toContain('href="/family" aria-current="page">Your family</a>');
+    expect(html).toContain('href="/family" aria-current="page">Manage</a>');
     expect(html).toContain('href="/profile" class="account-profile"');
     expect(html).toContain('src="/avatar/member-1?initials=JR"');
     expect(html.indexOf('href="/profile"')).toBeGreaterThan(html.indexOf('</nav>'));
@@ -44,7 +44,7 @@ describe('SiteHeader', () => {
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
   });
 
-  it('keeps the member navigation stable without exposing the admin page', () => {
+  it('gives every member the family sharing destination', () => {
     const html = renderToStaticMarkup(
       <SiteHeader
         member={{ id: 'member-2', displayName: 'A very loved family member', role: 'member' }}
@@ -53,7 +53,7 @@ describe('SiteHeader', () => {
     );
 
     expect(html).toContain('<strong>A very loved family member</strong>');
-    expect(html).not.toContain('href="/family"');
+    expect(html).toContain('href="/family">Manage</a>');
     expect(html).toContain('class="account-profile" aria-current="page"');
     expect(html).not.toContain('/cdn-cgi/access/logout');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);

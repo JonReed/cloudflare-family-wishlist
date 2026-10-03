@@ -28,11 +28,9 @@ export function SiteHeader({ member, current }: SiteHeaderProps) {
         <a href="/bookmarklet" aria-current={currentPage(current, 'add-from-anywhere')}>
           Add from anywhere
         </a>
-        {member.role === 'admin' ? (
-          <a href="/family" aria-current={currentPage(current, 'family')}>
-            Your family
-          </a>
-        ) : null}
+        <a href="/family" aria-current={currentPage(current, 'family')}>
+          Manage
+        </a>
       </nav>
 
       <a

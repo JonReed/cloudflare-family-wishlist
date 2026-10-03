@@ -13,7 +13,7 @@ family organiser and welcomes everyone else.
 ## People and trust
 
 Cloudflare Access owns admission. The organiser adds a person's exact email address from the
-application's **Your family** page. The Worker creates an exact-email Allow policy through the
+application's **Manage** page. The Worker creates an exact-email Allow policy through the
 Cloudflare API; only then can that person request an emailed one-time PIN from Cloudflare. The
 application sees only a verified email identity after Access has admitted it.
 
@@ -39,13 +39,14 @@ members use separate identities and remain signed in.
 
 - the owner can view and edit their own wishes but cannot see their claim state;
 - any other admitted member can view and edit those wishes and coordinate claims;
-- the organiser role controls only family admission; it does not give different wishlist access.
+- the organiser manages family admission from **Manage**; all members can manage sharing links there;
+  it does not give different access to wishlist editing or gift coordination.
 
 ## Core workflows
 
 ### Join the family space
 
-1. The organiser enters a name and exact sign-in email on **Your family**.
+1. The organiser enters a name and exact sign-in email on **Manage**.
 2. The Worker adds an exact-email Allow policy in Cloudflare Access, then atomically activates the
    invitation and creates the member and wishlist. The family can start adding wishes immediately.
 3. The organiser copies and privately shares the application link.
@@ -112,23 +113,29 @@ confirmed action beside Edit. Removed wishes are deleted, not archived.
 
 ### Share gift ideas outside the family
 
-Any admitted family member can create a viewing link for one person's wishlist and send it to a
-relative or friend who does not use the private family space. The link opens without Cloudflare login
-and shows the current wishes, notes, prices, product links and pictures from that one list. It offers
-no editing or gift coordination controls.
+Any admitted family member can open **Manage**, tick one or more wishlists and create a named
+viewing link for relatives or friends outside the private family space. **Share this list** in a
+wishlist heading opens this same form with that list selected. There is one creation and management
+surface for all links, including existing single-list links.
 
-The unguessable link is the permission. Each wishlist can have up to five independent sharing links.
-The family member gives each link a private, recognisable name such as “Uncle David” when they make
-it. Creating another never changes an existing link. A family member can stop sharing any one link
-from Profile, and that link stops working immediately without affecting the others. Public-list reads
-use a separate database query that never joins claims, so claim and purchase information cannot enter
-the public response.
+The public page opens without Cloudflare login and shows the selected people's current wishes,
+notes, prices, product links and pictures, including empty lists. It never includes unselected lists,
+claim or purchase information, sign-in emails, photos or the link's private name. Adding a new family
+member does not add their list to an existing link. Changes to selected wishes appear automatically.
+Public queries never join claims.
 
-Profile shows every active link across the family's wishlists, its private name, who made it, when it
-was made and a persistent **Stop sharing this link** control. The list heading keeps its compact
-sharing shortcut for creating and copying links, with a route to Profile for reviewing or stopping
-them. At five links, the creation form is replaced with an explanation and a route to Profile; the
-server also rejects a sixth link until one of the five existing links is removed.
+The household can have up to five active sharing links in total. Each has a private, recognisable
+name such as “Uncle David”. **Manage** shows every link's name, currently visible lists, creator
+and creation date, with a confirmed **Stop sharing this link** control. Stopping one immediately
+invalidates its public page and pictures while preserving other links and saved wishes. Disabled
+owners' lists are omitted from both public viewing and the inventory's visible-list summary.
+
+The unguessable address is the permission and is shown only when created; only its hash is stored.
+Creating another never changes an existing link. At five active links, the form explains that one
+must first be stopped, and atomic server checks reject creation above the limit. Existing links from
+before consolidation remain usable and manageable, even when their total exceeds five; no new link
+can be created until the total falls below five. Sharing is available to every admitted member;
+family admission controls on the same page remain organiser-only.
 
 ## Product invariants
 
@@ -166,7 +173,7 @@ agreement rather than an ordinary implementation detail.
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased;
 - server-enforced claim secrecy for the recipient; and
-- removable, read-only sharing links for sharing one person's gift ideas outside the family, with
+- removable, read-only sharing links for sharing one or several people's gift ideas outside the family, with
   their narrow Cloudflare Access exception configured automatically.
 
 See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest)

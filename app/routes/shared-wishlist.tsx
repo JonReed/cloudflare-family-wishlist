@@ -1,8 +1,10 @@
+import { data } from 'react-router';
+
 import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
 import { cloudflareContext } from '../lib/context';
 import {
-  getSharedWishlist,
+  getSharedWishlists,
   SharedWishlistInputError,
   type SharedWishlistItem
 } from '../lib/db/shared-wishlists';
@@ -25,9 +27,11 @@ function notFound(): never {
 export async function loader({ context, params }: Route.LoaderArgs) {
   try {
     const { env } = context.get(cloudflareContext);
-    const wishlist = await getSharedWishlist(env.DB, params.token);
-    if (!wishlist) notFound();
-    return { wishlist, token: params.token };
+    const token = params.token;
+    if (!token) notFound();
+    const wishlists = await getSharedWishlists(env.DB, token);
+    if (!wishlists.length) notFound();
+    return { wishlists, token };
   } catch (error) {
     if (error instanceof SharedWishlistInputError) {
       notFound();
@@ -89,7 +93,8 @@ function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }
 }
 
 export default function SharedWishlistPage({ loaderData }: Route.ComponentProps) {
-  const { wishlist, token } = loaderData;
+  const { wishlists, token } = loaderData;
+  const Heading = wishlists.length > 1 ? 'h2' : 'h1';
   return (
     <div className="site-shell public-share-shell">
       <header className="public-share-header page-wrap">
@@ -98,31 +103,49 @@ export default function SharedWishlistPage({ loaderData }: Route.ComponentProps)
         </span>
       </header>
       <main className="public-share-main page-wrap">
-        <article className="wishlist-sheet public-share-sheet">
-          <span aria-hidden="true" className="paper-tape paper-tape-left" />
-          <span aria-hidden="true" className="paper-tape paper-tape-right" />
-          <header className="wishlist-heading">
-            <div>
-              <p className="section-kicker">Gift ideas</p>
-              <h1>{wishlist.ownerDisplayName}’s wishlist</h1>
-            </div>
-            <p className="wish-count">
-              {wishlist.items.length} {wishlist.items.length === 1 ? 'wish' : 'wishes'}
-            </p>
-          </header>
-          {wishlist.items.length ? (
-            <ul className="wish-list">
-              {wishlist.items.map((item) => (
-                <SharedWish key={item.id} item={item} token={token} />
+        {wishlists.length > 1 ? (
+          <header className="public-share-overview">
+            <p className="section-kicker">Gift ideas</p>
+            <h1>Family wishlists</h1>
+            <nav aria-label="Shared wishlists">
+              {wishlists.map((wishlist) => (
+                <a key={wishlist.id} href={`#wishlist-${wishlist.id}`} className="button-quiet">
+                  {wishlist.ownerDisplayName}
+                </a>
               ))}
-            </ul>
-          ) : (
-            <p className="empty-list">Nothing added to this wishlist</p>
-          )}
-        </article>
+            </nav>
+          </header>
+        ) : null}
+        {wishlists.map((wishlist) => (
+          <article
+            key={wishlist.id}
+            id={`wishlist-${wishlist.id}`}
+            className="wishlist-sheet public-share-sheet"
+          >
+            <span aria-hidden="true" className="paper-tape paper-tape-left" />
+            <span aria-hidden="true" className="paper-tape paper-tape-right" />
+            <header className="wishlist-heading">
+              <div>
+                <p className="section-kicker">Gift ideas</p>
+                <Heading>{wishlist.ownerDisplayName}’s wishlist</Heading>
+              </div>
+              <p className="wish-count">
+                {wishlist.items.length} {wishlist.items.length === 1 ? 'wish' : 'wishes'}
+              </p>
+            </header>
+            {wishlist.items.length ? (
+              <ul className="wish-list">
+                {wishlist.items.map((item) => (
+                  <SharedWish key={item.id} item={item} token={token} />
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-list">Nothing added to this wishlist</p>
+            )}
+          </article>
+        ))}
       </main>
       <SiteFooter />
     </div>
   );
 }
-import { data } from 'react-router';

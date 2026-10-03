@@ -271,7 +271,7 @@ instructions below; do not disable sign-in protection.
 
 ### 23. Invite one person
 
-In the app, open **Your family** and add one trusted person's name and exact email address.
+In the app, open **Manage** and add one trusted person's name and exact email address.
 
 **Done when:** they appear as **Not signed in yet** and their wishlist is available. Use **Copy
 invitation** to share the address privately with them. The app does not send an invitation email itself.
@@ -286,7 +286,7 @@ Choose the invited person's list and add a test wish before they sign in.
 
 Ask them to open the invitation and sign in with their own email code.
 
-**Done when:** they have the same wishlist and test wish, and **Your family** shows **Joined**.
+**Done when:** they have the same wishlist and test wish, and **Manage** shows **Joined**.
 
 ### 26. Check that a claim stays secret
 
@@ -302,14 +302,15 @@ On that test wish, choose **Mark as bought** while signed in as yourself.
 
 ### 28. Check a public viewing link
 
-On the test list, choose **Share this list**, name the link `Setup test`, then copy it.
+On the test list, choose **Share this list**. In **Manage**, check that the test list is selected,
+name the link `Setup test`, choose **Create sharing link**, then copy it.
 
 **Done when:** that copied link opens in a signed-out private browser without login and has no
 editing or gift-claim controls.
 
 ### 29. Stop sharing the test link
 
-In **Profile**, find `Setup test`, choose **Stop sharing this link**, then confirm with
+In **Manage**, find `Setup test`, choose **Stop sharing this link**, then confirm with
 **Yes, stop sharing this link**.
 
 **Done when:** the old link no longer opens the list in a signed-out browser.
@@ -330,7 +331,7 @@ Run its first update check and require a successful Cloudflare build.
 does not prove that future releases will arrive.
 
 The installation is complete after the app checks and update connection pass. Add other family members through
-**Your family**. [Everyday use](USER_GUIDE.md) explains adding wishes, sharing lists and saving from a phone.
+**Manage**. [Everyday use](USER_GUIDE.md) explains adding wishes, sharing lists and saving from a phone.
 
 ## When something fails
 

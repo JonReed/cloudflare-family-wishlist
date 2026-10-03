@@ -2,6 +2,7 @@ import { data, Form, redirect } from 'react-router';
 
 import { AddFamilyMemberForm } from '../components/add-family-member-form';
 import { FamilyMemberRemoval } from '../components/family-member-removal';
+import { FamilySharing } from '../components/family-sharing';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import {
@@ -26,15 +27,28 @@ import {
   type FamilyPerson
 } from '../lib/db/family-members';
 import { ensureMemberForEmail } from '../lib/db/members';
+import {
+  ensurePublicSharingAccess,
+  PublicSharingAccessError
+} from '../lib/cloudflare/access-public-sharing';
+import {
+  createFamilyShareLink,
+  listActiveShareLinks,
+  listShareableWishlists,
+  normaliseSharedWishlistIds,
+  normaliseWishlistShareLinkName,
+  revokeShareLink,
+  SharedWishlistInputError
+} from '../lib/db/shared-wishlists';
 
 import type { Route } from './+types/family';
 
 export function meta() {
   return [
-    { title: 'Your family · Family Wishlist' },
+    { title: 'Manage · Family Wishlist' },
     {
       name: 'description',
-      content: 'See who has joined your private family wishlist and add someone new.'
+      content: 'Share family wishlists and manage your family space.'
     }
   ];
 }
@@ -47,15 +61,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     identity.email,
     organiserEmailForRequest(env, identity.email)
   );
-  if (member.role !== 'admin') return redirect('/');
-
+  const url = new URL(request.url);
+  const isOrganiser = member.role === 'admin';
+  const shareableWishlists = await listShareableWishlists(env.DB, member.id);
+  const requestedWishlistId = url.searchParams.get('list');
   return {
     member,
-    people: await listFamilyPeople(env.DB),
+    people: isOrganiser ? await listFamilyPeople(env.DB) : [],
+    shareableWishlists,
+    shareLinks: await listActiveShareLinks(env.DB, member.id),
+    initialSelectedWishlistIds: shareableWishlists
+      .filter((wishlist) => wishlist.id === requestedWishlistId)
+      .map((wishlist) => wishlist.id),
     invitationUrl: new URL('/', request.url).toString(),
-    added: new URL(request.url).searchParams.get('added') === '1',
-    repaired: new URL(request.url).searchParams.get('repaired') === '1',
-    removed: new URL(request.url).searchParams.get('removed') === '1'
+    added: isOrganiser && url.searchParams.get('added') === '1',
+    repaired: isOrganiser && url.searchParams.get('repaired') === '1',
+    removed: isOrganiser && url.searchParams.get('removed') === '1'
   };
 }
 
@@ -67,11 +88,63 @@ export async function action({ request, context }: Route.ActionArgs) {
     identity.email,
     organiserEmailForRequest(env, identity.email)
   );
-  if (member.role !== 'admin') return redirect('/');
   const formData = await request.formData();
   const displayNameValue = formData.get('displayName');
   const emailValue = formData.get('email');
   const intent = formData.get('intent');
+
+  if (
+    intent === 'create-family-share-link' ||
+    intent === 'revoke-share-link' ||
+    intent === 'revoke-family-share-link'
+  ) {
+    try {
+      if (intent !== 'create-family-share-link') {
+        const shareLinkId = formData.get('shareLinkId');
+        await revokeShareLink(env.DB, member.id, shareLinkId);
+        if (formData.get('enhancedRemoval') === 'true') return { removedShareLinkId: shareLinkId };
+        return redirect('/family#family-sharing');
+      }
+      const wishlistIds = normaliseSharedWishlistIds(formData.getAll('wishlistIds'));
+      const shareLinkName = normaliseWishlistShareLinkName(formData.get('shareLinkName'));
+      if (!import.meta.env.DEV) {
+        await ensurePublicSharingAccess(env, new URL(request.url).hostname);
+      }
+      const { token, shareLinkId } = await createFamilyShareLink(
+        env.DB,
+        member.id,
+        wishlistIds,
+        shareLinkName
+      );
+      return {
+        shareUrl: new URL(`/shared/${token}`, request.url).toString(),
+        shareLinkId,
+        shareLinkName
+      };
+    } catch (error) {
+      if (error instanceof SharedWishlistInputError || error instanceof PublicSharingAccessError) {
+        const shareLinkName = formData.get('shareLinkName');
+        // Revocation errors use the same shape as the reusable stop-sharing fetcher.
+        if (intent !== 'create-family-share-link')
+          return data({ error: error.message, familyShareError: error.message }, { status: 400 });
+        return data(
+          {
+            error: error.message,
+            familyShareError: error.message,
+            shareLinkName: typeof shareLinkName === 'string' ? shareLinkName.slice(0, 80) : '',
+            selectedWishlistIds: formData
+              .getAll('wishlistIds')
+              .filter((id): id is string => typeof id === 'string')
+              .slice(0, 50)
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+  }
+
+  if (member.role !== 'admin') return redirect('/');
 
   try {
     if (intent === 'repair-invitation') {
@@ -298,7 +371,10 @@ function FamilyPersonRow({
 export default function Family({ loaderData, actionData }: Route.ComponentProps) {
   const joinedCount = loaderData.people.filter((person) => person.status === 'joined').length;
   const waitingCount = loaderData.people.length - joinedCount;
-  const navigationError = actionData && 'error' in actionData ? actionData.error : null;
+  const navigationError =
+    actionData && 'error' in actionData && !('familyShareError' in actionData)
+      ? actionData.error
+      : null;
   const submittedValues = actionData && 'values' in actionData ? actionData.values : undefined;
 
   return (
@@ -308,9 +384,18 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
       <main className="profile-main page-wrap">
         <section className="profile-sheet family-sheet" aria-labelledby="family-title">
           <div className="profile-heading">
-            <p className="profile-kicker">The people around your table</p>
-            <h1 id="family-title">Your family</h1>
-            <p>See who has made it in and add another favourite person when you’re ready.</p>
+            <p className="profile-kicker">
+              {loaderData.member.role === 'admin'
+                ? 'Sharing and family settings'
+                : 'Sharing settings'}
+            </p>
+            <h1 id="family-title">Manage</h1>
+            <p>
+              Share gift ideas with relatives and friends.
+              {loaderData.member.role === 'admin'
+                ? ' You can also welcome someone new to your family space.'
+                : ''}
+            </p>
           </div>
 
           {loaderData.repaired ? (
@@ -325,105 +410,117 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
             </div>
           ) : null}
 
-          <div className="family-admin-grid">
-            <section aria-labelledby="family-members-title">
-              <div className="family-section-heading">
-                <h2 id="family-members-title">Family members</h2>
+          {loaderData.member.role === 'admin' ? (
+            <div className="family-admin-grid">
+              <section aria-labelledby="family-members-title">
+                <div className="family-section-heading">
+                  <h2 id="family-members-title">Family members</h2>
+                  <p>
+                    {joinedCount} joined{waitingCount ? ` · ${waitingCount} waiting` : ''}
+                  </p>
+                </div>
+
+                <ul className="family-people-list">
+                  {loaderData.people.map((person) => (
+                    <FamilyPersonRow
+                      key={`${person.status}-${person.id}`}
+                      person={person}
+                      invitationUrl={loaderData.invitationUrl}
+                    />
+                  ))}
+                </ul>
+              </section>
+
+              <aside className="family-add-panel" aria-labelledby="add-family-member-title">
+                <span aria-hidden="true" className="add-panel-tape" />
+                <h2 id="add-family-member-title">Add someone</h2>
                 <p>
-                  {joinedCount} joined{waitingCount ? ` · ${waitingCount} waiting` : ''}
+                  Their wishlist will be ready straight away, even before they sign in. Use the
+                  exact email address they’ll sign in with. We won’t email them; you’ll get an
+                  invitation to copy instead.
                 </p>
-              </div>
 
-              <ul className="family-people-list">
-                {loaderData.people.map((person) => (
-                  <FamilyPersonRow
-                    key={`${person.status}-${person.id}`}
-                    person={person}
-                    invitationUrl={loaderData.invitationUrl}
-                  />
-                ))}
-              </ul>
-            </section>
+                <AddFamilyMemberForm
+                  method="post"
+                  className="profile-form family-add-form"
+                  serverSucceeded={loaderData.added}
+                >
+                  {({ error, isPending, succeeded }) => (
+                    <>
+                      <input type="hidden" name="intent" value="add-member" />
+                      {(error ?? navigationError) ? (
+                        <div role="alert" className="form-alert profile-alert">
+                          <strong>Sorry, that didn’t work.</strong> {error ?? navigationError}
+                        </div>
+                      ) : null}
 
-            <aside className="family-add-panel" aria-labelledby="add-family-member-title">
-              <span aria-hidden="true" className="add-panel-tape" />
-              <h2 id="add-family-member-title">Add someone</h2>
-              <p>
-                Their wishlist will be ready straight away, even before they sign in. Use the exact
-                email address they’ll sign in with. We won’t email them; you’ll get an invitation to
-                copy instead.
-              </p>
+                      <fieldset className="family-add-fields" disabled={isPending}>
+                        <div>
+                          <label htmlFor="family-display-name" className="form-label">
+                            Their name
+                          </label>
+                          <input
+                            id="family-display-name"
+                            name="displayName"
+                            required
+                            maxLength={80}
+                            defaultValue={submittedValues?.displayName}
+                            autoComplete="off"
+                            className="form-control"
+                            placeholder="The name your family uses"
+                          />
+                        </div>
 
-              <AddFamilyMemberForm
-                method="post"
-                className="profile-form family-add-form"
-                serverSucceeded={loaderData.added}
-              >
-                {({ error, isPending, succeeded }) => (
-                  <>
-                    <input type="hidden" name="intent" value="add-member" />
-                    {(error ?? navigationError) ? (
-                      <div role="alert" className="form-alert profile-alert">
-                        <strong>Sorry, that didn’t work.</strong> {error ?? navigationError}
+                        <div>
+                          <label htmlFor="family-email" className="form-label">
+                            Sign-in email
+                          </label>
+                          <input
+                            id="family-email"
+                            name="email"
+                            type="email"
+                            required
+                            maxLength={254}
+                            defaultValue={submittedValues?.email}
+                            autoComplete="email"
+                            className="form-control"
+                            placeholder="name@example.com"
+                          />
+                          <p className="profile-hint">
+                            For a child, an address such as yourname+child@gmail.com works nicely.
+                          </p>
+                        </div>
+
+                        <button type="submit" className="button-primary">
+                          {isPending ? 'Adding…' : 'Add to the family'}
+                        </button>
+                      </fieldset>
+
+                      <div
+                        role="status"
+                        aria-live="polite"
+                        className="profile-saved family-add-success"
+                        hidden={!succeeded}
+                      >
+                        Added to your family. Their wishlist is ready for wishes. Copy their
+                        invitation from the family list and send it however you like.
                       </div>
-                    ) : null}
-
-                    <fieldset className="family-add-fields" disabled={isPending}>
-                      <div>
-                        <label htmlFor="family-display-name" className="form-label">
-                          Their name
-                        </label>
-                        <input
-                          id="family-display-name"
-                          name="displayName"
-                          required
-                          maxLength={80}
-                          defaultValue={submittedValues?.displayName}
-                          autoComplete="off"
-                          className="form-control"
-                          placeholder="The name your family uses"
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="family-email" className="form-label">
-                          Sign-in email
-                        </label>
-                        <input
-                          id="family-email"
-                          name="email"
-                          type="email"
-                          required
-                          maxLength={254}
-                          defaultValue={submittedValues?.email}
-                          autoComplete="email"
-                          className="form-control"
-                          placeholder="name@example.com"
-                        />
-                        <p className="profile-hint">
-                          For a child, an address such as yourname+child@gmail.com works nicely.
-                        </p>
-                      </div>
-
-                      <button type="submit" className="button-primary">
-                        {isPending ? 'Adding…' : 'Add to the family'}
-                      </button>
-                    </fieldset>
-
-                    <div
-                      role="status"
-                      aria-live="polite"
-                      className="profile-saved family-add-success"
-                      hidden={!succeeded}
-                    >
-                      Added to your family. Their wishlist is ready for wishes. Copy their
-                      invitation from the family list and send it however you like.
-                    </div>
-                  </>
-                )}
-              </AddFamilyMemberForm>
-            </aside>
-          </div>
+                    </>
+                  )}
+                </AddFamilyMemberForm>
+              </aside>
+            </div>
+          ) : null}
+          <FamilySharing
+            wishlists={loaderData.shareableWishlists}
+            links={loaderData.shareLinks}
+            initialSelectedWishlistIds={loaderData.initialSelectedWishlistIds}
+            serverResult={
+              actionData && ('shareUrl' in actionData || 'familyShareError' in actionData)
+                ? actionData
+                : undefined
+            }
+          />
         </section>
       </main>
 

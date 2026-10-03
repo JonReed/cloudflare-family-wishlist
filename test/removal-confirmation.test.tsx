@@ -51,10 +51,10 @@ describe('destructive action confirmations', () => {
     expect(html).toContain('<summary>Stop sharing this link</summary>');
     expect(html).not.toContain(' open');
     expect(html).toContain('Yes, stop sharing this link');
-    expect(html).toContain('Your wishlist will stay here.');
+    expect(html).toContain('Your wishlists will stay here.');
     expect(html).toContain('name="shareLinkId" value="share-1"');
     expect(html).toContain('name="enhancedRemoval" value="false"');
     expect(html).toContain('method="post"');
-    expect(html).toContain('action="/profile"');
+    expect(html).toContain('action="/family"');
   });
 });

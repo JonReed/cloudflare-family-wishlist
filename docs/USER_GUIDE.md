@@ -60,18 +60,25 @@ plan, so check that you are removing the right item.
 
 ## Share ideas outside the family
 
-Choose **Share this list**, give the viewing link a name you will recognise, and copy it to send.
-Anyone with that link can view that person's wishes without signing in, but cannot edit them or
-see who is buying anything. The link's name is a reminder for your family, not a restriction on who
-can open or forward it. Share it only where you are comfortable sharing the list's contents.
+Open **Manage** and find **Sharing links**. Tick one or more people's lists, give the link a
+private name you will recognise, then choose **Create sharing link** and copy the address.
+**Share this list** on a wishlist takes you to the same form with that list already ticked.
+Anyone in the family can create and manage sharing links.
 
-Each wishlist can have up to five active links. In **Profile**, the family can review and stop
-sharing existing links. Stopping one makes that link stop working without affecting the others.
-It cannot erase copies or screenshots someone has already made.
+Anyone with the address can view those selected people's current wishes without signing in, but
+cannot edit them or see who is buying anything. New family members are not added automatically.
+The private name helps your family recognise the link; it does not restrict who can open or forward
+it. Share it only where you are comfortable sharing the selected lists' contents.
+
+Your family can have up to five active links in total. All links appear together in **Manage**,
+including older single-list links. Each entry shows its name, visible lists, who made it and when.
+Choose **Stop sharing this link**, then confirm, to stop that address working. Other links and all
+saved wishes stay available. It cannot erase copies or screenshots someone has already made.
+Copy the address when you make it; it will not be shown again after you leave the page.
 
 ## Your profile and family
 
-Use **Profile** to change the name your family sees and manage viewing links. Read the sign-out
+Use **Profile** to change the name your family sees. Read the sign-out
 notice: Cloudflare Access sign-out can also sign you out of other applications in the same Access
 account, not just the wishlist.
 
@@ -80,7 +87,7 @@ Your name and profile photo sit at the right of the top menu. Photos come from
 Profile includes the link and a preview. Until a photo is available, your initials appear instead.
 A changed photo may take a few minutes to appear. Photos stay within the signed-in family space.
 
-The organiser uses **Family** to invite people by their exact email address. The wishlist does not
+The organiser uses **Manage** to invite people by their exact email address. The wishlist does not
 send invitation emails; the organiser shares the address and instructions directly. This organiser
 role controls admission, not exclusive ownership of everybody's lists.
 

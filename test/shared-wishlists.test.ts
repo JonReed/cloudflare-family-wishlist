@@ -106,7 +106,7 @@ describe('shared wishlists', () => {
     await expect(hasWishlistShareLink(env.DB, member.wishlistId)).resolves.toBe(true);
   });
 
-  it('atomically caps each wishlist at five active viewing links', async () => {
+  it('atomically caps the household at five active viewing links', async () => {
     const member = await createMember('owner@example.com');
     const attempts = await Promise.allSettled(
       Array.from({ length: 6 }, (_, index) =>

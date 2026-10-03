@@ -43,6 +43,16 @@ export type ActiveWishlistShareLink = {
   createdAt: string;
 };
 
+export type ShareableWishlist = { id: string; ownerDisplayName: string };
+
+export type ActiveFamilyShareLink = {
+  id: string;
+  name: string;
+  createdByDisplayName: string;
+  createdAt: string;
+  wishlists: ShareableWishlist[];
+};
+
 export class SharedWishlistInputError extends Error {}
 export class SharedImageRateLimitError extends Error {
   readonly retryAfterSeconds: number;
@@ -189,12 +199,10 @@ export async function createWishlistShareLink(
        SELECT ?1, wishlists.id, ?2, ?3, members.id
        FROM wishlists
        INNER JOIN members ON members.id = ?4 AND members.disabled_at IS NULL
-       WHERE wishlists.id = ?5
-         AND (
-           SELECT COUNT(*)
-           FROM wishlist_share_links AS active_links
-           WHERE active_links.wishlist_id = wishlists.id
-         ) < 5`
+       INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+       WHERE wishlists.id = ?5 AND owners.disabled_at IS NULL
+         AND ((SELECT COUNT(*) FROM wishlist_share_links) +
+              (SELECT COUNT(*) FROM family_share_links)) < 5`
     )
     .bind(shareLinkId, linkName, hash, actorId, targetWishlistId)
     .run();
@@ -206,17 +214,20 @@ export async function createWishlistShareLink(
            EXISTS (
              SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL
            ) AND EXISTS (
-             SELECT 1 FROM wishlists WHERE id = ?2
+             SELECT 1 FROM wishlists
+             INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+             WHERE wishlists.id = ?2 AND owners.disabled_at IS NULL
            ) AS targetFound,
            (
-             SELECT COUNT(*) FROM wishlist_share_links WHERE wishlist_id = ?2
+             (SELECT COUNT(*) FROM wishlist_share_links) +
+             (SELECT COUNT(*) FROM family_share_links)
            ) AS activeLinkCount`
       )
       .bind(actorId, targetWishlistId)
       .first<{ targetFound: number; activeLinkCount: number }>();
     if (status?.targetFound === 1 && status.activeLinkCount >= 5) {
       throw new SharedWishlistInputError(
-        'This wishlist already has five sharing links. Stop sharing one from Profile before making another.'
+        'Your family already has five sharing links. Stop sharing one from Manage before making another.'
       );
     }
     throw new SharedWishlistInputError(
@@ -248,14 +259,226 @@ export async function revokeWishlistShareLink(
   }
 }
 
+export function normaliseSharedWishlistIds(values: readonly unknown[]): string[] {
+  if (!values.length) throw new SharedWishlistInputError('Choose at least one wishlist to share.');
+  if (values.length > 50)
+    throw new SharedWishlistInputError('Choose up to 50 wishlists at a time.');
+  return [...new Set(values.map((value) => requireUuid(value, 'The wishlist').toLowerCase()))];
+}
+
+export async function listShareableWishlists(
+  db: D1Database,
+  actorMemberId: string
+): Promise<ShareableWishlist[]> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const { results } = await db
+    .prepare(
+      `SELECT wishlists.id, owners.display_name AS ownerDisplayName
+     FROM wishlists
+     INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+     WHERE owners.disabled_at IS NULL AND EXISTS (
+       SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL
+     )
+     ORDER BY owners.display_name COLLATE NOCASE, wishlists.id`
+    )
+    .bind(actorId)
+    .all<ShareableWishlist>();
+  return results;
+}
+
+export async function listActiveFamilyShareLinks(
+  db: D1Database,
+  actorMemberId: string
+): Promise<ActiveFamilyShareLink[]> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const { results } = await db
+    .prepare(
+      `SELECT links.id, links.name, creators.display_name AS createdByDisplayName,
+       links.created_at AS createdAt, wishlists.id AS wishlistId,
+       owners.display_name AS ownerDisplayName
+     FROM family_share_links AS links
+     INNER JOIN members AS creators ON creators.id = links.created_by_member_id
+     LEFT JOIN family_share_link_wishlists AS selected ON selected.share_link_id = links.id
+     LEFT JOIN wishlists ON wishlists.id = selected.wishlist_id
+     LEFT JOIN members AS owners ON owners.id = wishlists.owner_member_id
+     WHERE EXISTS (
+       SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL
+     )
+     ORDER BY links.created_at DESC, links.id DESC, owners.display_name COLLATE NOCASE, wishlists.id`
+    )
+    .bind(actorId)
+    .all<
+      Omit<ActiveFamilyShareLink, 'wishlists'> & {
+        wishlistId: string | null;
+        ownerDisplayName: string | null;
+      }
+    >();
+  const links = new Map<string, ActiveFamilyShareLink>();
+  for (const row of results) {
+    let link = links.get(row.id);
+    if (!link) {
+      link = {
+        id: row.id,
+        name: row.name,
+        createdByDisplayName: row.createdByDisplayName,
+        createdAt: row.createdAt,
+        wishlists: []
+      };
+      links.set(row.id, link);
+    }
+    if (row.wishlistId && row.ownerDisplayName) {
+      link.wishlists.push({ id: row.wishlistId, ownerDisplayName: row.ownerDisplayName });
+    }
+  }
+  return [...links.values()];
+}
+
+export async function createFamilyShareLink(
+  db: D1Database,
+  actorMemberId: string,
+  wishlistIds: readonly unknown[],
+  name: unknown
+): Promise<{ token: string; shareLinkId: string }> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const selectedIds = normaliseSharedWishlistIds(wishlistIds);
+  const linkName = normaliseWishlistShareLinkName(name);
+  const shareLinkId = crypto.randomUUID();
+  const token = makeShareToken();
+  const hash = await hashShareToken(token);
+  const selection = JSON.stringify(selectedIds);
+  // D1 batches are transactions: the token and its complete selection commit together.
+  // The conditional insert checks availability and the limit inside that transaction.
+  const [linkResult] = await db.batch([
+    db
+      .prepare(
+        `INSERT INTO family_share_links (id, name, token_hash, created_by_member_id)
+       SELECT ?1, ?2, ?3, members.id FROM members
+       WHERE members.id = ?4 AND members.disabled_at IS NULL
+         AND ((SELECT COUNT(*) FROM wishlist_share_links) +
+              (SELECT COUNT(*) FROM family_share_links)) < 5
+         AND (
+           SELECT COUNT(*) FROM wishlists
+           INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+           WHERE wishlists.id IN (SELECT value FROM json_each(?5)) AND owners.disabled_at IS NULL
+         ) = ?6`
+      )
+      .bind(shareLinkId, linkName, hash, actorId, selection, selectedIds.length),
+    db
+      .prepare(
+        `INSERT INTO family_share_link_wishlists (share_link_id, wishlist_id)
+       SELECT links.id, selected.value
+       FROM family_share_links AS links, json_each(?2) AS selected
+       WHERE links.id = ?1`
+      )
+      .bind(shareLinkId, selection)
+  ]);
+  if (!linkResult?.success || linkResult.meta.changes !== 1) {
+    throw new SharedWishlistInputError(
+      'We couldn’t create this link. Check the selected wishlists are available and that fewer than five sharing links are active.'
+    );
+  }
+  return { token, shareLinkId };
+}
+
+export async function revokeFamilyShareLink(
+  db: D1Database,
+  actorMemberId: string,
+  shareLinkId: unknown
+): Promise<void> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const linkId = requireUuid(shareLinkId, 'The viewing link');
+  const result = await db
+    .prepare(
+      `DELETE FROM family_share_links WHERE id = ?1 AND EXISTS (
+       SELECT 1 FROM members WHERE id = ?2 AND disabled_at IS NULL
+     )`
+    )
+    .bind(linkId, actorId)
+    .run();
+  if (!result.success)
+    throw new SharedWishlistInputError('We couldn’t stop sharing this link. Try again.');
+}
+
+export async function listActiveShareLinks(
+  db: D1Database,
+  actorMemberId: string
+): Promise<ActiveFamilyShareLink[]> {
+  const [groups, singles, visibleWishlists] = await Promise.all([
+    listActiveFamilyShareLinks(db, actorMemberId),
+    listActiveWishlistShareLinks(db, actorMemberId),
+    listShareableWishlists(db, actorMemberId)
+  ]);
+  const visibleIds = new Set(visibleWishlists.map((wishlist) => wishlist.id));
+  return [
+    ...groups.map((link) => ({
+      ...link,
+      wishlists: link.wishlists.filter((wishlist) => visibleIds.has(wishlist.id))
+    })),
+    ...singles.map((link) => ({
+      id: link.id,
+      name: link.name,
+      createdByDisplayName: link.createdByDisplayName,
+      createdAt: link.createdAt,
+      wishlists: visibleIds.has(link.wishlistId)
+        ? [{ id: link.wishlistId, ownerDisplayName: link.ownerDisplayName }]
+        : []
+    }))
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+}
+
+export async function revokeShareLink(
+  db: D1Database,
+  actorMemberId: string,
+  shareLinkId: unknown
+): Promise<void> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const linkId = requireUuid(shareLinkId, 'The viewing link');
+  const results = await db.batch([
+    db
+      .prepare(
+        `DELETE FROM wishlist_share_links WHERE id = ?1 AND EXISTS (
+      SELECT 1 FROM members WHERE id = ?2 AND disabled_at IS NULL
+    )`
+      )
+      .bind(linkId, actorId),
+    db
+      .prepare(
+        `DELETE FROM family_share_links WHERE id = ?1 AND EXISTS (
+      SELECT 1 FROM members WHERE id = ?2 AND disabled_at IS NULL
+    )`
+      )
+      .bind(linkId, actorId)
+  ]);
+  if (results.some((result) => !result.success))
+    throw new SharedWishlistInputError('We couldn’t stop sharing this link. Try again.');
+}
+
+// Existing single-list capabilities and new selections share the claim-free public boundary.
+const SHARED_WISHLIST_IDS = `
+  SELECT wishlist_id FROM wishlist_share_links WHERE token_hash = ?1
+  UNION
+  SELECT selected.wishlist_id FROM family_share_links AS links
+  INNER JOIN family_share_link_wishlists AS selected ON selected.share_link_id = links.id
+  WHERE links.token_hash = ?1
+`;
+
 export async function getSharedWishlist(
   db: D1Database,
   token: unknown
 ): Promise<SharedWishlist | null> {
+  const wishlists = await getSharedWishlists(db, token);
+  return wishlists[0] ?? null;
+}
+
+export async function getSharedWishlists(
+  db: D1Database,
+  token: unknown
+): Promise<SharedWishlist[]> {
   const hash = await tokenHash(token);
   const { results } = await db
     .prepare(
-      `SELECT
+      `WITH shared_wishlist_ids AS (${SHARED_WISHLIST_IDS})
+       SELECT
          wishlists.id AS wishlist_id,
          members.display_name AS owner_display_name,
          items.id AS item_id,
@@ -266,12 +489,14 @@ export async function getSharedWishlist(
          items.price_amount_minor AS item_price_amount_minor,
          items.price_currency AS item_price_currency,
          items.priority AS item_priority
-       FROM wishlist_share_links
-       INNER JOIN wishlists ON wishlists.id = wishlist_share_links.wishlist_id
+       FROM shared_wishlist_ids
+       INNER JOIN wishlists ON wishlists.id = shared_wishlist_ids.wishlist_id
        INNER JOIN members ON members.id = wishlists.owner_member_id
        LEFT JOIN items ON items.wishlist_id = wishlists.id
-       WHERE wishlist_share_links.token_hash = ?1
+       WHERE members.disabled_at IS NULL
        ORDER BY
+         members.display_name COLLATE NOCASE,
+         wishlists.id,
          CASE items.priority
            WHEN 'high' THEN 0
            WHEN 'normal' THEN 1
@@ -283,29 +508,27 @@ export async function getSharedWishlist(
     .bind(hash)
     .all<SharedWishlistRow>();
 
-  const first = results[0];
-  if (!first) return null;
-
-  return {
-    id: first.wishlist_id,
-    ownerDisplayName: first.owner_display_name,
-    items: results.flatMap((row) =>
-      row.item_id && row.item_title && row.item_priority
-        ? [
-            {
-              id: row.item_id,
-              title: row.item_title,
-              notes: row.item_notes,
-              productUrl: row.item_product_url,
-              hasImage: Boolean(row.item_image_url),
-              priceAmountMinor: row.item_price_amount_minor,
-              priceCurrency: row.item_price_currency,
-              priority: row.item_priority
-            }
-          ]
-        : []
-    )
-  };
+  const wishlists = new Map<string, SharedWishlist>();
+  for (const row of results) {
+    let wishlist = wishlists.get(row.wishlist_id);
+    if (!wishlist) {
+      wishlist = { id: row.wishlist_id, ownerDisplayName: row.owner_display_name, items: [] };
+      wishlists.set(row.wishlist_id, wishlist);
+    }
+    if (row.item_id && row.item_title && row.item_priority) {
+      wishlist.items.push({
+        id: row.item_id,
+        title: row.item_title,
+        notes: row.item_notes,
+        productUrl: row.item_product_url,
+        hasImage: Boolean(row.item_image_url),
+        priceAmountMinor: row.item_price_amount_minor,
+        priceCurrency: row.item_price_currency,
+        priority: row.item_priority
+      });
+    }
+  }
+  return [...wishlists.values()];
 }
 
 export async function getSharedWishlistImageUrl(
@@ -317,12 +540,14 @@ export async function getSharedWishlistImageUrl(
   const targetItemId = requireUuid(itemId, 'The wish');
   return db
     .prepare(
-      `SELECT items.image_url AS imageUrl, wishlists.id AS wishlistId
-       FROM wishlist_share_links
-       INNER JOIN wishlists ON wishlists.id = wishlist_share_links.wishlist_id
+      `WITH shared_wishlist_ids AS (${SHARED_WISHLIST_IDS})
+       SELECT items.image_url AS imageUrl, wishlists.id AS wishlistId
+       FROM shared_wishlist_ids
+       INNER JOIN wishlists ON wishlists.id = shared_wishlist_ids.wishlist_id
+       INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
        INNER JOIN items ON items.wishlist_id = wishlists.id
-       WHERE wishlist_share_links.token_hash = ?1
-         AND items.id = ?2
+       WHERE items.id = ?2
+         AND owners.disabled_at IS NULL
          AND items.image_url IS NOT NULL`
     )
     .bind(hash, targetItemId)

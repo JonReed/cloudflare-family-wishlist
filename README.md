@@ -199,7 +199,7 @@ provides the friendly sign-in method, while exact-email rules keep admission inv
 
 The Worker also verifies Access JWTs itself and fails closed if the team domain, application audience or assertion is absent or invalid. Only the explicitly configured initial organiser can create the first member; after one
 additional scoped Cloudflare API token is configured, they can add exact sign-in addresses from the
-**Your family** page without using the Cloudflare dashboard. The application prepares an invitation
+**Manage** page without using the Cloudflare dashboard. The application prepares an invitation
 to copy but does not send email itself.
 
 ## Release progress

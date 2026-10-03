@@ -12,12 +12,6 @@ import {
   setOwnClaimState,
   unclaimWishlistItem
 } from '../lib/db/wishlists';
-import {
-  countWishlistShareLinks,
-  normaliseWishlistShareLinkName,
-  createWishlistShareLink,
-  SharedWishlistInputError
-} from '../lib/db/shared-wishlists';
 import { consumeProductLookupBudget, ProductLookupRateLimitError } from '../lib/db/product-lookups';
 import {
   fetchProductMetadata,
@@ -26,10 +20,6 @@ import {
   ProductMetadataError
 } from '../lib/product-metadata';
 import { productFormDraft } from '../lib/wishlist-form-draft';
-import {
-  ensurePublicSharingAccess,
-  PublicSharingAccessError
-} from '../lib/cloudflare/access-public-sharing';
 import { redirect } from 'react-router';
 import { SiteHeader } from '../components/site-header';
 import { FamilyWishlistTags } from '../components/family-wishlist-tags';
@@ -59,11 +49,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const requestedWishlistId = new URL(request.url).searchParams.get('list');
   const activeWishlist =
     wishlists.find((wishlist) => wishlist.id === requestedWishlistId) ?? wishlists[0] ?? null;
-  const shareLinkCount = activeWishlist
-    ? await countWishlistShareLinks(env.DB, activeWishlist.id)
-    : 0;
-
-  return { member, wishlists, activeWishlist, shareLinkCount };
+  return { member, wishlists, activeWishlist };
 }
 
 function formString(formData: FormData, name: string): string {
@@ -167,15 +153,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       case 'unclaim-item':
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         return { wishlistId, updated: 'unclaim' as const };
-      case 'create-share-link': {
-        const shareLinkName = normaliseWishlistShareLinkName(formData.get('shareLinkName'));
-        if (!import.meta.env.DEV) {
-          await ensurePublicSharingAccess(env, new URL(request.url).hostname);
-        }
-        const token = await createWishlistShareLink(env.DB, member.id, wishlistId, shareLinkName);
-        const shareUrl = new URL(`/shared/${token}`, request.url).toString();
-        return { wishlistId, shareLinkName, shareUrl };
-      }
+      case 'create-share-link':
+        return redirect(`/family?list=${encodeURIComponent(wishlistId)}#family-sharing`);
       default:
         throw new WishlistInputError(
           'We couldn’t work out what to do. Refresh the page and try again.'
@@ -184,11 +163,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     return redirect(`/?list=${encodeURIComponent(wishlistId)}#wishlist`);
   } catch (error) {
-    if (
-      error instanceof WishlistInputError ||
-      error instanceof SharedWishlistInputError ||
-      error instanceof PublicSharingAccessError
-    ) {
+    if (error instanceof WishlistInputError) {
       return { error: error.message };
     }
 
@@ -197,21 +172,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { member, wishlists, activeWishlist, shareLinkCount } = loaderData;
-  const shareUrl =
-    actionData &&
-    'shareUrl' in actionData &&
-    activeWishlist &&
-    actionData.wishlistId === activeWishlist.id
-      ? actionData.shareUrl
-      : undefined;
-  const shareLinkName =
-    actionData &&
-    'shareLinkName' in actionData &&
-    activeWishlist &&
-    actionData.wishlistId === activeWishlist.id
-      ? actionData.shareLinkName
-      : undefined;
+  const { member, wishlists, activeWishlist } = loaderData;
 
   return (
     <div className="site-shell">
@@ -234,13 +195,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
           {activeWishlist ? (
             <div className="wishlist-workspace">
-              <WishlistSheet
-                key={activeWishlist.id}
-                wishlist={activeWishlist}
-                shareLinkCount={shareLinkCount}
-                shareLinkName={shareLinkName}
-                shareUrl={shareUrl}
-              />
+              <WishlistSheet key={activeWishlist.id} wishlist={activeWishlist} />
               <AddWishPanel wishlist={activeWishlist} actionData={actionData} />
             </div>
           ) : (

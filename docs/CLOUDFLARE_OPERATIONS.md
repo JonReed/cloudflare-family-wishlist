@@ -111,9 +111,12 @@ Those early links must be created again after that upgrade. Migration `0012` add
 first-sign-in column and prepares wishlists for completed invitations. Apply all pending migrations
 before deploying code that uses them; the normal deployment command does this automatically.
 
+Migration `0013` adds group sharing tables without changing existing named single-list links.
+The normal `deploy:production` command applies it automatically when pending.
+
 ## Removing a family member
 
-In **Your family**, choose **Remove access** and confirm. The app disables that person, removes their
+In **Manage**, choose **Remove access** and confirm. The app disables that person, removes their
 exact-email policy and revokes all application sessions, signing everyone out once. It retains the
 removed person's wishlist and history.
 

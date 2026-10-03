@@ -30,7 +30,7 @@ The signed-in home has four stable regions:
    setup instructions.
 
 The signed-in header is identical on every route for the same member. The mark sits at the left,
-followed by Wishlists, Add from anywhere and, for the organiser, Your family. The member's display
+followed by Wishlists, Add from anywhere and Manage for every member. The member's display
 name, photo and Profile link form one destination at the far right. On phones, keep the mark and
 profile on the first row and the other destinations below. Long names truncate in the header while
 the full name remains available in the link's title. Keep the current destination in place and mark
@@ -60,7 +60,8 @@ conventional button label or an action name explains any unfamiliar setup intera
 search field, exact choice and visible result. Every route must explicitly end at an editable draft,
 not imply that a wish is saved automatically.
 
-Household administration lives on the separate, infrequently visited **Your family** page. Adding
+Sharing lives on **Manage** for every member. Household administration on that page is visible
+only to the organiser. Adding
 someone creates their wishlist immediately; their exact email remains required. Show **Not signed
 in yet** until their first authenticated visit, keep the invitation copy control available, and allow
 the organiser to remove access even before that visit. After a successful addition, clear the add
@@ -72,31 +73,28 @@ normal list never feels like an admin console. Put **Remove access** behind a na
 a second explicit action. Its warning must say that the person can no longer sign in, everyone will
 be signed out once, and the person's wishlist and wishes remain.
 
-Sharing one person's ideas outside the family stays attached to that active wishlist. A visible
-**Share this list** link belongs in the active list heading beside its wish count; it opens compact
-controls to name, create or copy a sharing link without turning the normal list into an
-administration page. Ask who the link is for, with an example such as “Uncle David”, and explain that
-this private name helps the family recognise it later. Show the newly created address with a clear
-copy control; after a reload, show that one or more sharing links are active without attempting to
-recover their secrets from storage. Include a small link to Profile for reviewing or stopping active
-links; do not duplicate the removal action in this popup. When five links are active, replace the
-creation form with a clear explanation that one must first be stopped from Profile.
+**Manage** is the single creation and management surface for sharing links. A visible
+**Share this list** shortcut in the active wishlist heading opens that page's **Sharing links**
+section with the current list ticked. Visiting the section directly leaves checkboxes unticked.
+The form lets any member choose one or more lists and asks who the link is for, with an example such
+as “Uncle David”. Explain that this private name helps the family recognise it later.
 
-Creating a sharing link stays in the open panel when JavaScript is available. Show “Creating link…”
-and disable repeat submissions while waiting, then select the new address ready to copy and refresh
-the active-link count. Keep failures beside the sharing form and preserve unfinished wish drafts.
-The ordinary server form remains available without JavaScript.
+Creating a link stays beside the form when JavaScript is available. Show “Creating link…” and
+disable repeat submissions while waiting, then select the new address ready to copy and refresh the
+inventory. Keep errors beside the form and preserve sharing choices. The ordinary server form must
+also work without JavaScript.
 
-Profile is the persistent management surface for sharing links. Below personal details, show every
-active link as a plain list with its private name, wishlist owner, the family member who made it, its
-creation date, a route back to the wishlist and an explicit **Stop sharing this link** action. Explain
-that each wishlist can have up to five active links and that each readable address is shown only when
-made. Keep technical terms such as “revoke” out of family-facing controls and explanations.
+Show all active links together below the form, including older single-list links. Each entry gives
+its private name, currently visible wishlists, creator, creation date and an explicit **Stop sharing
+this link** action. Say when no lists are currently visible. Explain the household-wide allowance of
+five active links and replace the creation form with a clear explanation when that limit is reached.
+Each address is shown only when made. Keep technical terms such as “revoke” out of family-facing copy.
+Profile contains personal details, photo guidance and sign-out; it has no sharing-link inventory.
 
 Stopping sharing first opens a native disclosure explaining that the link will stop working, with
 a second explicit **Yes, stop sharing this link** action. Closing the disclosure cancels without
-changing anything. Stopping sharing updates the row in place after server confirmation and preserves unfinished profile
-edits. Show pending feedback and errors beside that link. Move focus to the next link's stop-sharing
+changing anything. Stopping sharing updates the row in place after server confirmation and preserves unfinished sharing
+choices. Show pending feedback and errors beside that link. Move focus to the next link's stop-sharing
 summary, the previous one if necessary, or the empty message when none remain; leave focus alone if
 the person moved elsewhere while waiting. Without JavaScript, retain the normal form redirect.
 
@@ -213,6 +211,10 @@ The link-shared view is a calm, read-only paper list with the Family Wishlist ma
 wish count and ordinary wish details. It has no signed-in navigation, editing, add or claim controls.
 The absence of those controls is sufficient; do not add software-oriented explanations about what a
 public visitor cannot do.
+
+When a sharing link includes several lists, introduce it with **Family wishlists** and a compact
+set of name links that jump to each person's section. Each selected list has its own paper sheet,
+heading and wish count, including a clear empty state. Keep the whole view readable without scripts.
 
 ### Finding the right person
 

@@ -51,7 +51,7 @@ Retrieve current Cloudflare and React Router documentation before relying on API
   succeeds. First login reuses them by verified email; only the organiser bootstraps on first request.
   There is no public sign-up flow, and a wishlist can receive wishes before its owner signs in.
 - The first provisioned member has the `admin` role and is called the family organiser in the UI.
-  Later members default to `member`; role currently controls only the `/family` admission page.
+  Later members default to `member`; role controls family admission on `/family`; sharing is available to every admitted member.
 - Every admitted member can see and edit every wishlist. “Owner” and “gift-giver” are contextual
   relationships, not permission roles.
 - Claims are separate rows. Other family members can see them; the wishlist owner must not receive

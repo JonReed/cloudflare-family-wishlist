@@ -31,7 +31,7 @@ JWT verification + security headers + React Router request handler
     |                  |
     |                  +--> cleaned product-detail enrichment (Workers AI)
     |
-    +--> organiser-only family route (app/routes/family.tsx)
+    +--> family sharing and organiser-only admission (app/routes/family.tsx)
             |
             +--> exact-email policy creation (Cloudflare Access API)
     |
@@ -90,11 +90,11 @@ enforcement cannot disagree.
 8. A read-only shared-list request skips identity validation only when its method and path exactly
    match the public route boundary. It hashes the URL secret and runs a separate D1 query that does
    not reference `claims`. Shared pictures require the same secret plus an item belonging to that
-   list, pass through the bounded raster proxy and consume both a capability-holder budget and a
+   selected list, pass through the bounded raster proxy and consume both a capability-holder budget and a
    higher list-wide emergency budget. A HEAD request verifies membership but does not fetch or count
    the upstream picture.
 
-The organiser-only `/family` action is the one flow that changes the Access admission boundary. It
+The organiser-only admission intents in `/family` are the flows that change the Access admission boundary. The action
 validates the organiser role and proposed name/email and writes a non-admitting `pending` invitation
 before creating a single exact-email application policy through Cloudflare's API. It marks the row
 `active` only after Cloudflare succeeds. If activation fails, it attempts to delete the policy; a
@@ -102,7 +102,7 @@ failed rollback is retained as `cleanup_required` with the policy ID. Neither `p
 `cleanup_required` can provision a member, so Access and D1 failures remain fail-closed. The API token
 is a Worker secret and is never returned to loaders, HTML or logs.
 
-The family page exposes interrupted `pending` and `cleanup_required` invitations to the organiser.
+The **Manage** page exposes interrupted `pending` and `cleanup_required` invitations to the organiser.
 Repair first obtains a pagination-verified complete list of the application's Access policies and
 reuses only one exact policy-name and exact-email match; otherwise it creates a fresh exact-email
 policy. Duplicate or incomplete results fail closed.
@@ -151,8 +151,8 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/routes/add.tsx`                                       | Product-link draft landing page, multi-list chooser and save action                              |
 | `app/routes/bookmarklet.tsx`                               | Android, Share Sheet Shortcut, clipboard and browser-button setup                                |
 | `app/routes/share-target.ts`                               | Safe Android shared-text/link handoff to the editable add route                                  |
-| `app/routes/family.tsx`                                    | Organiser-only joined/waiting member administration                                              |
-| `app/routes/profile.tsx`                                   | Personal details and persistent active viewing-link management                                   |
+| `app/routes/family.tsx`                                    | Family sharing and organiser-only joined/waiting member administration                           |
+| `app/routes/profile.tsx`                                   | Personal details, profile photo and sign-out                                                     |
 | `app/routes/product-details.ts`                            | Same-origin progressive-enhancement endpoint for product-link metadata                           |
 | `app/lib/bookmarklet.ts`, `public/*.js`                    | Deployment-specific add links, installation and progressively enhanced setup tools               |
 | `app/lib/cloudflare/access-membership.ts`                  | Bounded, exact-email Cloudflare Access policy creation and cleanup                               |
@@ -165,7 +165,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/root.tsx`, `app/entry.server.tsx`                     | Document shell, authenticated hydration and CSP nonce propagation                                |
 | `app/components/add-wish-form.tsx`                         | Progressive frequent-add submission, local state and native form fallback                        |
 | `app/components/edit-wish-form.tsx`                        | Progressive item editing, local state and native form fallback                                   |
-| `app/components/wishlist/`                                 | Item fields and rows, claims, sharing, add panel and active-sheet coordination                   |
+| `app/components/wishlist/`                                 | Item fields and rows, claims, add panel and active-sheet coordination                            |
 | `app/lib/wishlist-form-draft.ts`                           | Bounded lookup drafts that preserve existing input                                               |
 | `scripts/installation-config.ts`                           | Validated installation identifiers merged with shared defaults                                   |
 | `scripts/deploy-production.ts`                             | Matching-build check and migration-before-deployment sequencing                                  |
@@ -216,11 +216,23 @@ family_invitations
 
 wishlist_share_links
   id (UUID) PK
-  wishlist_id FK -> wishlists (maximum 5 active rows)
+  wishlist_id FK -> wishlists (legacy single-list selection)
   name (private family-facing label, 1..80 characters)
   token_hash UNIQUE
   created_by_member_id FK -> members
   created_at
+
+family_share_links
+  id (UUID) PK
+  name (private family-facing label, 1..80 characters)
+  token_hash UNIQUE
+  created_by_member_id FK -> members
+  created_at
+
+family_share_link_wishlists
+  share_link_id + wishlist_id PK
+  share_link_id FK -> family_share_links (ON DELETE CASCADE)
+  wishlist_id FK -> wishlists (ON DELETE CASCADE)
 
 shared_image_fetch_limits
   wishlist_id PK/FK -> wishlists
@@ -263,18 +275,42 @@ current claimant so one member cannot change another member's claim.
 
 A sharing URL carries 16 random bytes encoded as a 22-character URL-safe secret. D1 stores only its
 SHA-256 hash, so a database read cannot recover a working link. Each row has a private family-facing
-name and a separate internal UUID; an atomic conditional insert enforces at most five active rows per
-wishlist. Stopping sharing deletes only the selected UUID. Unknown and removed links return the same
+name and a separate internal UUID. Atomic conditional inserts count both sharing tables to enforce
+at most five active links across the household. Existing rows above that limit remain usable, but
+creation stays blocked until fewer than five remain. Unknown and removed links return the same
 not-found result.
 
+New selections use the additive `family_share_links` and `family_share_link_wishlists` tables, so
+existing single-list tokens and the running Worker's schema remain compatible during deployment.
+A guarded insert validates every selected UUID, the enabled actor and the combined five-link limit.
+A transactional D1 batch inserts the link and all selected wishlists together. Missing or disabled
+lists cannot leave a partial selection; duplicate IDs are deduplicated. The selection is fixed at
+creation while each wishlist's contents stay current.
+
+The authenticated `/family` route is the single sharing surface for every enabled member. Its
+inventory combines both tables, showing only currently enabled owners in each visible-list summary.
+A universal revocation service deletes the selected UUID from either table in a guarded D1 batch;
+selection rows cascade for new links. The public page and its images stop working immediately.
+The loader omits admission and invitation data for ordinary members, and all admission actions retain
+the organiser check before any database or Access mutation.
+
 The public query selects the list owner and ordinary item fields directly from `wishlists`, `members`
-and `items`. It neither joins nor selects `claims`. Its TypeScript result has no claim field. Shared
+and `items`. A token-hash lookup unions the selected IDs from either kind of link before reading
+ordinary wish details; it returns one claim-free result per selected wishlist, including empty lists.
+It neither joins nor selects `claims`. Its TypeScript result has no claim field. Shared
 image routes look up the stored image only when both the hashed secret and item membership match,
 then reuse the public-network, redirect, type and size checks of the signed-in image proxy. A D1-backed
 20-per-minute and 100-per-day capability-holder budget prevents one recipient from consuming the
 whole allowance. A higher 60-per-minute and 500-per-day list-wide ceiling remains as an emergency
 cost bound. The requester key is a SHA-256 derivation salted by the bearer capability; raw network
 addresses and reusable cross-link identifiers are never stored.
+
+Public list and image queries require the wishlist owner to have `disabled_at IS NULL`. A removed
+owner's single-list link returns the same 404 as an unknown link; a group link omits that owner's
+list and returns 404 if no enabled lists remain. Image GET and HEAD requests return 404 before
+fetching or consuming a budget. Sharing choices and guarded creation reject disabled owners too,
+including a mixed selection that would otherwise create a partial link. Existing sharing tokens and
+selections remain stored for management.
 
 Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`, carry a site-wide
 `X-Robots-Tag` no-indexing directive and load no third-party scripts or fonts. Application logs redact
@@ -319,13 +355,15 @@ its summary and shows a confirmation there; an unenhanced edit continues through
 Removal uses the same marker and returns structured success for loader revalidation. The wishlist
 sheet restores focus after the deleted editor unmounts; rows are never optimistically removed.
 
-Sharing-link creation uses a wishlist-keyed fetcher with local pending and error feedback. The same
-server action returns the new address for both document and enhanced submissions. Revalidation
-updates the count while the panel selects the new address; delegated copy and close handlers also
-work for results inserted after hydration and after switching wishlists.
-Profile revocation uses a link-keyed fetcher and a browser-only submission marker to preserve the
-native redirect. The parent sharing list restores focus after revalidation removes a row. Link
-revocation remains server-confirmed and never optimistically hides a still-active viewing link.
+Sharing-link creation uses the family selection form's fetcher with local pending and error feedback.
+The same server action returns the new address for both document and enhanced submissions.
+Revalidation updates the combined inventory while the form selects the new address; delegated copy
+handling also works for results inserted after hydration. The wishlist shortcut navigates to that
+form with its list preselected. Profile has no sharing inventory.
+Link revocation uses a link-keyed fetcher and a browser-only submission marker to preserve the native
+redirect. The parent sharing list restores focus after revalidation removes a row. Revocation stays
+server-confirmed and never optimistically hides a still-active link. Removing the newly created link
+also removes its copy result.
 
 The product-link helper is another progressively enhanced interaction: a small nonce-authorised,
 self-hosted script starts the lookup after a link is pasted or changed. The ordinary “Fill from link”

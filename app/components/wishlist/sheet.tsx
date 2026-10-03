@@ -1,6 +1,5 @@
 import type { FamilyWishlist } from '../../lib/db/wishlists';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { ShareWishlistPanel } from './share-panel';
 import { WishlistItemRow } from './item-row';
 import { MemberAvatar } from '../member-avatar';
 
@@ -16,17 +15,7 @@ function focusEditError(form: HTMLFormElement): void {
   if (error instanceof HTMLElement) error.focus({ preventScroll: true });
 }
 
-export function WishlistSheet({
-  wishlist,
-  shareLinkCount,
-  shareLinkName,
-  shareUrl
-}: {
-  wishlist: FamilyWishlist;
-  shareLinkCount: number;
-  shareLinkName?: string;
-  shareUrl?: string;
-}) {
+export function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
   const [lastEditedItemId, setLastEditedItemId] = useState<string | null>(null);
   const sheetRef = useRef<HTMLElement>(null);
   const removalRef = useRef<{ itemId: string; candidates: string[] } | null>(null);
@@ -83,12 +72,12 @@ export function WishlistSheet({
           <a className="add-wish-shortcut" href={`#add-${wishlist.id}-heading`}>
             Add a wish
           </a>
-          <ShareWishlistPanel
-            wishlist={wishlist}
-            linkCount={shareLinkCount}
-            shareLinkName={shareLinkName}
-            shareUrl={shareUrl}
-          />
+          <a
+            className="share-list-shortcut"
+            href={`/family?list=${encodeURIComponent(wishlist.id)}#family-sharing`}
+          >
+            Share this list
+          </a>
         </div>
       </header>
 

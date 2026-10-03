@@ -684,81 +684,20 @@
   line-height: 1.65;
 }
 
-.share-panel {
-  position: relative;
-}
-
-.share-panel summary {
-  cursor: pointer;
+.share-list-shortcut {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
   color: var(--leaf);
   font-size: 0.8rem;
   font-weight: 800;
   text-decoration: underline;
-  text-decoration-color: rgb(40 80 62 / 0.4);
-  text-decoration-thickness: 1px;
   text-underline-offset: 0.22rem;
-  list-style: none;
 }
 
-.share-panel summary::-webkit-details-marker {
-  display: none;
-}
-
-.share-panel[open] summary {
-  color: var(--rust);
-}
-
-.share-panel summary:focus-visible {
+.share-list-shortcut:focus-visible {
   outline: 2px solid var(--rust);
   outline-offset: 3px;
-}
-
-.share-panel-body {
-  position: absolute;
-  z-index: 8;
-  top: calc(100% + 0.8rem);
-  right: 0;
-  width: min(28rem, calc(100vw - 3rem));
-  border: 1px solid rgb(80 68 50 / 0.2);
-  border-top: 4px solid var(--leaf);
-  background: var(--paper);
-  box-shadow:
-    6px 7px 0 rgb(88 69 46 / 0.1),
-    0 14px 30px rgb(88 69 46 / 0.16);
-  padding: 1.15rem 3rem 1.15rem 1.15rem;
-  text-align: left;
-}
-
-.share-panel-close {
-  position: absolute;
-  top: 0.55rem;
-  right: 0.65rem;
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border: 0;
-  color: var(--muted);
-  font-family: Arial, sans-serif;
-  font-size: 1.5rem;
-  line-height: 1;
-  text-decoration: none;
-}
-
-.share-panel-close:hover {
-  color: var(--rust);
-}
-
-.share-panel-close:focus-visible {
-  outline: 2px solid var(--rust);
-  outline-offset: 2px;
-}
-
-.share-panel-body > p {
-  max-width: 42rem;
-  margin: 0 0 1rem;
-  color: var(--muted);
-  line-height: 1.6;
 }
 
 .share-link-result {
@@ -787,51 +726,6 @@
   font-size: 0.78rem;
 }
 
-.share-link-form {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.share-link-form .button-secondary {
-  justify-self: start;
-}
-
-.share-link-hint {
-  margin: 0.35rem 0 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.5;
-}
-
-.share-limit-message {
-  border-left: 4px solid var(--rust);
-  background: rgb(158 82 58 / 0.08);
-  padding: 0.9rem 1rem;
-  color: var(--ink);
-  line-height: 1.55;
-}
-
-.share-limit-message p {
-  margin: 0.35rem 0 0;
-}
-
-.share-limit-message a {
-  color: var(--leaf);
-  font-weight: 800;
-  text-underline-offset: 0.18rem;
-}
-
-.share-panel-body > .share-panel-manage {
-  margin: 0.85rem 0 0;
-  font-size: 0.72rem;
-}
-
-.share-panel-manage a {
-  color: var(--leaf);
-  font-weight: 800;
-  text-underline-offset: 0.18rem;
-}
-
 .public-share-header {
   display: flex;
   min-height: 6.25rem;
@@ -839,13 +733,41 @@
 }
 
 .public-share-main {
+  display: grid;
+  gap: 3rem;
+  align-content: start;
   flex: 1;
   padding-block: 2rem 5rem;
 }
 
 .public-share-sheet {
+  width: 100%;
   max-width: 64rem;
   margin-inline: auto;
+}
+
+.public-share-overview {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.public-share-overview h1 {
+  margin: 0.5rem 0 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.public-share-overview nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.public-share-sheet .wishlist-heading h2 {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3vw, 2rem);
 }
 
 .public-share-sheet .paper-tape-right {
@@ -2092,6 +2014,64 @@ button:disabled {
   width: min(100%, 82rem);
 }
 
+.family-sharing-form {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.family-sharing-fields {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  padding: 1rem;
+}
+
+.family-sharing-fields legend {
+  padding-inline: 0.5rem;
+}
+
+.family-share-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.25rem 1.5rem;
+}
+
+.family-share-choices label {
+  display: flex;
+  min-height: 44px;
+  gap: 0.75rem;
+  align-items: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.family-share-choices input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--leaf);
+}
+
+.family-share-name,
+.family-share-result {
+  width: 100%;
+  max-width: 40rem;
+}
+
+.family-sharing-form > button {
+  justify-self: start;
+}
+
+.family-share-result {
+  margin-top: 1.5rem;
+}
+
+.family-sharing .profile-share-item > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .family-page-message {
   max-width: 45rem;
   margin-top: 2rem;
@@ -2647,7 +2627,7 @@ button:disabled {
     justify-self: end;
   }
 
-  .wishlist-heading-tools .share-panel {
+  .wishlist-heading-tools .share-list-shortcut {
     grid-column: 2;
     grid-row: 2;
     justify-self: end;
@@ -2669,10 +2649,6 @@ button:disabled {
   .wish-count {
     margin-top: 0.35rem;
     font-size: 0.65rem;
-  }
-
-  .share-panel-body {
-    width: min(22rem, calc(100vw - 2.5rem));
   }
 
   .wish-row {
