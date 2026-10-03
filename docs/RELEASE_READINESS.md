@@ -132,8 +132,8 @@ candidate `0d79dd413e63a1b808c06282541f4b7a5cf8d789`. The household started at `
 | Scheduled delivery              | Pending: the test workflow is enabled with the opt-in variable set, but no timer-triggered run has yet been observed. Manual runs are not scheduler evidence.                                                                                                                                 |
 
 The fixture uses the candidate's updater and build-verification scripts unchanged, with a wrapper
-selecting a disposable upstream repository. Its timer is accelerated to five minutes; the shipped
-workflow checks every six hours. These differences allow controlled releases without publishing an
+selecting a disposable upstream repository. The initial timer used five-minute intervals; the corrected native-scheduler test uses
+ten-minute intervals, while the shipped workflow checks every six hours. These differences allow controlled releases without publishing an
 untested application release. The tests use synthetic data and the application's normal fail-closed
 response without Access configuration; they do not repeat authenticated family workflows or new-account
 onboarding. Production Cloudflare resources were not changed by this test.
@@ -152,3 +152,20 @@ The independent scheduler diagnostic had been disabled after only a short observ
 it did not establish that GitHub's scheduler was broken. The original missing scheduled run remains
 unexplained. The corrected live test keeps the real update workflow enabled and distinguishes a
 real `schedule` event from manual dispatch. Publication still requires that live acceptance result.
+
+The corrected implementation passed all 557 application tests and eight updater integration tests,
+formatting, lint, type checks, script checks and production build; the dependency audit found no
+vulnerabilities. Commit `a1753e02e959a3d467a7605c6aceb482f5583e5d` passed reference CI and its normal
+Cloudflare Build. The reference Worker settings confirmed that no cron triggers remained.
+
+The disposable household's corrected manual run `37135784253` succeeded. Cloudflare build
+`a6af9868-1800-4fa8-829e-44d62faee944` deployed version
+`7f82c1ef-6fec-478e-a03d-9b6f214a078f` to 100% of traffic. All seeded rows and 13 migration records
+matched the previous snapshot; integrity checks passed.
+
+A real `v1.1.1` release was then published **only in the disposable source repository**.
+Its **Release to stable** run `37136487286` passed the same quality and audit gates as this project
+and promoted `stable` to the exact tagged commit `247835bc8d254623a6c0fa653c2aa1cae715f384`.
+The household fixture has not been manually updated to that release: it is reserved for the genuine
+scheduled-delivery acceptance check. At 16:23 UTC, neither the household nor the separate public
+scheduler diagnostic had received a `schedule` event. The project release remains a draft.
