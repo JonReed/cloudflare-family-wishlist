@@ -64,37 +64,33 @@ migrations before deploying the Worker. Migrations must remain compatible with t
 a failed Worker deployment does not roll back successful database migrations. Switching from `main`
 back to an older stable version therefore requires a compatibility check, not just a branch change.
 
-## Independent-account delivery remains a separate step
+## Delivery to household installations
 
-Cloudflare's standard Git integration connects repositories authorised through the installer's
-GitHub account or organisation. Reading a public repository is not equivalent to authorising that
-integration. Do not promise that an unrelated household can simply choose this upstream repository
-in its own Cloudflare account. A fork also does not follow upstream branch changes automatically.
+Publishing a stable release advances `stable` only after the release gates pass. Each configured
+household fork runs **Update Family Wishlist** every six hours. It copies the stable application
+snapshot into a normal commit on its own `main`, leaving `.github/` and ignored household settings
+alone. It records the upstream SHA in `.wishlist-upstream.json`. Cloudflare Builds deploys that
+household commit with `npm run deploy:production` and the updater verifies Cloudflare's check result.
 
-This release workflow establishes the shared `stable` channel. The [version-pin updater and installation
-bootstrap](INSTALLATION_UPDATES.md) have passed live GitHub delivery, synthetic bot-triggered Cloudflare
-deployments, and a real-application Cloudflare build with a pending migration. A genuine scheduled
-updater event has not yet been observed. Before offering automatic updates to
-independent households without fork maintenance, we still need to verify:
+The updater refuses downgrades, unrelated history, dirty checkouts and application customisations.
+It uses a normal push so concurrent owner commits are never force-overwritten. A repair from `main`
+can be ahead of stable: it waits for the next descendant release. A small activity commit after 28
+days without commits keeps public forks active; it also exercises the deployment connection.
 
-- delivery of upstream channel changes into each installation's build;
-- a clean installation and upgrade acceptance run in an independent account.
+Follow [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md) for setup and
+[REPAIR_UPDATES.md](REPAIR_UPDATES.md) for the one-time existing-user repair. The old separate
+bootstrap repository has [migration instructions](INSTALLATION_UPDATES.md). There is one normal
+update mechanism: the fork workflow. Do not add an app deployment button or a second scheduler.
 
-The small installation scripts use protocol 1 and receive separately documented operator-applied
-fixes; application updates do not replace them. See the [release-readiness record](RELEASE_READINESS.md)
-for checked and outstanding gates. No `stable` branch or release should be described as available
-until the first promotion has actually succeeded.
+Application source updates include the updater scripts, but `.github/` stays owned by the household.
+Keep the workflow/script interface backwards-compatible. A future change to workflow permissions or
+steps needs an explicit installer repair and release note; ordinary releases must not depend on it.
 
-Account/Worker/D1 configuration is now separate from shared source through
-[Installation settings](INSTALLATION_CONFIG.md). Existing Builds must receive their installation
-JSON before adopting that change; this does not yet complete automatic upstream delivery.
+### Verification status
 
-The existing [installation guide](DEPLOYMENT.md) remains a self-managed fork route while that work is
-completed. Users who choose a fork own its synchronisation and customisations.
-
-## Sources
-
-- [Cloudflare build branches](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/)
-- [Cloudflare GitHub integration and account access](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/github-integration/)
-- [GitHub release workflow events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release)
-- [GitHub workflow token event behaviour](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+Local real-Git integration tests cover repeated releases, preserved workflows/settings, installations
+ahead of stable, customisation conflicts, dirty/invalid states, concurrent pushes and the inactivity
+keepalive. Cloudflare build result classification is tested separately. Earlier bootstrap tests proved
+that a GitHub bot push can trigger Cloudflare Builds, but they do not prove this fork workflow's
+scheduled end-to-end path. Observe that path on a disposable household installation before claiming
+unattended delivery has passed. Failed builds must remain visible on subsequent updater runs.

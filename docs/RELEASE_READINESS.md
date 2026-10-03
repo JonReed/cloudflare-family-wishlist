@@ -102,3 +102,16 @@ JSON and preview builds disabled. No build-token permissions or production resou
 The test uses published source predating the new optional SHA tag support; the synthetic Worker
 separately proves tagging and live-version comparison. Testing the unreleased installer against
 published application source is not the same as certifying an exact first-release candidate.
+
+## Fork updater repair — 3 October 2026
+
+The normal setup now includes the application fork's **Update Family Wishlist** workflow and a
+one-time repair for existing users. Real-Git local integration tests exercise repeated stable
+updates, household workflow/configuration preservation, downgrade prevention, customisation refusal,
+concurrent pushes and a 28-day activity commit. Cloudflare check classification tests distinguish
+missing, pending, failed and successful builds, including a successful retry of an earlier failure.
+
+The historical bootstrap evidence above belongs to a different delivery implementation. It must not
+be used to claim that the new fork workflow's scheduled delivery has passed. A disposable household
+must still demonstrate a scheduled run, release delivery, deployment failure and recovery before
+that claim can be made. See [fresh-deployment acceptance](FRESH_DEPLOYMENT_ACCEPTANCE.md).

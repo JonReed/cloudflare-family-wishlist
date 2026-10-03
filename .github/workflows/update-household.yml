@@ -1,0 +1,38 @@
+name: Update Family Wishlist
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 */6 * * *'
+
+permissions:
+  contents: write
+  checks: read
+  statuses: read
+
+concurrency:
+  group: household-updates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.repository != 'JonReed/cloudflare-family-wishlist'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+      - name: Get the next tested release
+        id: update
+        run: node scripts/update-fork.ts --apply
+      - name: Check the Cloudflare build
+        if: steps.update.outputs.deployment_commit != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATE_COMMIT: ${{ steps.update.outputs.deployment_commit }}
+        run: node scripts/verify-update-build.ts

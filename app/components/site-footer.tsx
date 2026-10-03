@@ -1,3 +1,5 @@
+import { version } from '../../package.json';
+
 const projectUrl = 'https://familywishlist.org/';
 const repositoryUrl = 'https://github.com/JonReed/cloudflare-family-wishlist';
 
@@ -32,7 +34,7 @@ export function SiteFooter() {
           </a>
         </nav>
 
-        <p className="footer-meta">v0.1.0 · Built to run on Cloudflare</p>
+        <p className="footer-meta">v{version} · Built to run on Cloudflare</p>
       </div>
     </footer>
   );

@@ -53,8 +53,9 @@ Links you paste may already contain tracking parameters; Cloudflare still proces
 host and protect your installation.
 
 **Ready for everyday family use.** See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest), with private sign-in,
-shared wishlists, surprise-preserving gifts and public viewing links. The optional
-[automatic upstream updater](docs/INSTALLATION_UPDATES.md) remains experimental.
+shared wishlists, surprise-preserving gifts and public viewing links. [Automatic release updates](docs/AUTOMATIC_UPDATES.md) are part of household setup. Existing
+installations need the [one-time update repair](docs/REPAIR_UPDATES.md). The new fork workflow still
+requires a live scheduled end-to-end verification.
 
 ## Turn a shopping link into a useful wish
 
@@ -118,9 +119,8 @@ checks after each stage. The setup commands save settings and find Cloudflare ID
 No additional plugin is required. The repository includes an
 [installation skill](.agents/skills/wishlist-install/SKILL.md) for assistants that support skills.
 Keep API tokens and email codes out of chat; enter the scoped token through the command's hidden
-terminal prompt. The initial installation does not require a fork or automatic updater. Add
-[GitHub deployments](docs/CLOUDFLARE_OPERATIONS.md#connect-automatic-deployments) after sign-in works
-if you want them. Builds deploys changes in your connected repository; upstream updating is separate.
+terminal prompt. The installation includes a household GitHub fork and [automatic release updates](docs/AUTOMATIC_UPDATES.md).
+After sign-in works, connect the existing Worker and verify the updater’s first Cloudflare build.
 
 ## Stack
 
@@ -187,7 +187,7 @@ Cloudflare configuration.
 
 ## Deployment model
 
-`main` is the development channel and continues to power the reference installation. `stable` is the recommended release channel: publishing a stable GitHub release runs both repository gates and advances it to the tested tagged commit. The first successful release creates the branch. See [Release channels](docs/RELEASES.md) for promotion, channel selection and the remaining independent-account delivery work. Fork owners manage their own updates.
+`main` is the development channel and continues to power the reference installation. `stable` is the recommended release channel: publishing a stable GitHub release runs both repository gates and advances it to the tested tagged commit. The first successful release creates the branch. The household updater follows `stable` and Cloudflare deploys the resulting commits. See [Release channels](docs/RELEASES.md) for promotion and verification status. Existing users need the [one-time repair](docs/REPAIR_UPDATES.md).
 
 A normal family installation runs with a free Cloudflare account and the included `workers.dev`
 address; a paid plan and custom domain are optional. The [installation guide](docs/DEPLOYMENT.md) starts before account setup. The

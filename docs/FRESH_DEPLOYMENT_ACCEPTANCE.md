@@ -19,7 +19,7 @@ Prepare:
 
 - one organiser mailbox, one invited-member mailbox and one unrelated mailbox;
 - a new Cloudflare account with Workers, D1, Zero Trust and a `workers.dev` subdomain available;
-- a disposable GitHub fork if automatic Builds are in scope;
+- a disposable GitHub fork for the required automatic release updates;
 - Git, Node.js and npm versions supported by [the installation guide](DEPLOYMENT.md); and
 - an optional test domain in the same account if custom-domain behaviour is in scope.
 
@@ -35,9 +35,9 @@ record.
    and a Linux terminal. A source-level Windows launcher test is not a Windows walkthrough.
 2. Follow [Install and deploy](DEPLOYMENT.md) from tools through the family checks,
    in order and without undocumented corrections. Use one command per step. Include GitHub
-   deployments only when testing that optional route.
-3. At step 16, run `npm run setup:check -- --before-login` before configuring Access. Require the
-   first-login schema and deployed D1 UUID checks to pass. At step 20, use the private prompt in:
+   release updates and the final workflow/build verification.
+3. At step 17, run `npm run setup:check -- --before-login` before configuring Access. Require the
+   first-login schema and deployed D1 UUID checks to pass. At step 21, use the private prompt in:
 
    ```sh
    npm run setup:access -- .private/access-setup.json
@@ -57,12 +57,15 @@ record.
    selected steps and verify that the saved files allow resumption. Interrupt a database or Access
    create once; rerunning must inspect live state and avoid duplicates.
 
-4. Exercise installation guide steps 21–29 using the three test
+4. Exercise installation guide steps 22–30 using the three test
    identities. In particular, verify that the unrelated address cannot enter and that a wishlist
    owner never receives their own item's claim or purchase state.
-5. If GitHub deployments are in scope, verify the build uses its `WISHLIST_INSTALLATION` settings without a tracked household-specific
-   change to `wrangler.jsonc`. Push one harmless documentation-only commit to the disposable fork. Confirm exactly one successful
-   Cloudflare Build and that the existing Worker remains reachable.
+5. Complete [automatic updates](AUTOMATIC_UPDATES.md). Verify the build uses its
+   `WISHLIST_INSTALLATION` settings without tracked household-specific changes to `wrangler.jsonc`.
+   Require a manual updater run, then an observed `schedule` event, to trigger a successful Cloudflare
+   build. Using disposable source/releases, exercise a new stable release and an intentional build
+   failure; confirm subsequent checks keep reporting that failure, a retry succeeds, and synthetic
+   family records remain intact. Never advance the real stable branch just to manufacture test data.
 6. Re-run `npm run setup:check` without the Access environment variables. Confirm the Wrangler, D1 and
    deployed-binding checks still pass and that the output explicitly says the deep Access checks were
    skipped.
@@ -92,6 +95,9 @@ setup:access --check makes no remote changes: pass/fail
 Interrupted setup resumes without duplicates: pass/fail
 Final acceptance checklist: pass/fail
 Cloudflare Build from disposable fork: pass/fail
+Manual updater run and matching Cloudflare build: pass/fail
+Observed scheduled updater event and matching build: pass/fail
+New release, failed build and successful retry preserve data: pass/fail
 setup:check without Access environment: pass/fail
 Observed allowance usage or warnings:
 Defects and follow-up links:

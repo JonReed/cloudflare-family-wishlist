@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
+import { version } from '../package.json';
+
 import { SiteFooter } from '../app/components/site-footer';
 
 describe('site footer', () => {
@@ -20,5 +22,6 @@ describe('site footer', () => {
       `<a href="${repository}#readme" target="_blank" rel="noreferrer">Set up your own</a>`
     );
     expect(html).not.toContain('<svg');
+    expect(html).toContain(`v${version} · Built to run on Cloudflare`);
   });
 });

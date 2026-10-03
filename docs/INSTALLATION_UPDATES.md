@@ -1,4 +1,15 @@
-# Automatic installation updates
+# Legacy installation-repository updater
+
+**New households:** use the application fork and [automatic release update guide](AUTOMATIC_UPDATES.md).
+This page documents the earlier, separate bootstrap repository; it is not a second setup choice.
+
+**Existing bootstrap installations:** keep the current Worker, database and settings. Create an
+application fork from upstream `main`, then reconnect the existing Worker's Builds to that fork
+using [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md), including changing the deploy command to
+`npm run deploy:production` and retaining `WISHLIST_INSTALLATION`. Disable the old repository's
+**Check upstream updates** workflow before enabling the new **Update Family Wishlist** workflow.
+Require the new workflow's Cloudflare build verification and a working sign-in before archiving the
+old repository. Do not sync application source into the bootstrap repository.
 
 The updater has passed live GitHub Actions tests in disposable repositories. The installation
 generator, pinned-source build, deployment guard and live-version checker are implemented. A generated

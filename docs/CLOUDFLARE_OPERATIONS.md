@@ -50,23 +50,15 @@ shared source during installation.
 
 ## Connect automatic deployments
 
-The basic guide deploys from your local checkout. GitHub deployment is optional and requires a
-repository you control. **Cloudflare Builds deploys your commits; it does not keep a fork up to date
-with upstream releases.** The separate [upstream updater](INSTALLATION_UPDATES.md) remains experimental.
+Automatic release updates are a required part of the household guide. Follow
+[Connect release updates](AUTOMATIC_UPDATES.md): the household fork checks our tested `stable`
+channel every six hours, publishes application changes to its own `main`, and verifies the resulting
+Cloudflare build. Existing installations use [the one-time repair](REPAIR_UPDATES.md).
 
-1. [Fork the project](https://github.com/JonReed/cloudflare-family-wishlist/fork) into your GitHub account.
-2. In [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages), select the
-   **existing** Worker created by the setup guide. Do not import a second Worker.
-3. Open **Settings → Builds** and connect your fork through Cloudflare's GitHub authorisation screen.
-4. Set production branch `main`, build command `npm run build`, deploy command
-   `npm run deploy:production`, and repository root `/`. Disable preview builds for this simple setup.
-5. Under **Builds → Variables and secrets**, add a **text build variable** named
-   `WISHLIST_INSTALLATION`. Copy the complete JSON from your ignored `.wishlist-installation.json`.
-   It is a build variable, not a runtime Worker binding.
-6. Under **Builds → API token**, verify the deployment token includes this account's **D1 → Edit**
-   permission as well as its Worker deployment permissions. Do not commit that token.
-7. Trigger one build and verify the existing Worker still signs in, keeps its family data and passes
-   `npm run setup:check` afterward.
+The normal settings are production branch `main`, build `npm run build`, deploy
+`npm run deploy:production`, Node.js `24`, and the saved `WISHLIST_INSTALLATION` build variable.
+Keep previews disabled and watch all paths. The build token needs D1 Edit as well as Worker
+deployment permissions. Runtime Access credentials remain in the existing Worker.
 
 Cloudflare's [Builds documentation](https://developers.cloudflare.com/workers/ci-cd/builds/) describes
 its Git integration. The connected Worker name must match `workerName` in installation settings.

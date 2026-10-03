@@ -87,7 +87,18 @@ Both SQL-export recovery and Time Travel were exercised with synthetic data on 6
 see the [release-readiness evidence](RELEASE_READINESS.md). This proves the recovery operations, not
 the completeness of any particular household's backup or its separately managed Access settings.
 
-## Upgrade an installation
+## Automatic release updates
+
+Normal household installations follow [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md). The scheduled
+fork workflow receives tested stable releases and Cloudflare runs pending migrations before deploying.
+Users installed with the earlier guide need [the one-time repair](REPAIR_UPDATES.md). D1 Time Travel
+provides the platform recovery window described above; keep periodic private exports for longer-term
+recovery. Release authors must test migrations against the previous app before promoting stable.
+
+## Manually repair or upgrade an installation
+
+Use the following procedure for a controlled operator-led upgrade or recovery. It is not a checklist
+each family must repeat for every automatic release.
 
 1. On the currently deployed revision, run `npm run setup:check` to prove the installation starts
    with no drift or previously pending migration.
