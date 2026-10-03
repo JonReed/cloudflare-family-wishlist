@@ -302,9 +302,7 @@ a reason to investigate, not a reason to create duplicates or delete resources.
 End with the site address, source version, verified checks, outstanding checks and how to invite
 family. Record the chosen update mode. For GitHub updates, record the household repository, first
 successful updater run and matching Cloudflare build. For automatic mode, also record the explicit
-`WISHLIST_AUTO_UPDATE=true` setting, the existing Worker’s cron, and presence of the encrypted
-update secret by name only. Record a real Cloudflare timed dispatch and matching automatic
-workflow run; a setup-check dispatch is not timer evidence. Mention any unobserved timed run. For terminal-only manual
+`WISHLIST_AUTO_UPDATE=true` setting; mention any unobserved scheduled run. For terminal-only manual
 mode, hand over [MANUAL_UPDATES.md](MANUAL_UPDATES.md) and confirm the owner has their checkout,
 installation settings and release notifications. Manual mode does not require an automatic update
 connection. Never report a successful Git push as a verified live deployment.

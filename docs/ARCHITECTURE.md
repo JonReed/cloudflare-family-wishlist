@@ -598,19 +598,3 @@ retaining applied SQL when the subsequent Worker deployment fails.
 
 Public fork setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md). The maintainer checkout may also
 contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context; it must remain private.
-
-### Release update trigger
-
-Manual and automatic GitHub updates use one release-only household workflow. Its updater copies
-only the gate-passed upstream `stable` snapshot; Cloudflare Builds applies migrations and deploys
-the household commit. Automatic mode uses a Cloudflare Cron Trigger on the existing Worker, not
-GitHub’s scheduled-event service. The scheduled handler dispatches the workflow on household `main`
-with an automatic input; the workflow also requires its explicit opt-in variable.
-
-The optional encrypted `WISHLIST_UPDATE_CONFIG` secret contains only the household repository and
-a fine-grained GitHub Actions read/write key scoped to that repository. Missing settings leave
-manual installations inactive. The scheduled handler has no public HTTP endpoint, reads no D1
-family data, rejects malformed settings and the reference repository, and sends credentials only
-to the fixed GitHub API origin with redirects forbidden and a bounded timeout. Logs distinguish
-accepted dispatches from completed deployments and never include keys or upstream response bodies.
-The Cloudflare build check remains the deployment-success boundary.

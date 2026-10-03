@@ -35,28 +35,27 @@ to production. If a migration is added, rerun `npm run db:migrate:local` before 
 
 ## Commands
 
-| Command                                    | Purpose                                                       |
-| ------------------------------------------ | ------------------------------------------------------------- |
-| `npm run dev`                              | Start React Router in the local Workers runtime               |
-| `npm run db:migrate:local`                 | Apply pending migrations to local D1                          |
-| `npm run access:configure-session`         | Apply and verify the setup-time 30-day Access session         |
-| `npm run access:configure-sharing -- HOST` | Create/verify one hostname's narrow public paths              |
-| `npm run setup:config`                     | Prepare a household database and ignored settings             |
-| `npm run setup:access-app`                 | Create/verify exact-email Worker protection using cf          |
-| `npm run updates:configure -- OWNER/REPO`  | Connect the existing Cloudflare timer to a household workflow |
-| `npm run setup:access`                     | Finish runtime Access settings with private token input       |
-| `npm run setup:check -- --before-login`    | Verify schema and deployed D1 before Access setup             |
-| `npm run setup:check`                      | Read-only check of a configured deployment                    |
-| `npm run scripts:check`                    | Prove setup scripts load in the supported Node runtime        |
-| `npm run format`                           | Write Prettier formatting                                     |
-| `npm run lint`                             | Generate route types and run zero-warning ESLint              |
-| `npm run typecheck`                        | Check Wrangler bindings, route types and TypeScript           |
-| `npm run test`                             | Run Vitest in the Cloudflare Workers runtime                  |
-| `npm run test:watch`                       | Run focused tests while developing                            |
-| `npm run build`                            | Produce the production Worker build                           |
-| `npm run quality`                          | Required format, lint, type, test and build gate              |
-| `npm run audit`                            | Required dependency vulnerability gate                        |
-| `npm run cf-typegen`                       | Regenerate Worker binding types after config changes          |
+| Command                                    | Purpose                                                 |
+| ------------------------------------------ | ------------------------------------------------------- |
+| `npm run dev`                              | Start React Router in the local Workers runtime         |
+| `npm run db:migrate:local`                 | Apply pending migrations to local D1                    |
+| `npm run access:configure-session`         | Apply and verify the setup-time 30-day Access session   |
+| `npm run access:configure-sharing -- HOST` | Create/verify one hostname's narrow public paths        |
+| `npm run setup:config`                     | Prepare a household database and ignored settings       |
+| `npm run setup:access-app`                 | Create/verify exact-email Worker protection using cf    |
+| `npm run setup:access`                     | Finish runtime Access settings with private token input |
+| `npm run setup:check -- --before-login`    | Verify schema and deployed D1 before Access setup       |
+| `npm run setup:check`                      | Read-only check of a configured deployment              |
+| `npm run scripts:check`                    | Prove setup scripts load in the supported Node runtime  |
+| `npm run format`                           | Write Prettier formatting                               |
+| `npm run lint`                             | Generate route types and run zero-warning ESLint        |
+| `npm run typecheck`                        | Check Wrangler bindings, route types and TypeScript     |
+| `npm run test`                             | Run Vitest in the Cloudflare Workers runtime            |
+| `npm run test:watch`                       | Run focused tests while developing                      |
+| `npm run build`                            | Produce the production Worker build                     |
+| `npm run quality`                          | Required format, lint, type, test and build gate        |
+| `npm run audit`                            | Required dependency vulnerability gate                  |
+| `npm run cf-typegen`                       | Regenerate Worker binding types after config changes    |
 
 Work on `main`. The `stable` branch is maintained by the release workflow; do not make changes directly on it. See [RELEASES.md](RELEASES.md) for the release procedure.
 

@@ -17,7 +17,7 @@ The original standard setup used manual updates. You can continue with the
 updater was available; if you enabled it, use [its migration instructions](INSTALLATION_UPDATES.md).
 
 If your GitHub copy already contains `.github/workflows/update-household.yml` with the
-`WISHLIST_AUTOMATIC_CHECK` setting and `scheduled_time` input, go straight to your chosen guide above. Otherwise, follow steps 1–4f
+`WISHLIST_AUTO_UPDATE` setting, go straight to your chosen guide above. Otherwise, follow steps 1–4f
 below to add the current update tools, then step 5 for your chosen option. These preparation steps
 apply to automatic updates and manual updates through GitHub. Manual updates from your computer
 use [their own instructions](MANUAL_UPDATES.md#manual-updates-from-your-computer).
@@ -104,7 +104,7 @@ up to date**, your folder already contains this release or newer changes; do not
 ### 4c. Confirm the release includes the update tool
 
 ```sh
-node -e "const fs=require('node:fs'); if(!fs.existsSync('scripts/update-fork.ts') || !fs.existsSync('.github/workflows/update-household.yml') || !fs.readFileSync('.github/workflows/update-household.yml','utf8').includes('WISHLIST_AUTOMATIC_CHECK')) throw new Error('This release does not yet include the update choices. Wait for v1.1.1 or later.'); console.log('Update tool is ready')"
+node -e "const fs=require('node:fs'); if(!fs.existsSync('scripts/update-fork.ts') || !fs.existsSync('.github/workflows/update-household.yml') || !fs.readFileSync('.github/workflows/update-household.yml','utf8').includes('WISHLIST_AUTO_UPDATE')) throw new Error('This release does not yet include the update choices. Wait for v1.1.1 or later.'); console.log('Update tool is ready')"
 ```
 
 **Done when:** the command prints **Update tool is ready**. If it fails, stop and check the

@@ -38,8 +38,8 @@ to add the update tool. Both that preparation and later updates use published re
 newer version with an older release.
 
 Complete [update connection steps 1–15](AUTOMATIC_UPDATES.md#1-open-your-wishlist-website-in-cloudflare), including
-the first manual run and app check. **Skip steps 16–28** (the automatic connection). Complete [step 29](AUTOMATIC_UPDATES.md#29-turn-on-failure-notifications)
-to receive failure notifications. In your repository's
+the first manual run and app check. **Skip step 16** (the automatic schedule). Complete step 17
+to receive failure notifications. Skip step 18, which checks the automatic schedule. In your repository's
 **Settings → Secrets and variables → Actions → Variables**, leave `WISHLIST_AUTO_UPDATE` absent or
 set it to `false`. The workflow must remain enabled for its manual button to work.
 
@@ -93,8 +93,7 @@ If the workflow is absent, stop and complete the one-time setup above.
 
 #### 5. Start the update
 
-Choose **Run workflow**, select branch **main**, leave **Automatic timer check** unchecked and
-**Cloudflare timer time** empty, then press the green **Run workflow** button.
+Choose **Run workflow**, select branch **main**, then press the green **Run workflow** button.
 
 **Done when:** a new run appears in the list. This installs a newer tested release or rebuilds the
 current version for a retry. It will not downgrade newer code.
@@ -116,7 +115,7 @@ Open your usual wishlist address and sign in.
 version number; compare it with the release notes. If you installed a development version newer
 than the latest release, the tool keeps it until a newer release becomes available.
 
-Manual updates do not need a Cloudflare timer key.
+GitHub's automatic schedule may be disabled after inactivity; manual runs do not require that schedule.
 
 ## Manual updates from your computer
 

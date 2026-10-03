@@ -5,8 +5,7 @@ for you. Once set up, it checks for a new release every six hours and updates th
 your family already uses.
 
 Prefer to choose when updates happen? Follow [manual updates](MANUAL_UPDATES.md). Manual GitHub
-updates use steps 1–15 below, then step 29 for notifications. Skip steps 16–28.
-Cloudflare supplies the timer; both choices use the same GitHub update workflow.
+updates use steps 1–15 below but skip step 16. Enabling Actions alone does not enable the schedule.
 
 ## Before you start
 
@@ -202,8 +201,7 @@ is missing, stop and use [the existing-installation guide](UPDATES.md).
 
 ## 13. Run the updater once
 
-On **Update Family Wishlist**, choose **Run workflow**, select **main**, leave **Automatic timer
-check** unchecked and **Cloudflare timer time** empty, then press **Run workflow**.
+On **Update Family Wishlist**, choose **Run workflow → main → Run workflow**.
 
 **Done when:** a new entry appears in the list of runs. Starting it also asks Cloudflare to republish
 the website if there is no newer release, so you can check the connection works.
@@ -244,156 +242,51 @@ true
 Save the variable. Use the **Variables** tab, not **Secrets**. This setting belongs to GitHub,
 not Cloudflare.
 
-**Done when:** GitHub shows `WISHLIST_AUTO_UPDATE` with value `true`. This allows the workflow
-to accept automatic checks. Complete the remaining steps to connect the Cloudflare timer.
+**Done when:** GitHub shows `WISHLIST_AUTO_UPDATE` with value `true`. This switches on the six-hour
+update checks. To keep updates manual, skip this step.
 
-## 17. Open GitHub's update-key page
-
-Open [Create a fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new).
-Sign in with the GitHub account that owns your household repository. A token is a permission key:
-Cloudflare uses this one to start the update workflow in your copy of the app.
-
-**Done when:** the page is headed **New fine-grained personal access token**. Do not choose a classic token.
-
-## 18. Name the key
-
-In **Token name**, paste:
-
-```text
-Family Wishlist automatic updates
-```
-
-**Done when:** that name appears in the field.
-
-## 19. Choose the expiry
-
-In **Expiration**, choose **No expiration** if your account allows it. This lets unattended updates
-continue without renewing the key. If your organisation requires an expiry, choose an allowed date
-and record it privately; repeat steps 17–25 with a replacement key before that date.
-
-**Done when:** the selected expiry matches your choice. An expired key cannot start updates.
-
-## 20. Select the repository owner
-
-In **Resource owner**, select the username or organisation shown in your household repository's
-address. For `https://github.com/yourname/cloudflare-family-wishlist`, select `yourname`.
-
-**Done when:** the owner matches your household copy.
-
-## 21. Limit the key to your household copy
-
-Under **Repository access**, select **Only select repositories**, then select your household's
-`cloudflare-family-wishlist` repository.
-
-**Done when:** only your household repository is selected. Do not select **All repositories**.
-
-## 22. Allow the key to start updates
-
-Under **Permissions**, choose **Repositories → Add permissions → Actions**. Set its **Access** to **Read and write**. GitHub includes
-**Metadata → Read-only** automatically. Leave other permissions unselected.
-
-**Done when:** Actions is **Read and write** and the selected repository is still only your copy.
-The key does not need permission to edit your app files or access your Cloudflare database.
-
-## 23. Create the key
-
-Press **Generate token**. Complete GitHub's account confirmation if asked. If an organisation must
-approve the key, wait for that approval before continuing.
-
-**Done when:** GitHub displays a key beginning with `github_pat_`.
-
-## 24. Copy the key
-
-Use GitHub's **Copy** button beside the key. Keep this page open until step 25 succeeds; GitHub
-only displays the value once. Do not paste it into chat, a document or a command argument.
-
-**Done when:** the key is on your clipboard, ready for the hidden terminal prompt.
-
-## 25. Save the key on your existing website
-
-Return to the terminal in your original project folder. Replace `YOUR-GITHUB-NAME` below with the
-owner selected in step 20. If your repository has a different name, use that name too.
-
-```sh
-npm run updates:configure -- YOUR-GITHUB-NAME/cloudflare-family-wishlist
-```
-
-When the command asks for the key, paste it and press Enter. Nothing appears while you paste;
-that is intentional. The command checks the existing Worker and database, starts a GitHub setup
-check, then saves the key as the Worker's encrypted `WISHLIST_UPDATE_CONFIG` secret. It does not
-write the key to a file. The scoped key goes only to GitHub for the check and to your existing
-Cloudflare Worker for future checks.
-
-**Done when:** the command reports **Update key saved on** followed by your existing website's
-name. Stop if it reports an error. Do not create another Worker or database.
-
-## 26. Check the key works
-
-Open the bookmarked GitHub **Update Family Wishlist** page. Open the run named
-**Automatic release check setup-check** and its **update** job.
-
-**Done when:** **Get the next tested release** and **Check the Cloudflare build** are green.
-A skipped job is not a passing check. This tests the key and update connection; it is not a timer event.
-
-## 27. Check the Cloudflare timer
-
-On your existing Worker's Cloudflare page, open **Settings → Trigger events → Cron triggers**.
-Older dashboard layouts call this section **Triggers**.
-Look for:
-
-```text
-37 */6 * * *
-```
-
-This means Cloudflare starts a release check at 00:37, 06:37, 12:37 and 18:37 UTC each day. Cloudflare
-may display the next run in your local time. The app's deploy command installs this timer; you do
-not need to create a second scheduled task on GitHub. New Cloudflare timer settings can take up to
-15 minutes to take effect.
-
-**Done when:** that timer appears on the Worker. If it is missing, stop and check step 14 deployed
-v1.1.1 or later, using the build/deploy commands in steps 4–5.
-
-## 28. Check the first timed run
-
-Return to GitHub after the next time shown in step 27. Look for **Automatic release check** followed
-by a date and time, rather than **setup-check**. Open that run and its **update** job.
-
-**Done when:** both update steps are green. This is the first complete timer check. On Cloudflare,
-**Observability → Events** should also show `automatic_update_trigger` with `result` equal to `dispatched` and the
-same timer time. If no run appears, use the troubleshooting table below. You can finish setup and
-return for this check; do not claim the timer has been verified until it has actually run.
-
-## 29. Turn on failure notifications
+## 17. Turn on failure notifications
 
 Open [GitHub notification settings](https://github.com/settings/notifications). Under **Actions**,
 enable email notifications for failed workflow runs and save your preference.
 
-**Done when:** GitHub is configured to email you when an update fails. This is useful for manual
-updates too. A failure to contact GitHub is recorded in the Cloudflare Worker's **Observability → Events**, so inspect
-those logs if an expected automatic run is missing.
+**Done when:** GitHub is configured to email you when an update fails. If you use manual updates,
+this notification step is still useful; do not enable step 16's schedule.
+
+## 18. Check the first automatic run
+
+After the next scheduled check, open your bookmarked **Update Family Wishlist** page on GitHub.
+Look for **Automatic release check**, open it, and confirm the event is **schedule**. Open its
+**update** job.
+
+The schedule is 00:37, 06:37, 12:37 and 18:37 UTC each day. GitHub may deliver a run late or
+occasionally drop one during high load; these times are not a delivery deadline.
+
+**Done when:** **Get the next tested release** and **Check the Cloudflare build** are green in
+that scheduled run. A **Manual update** run or a skipped job does not verify automatic updates.
+You can return later for this check. If no scheduled run appears by the next day, use the table below.
 
 ## If a step fails
 
 Stop at that step. Keep the existing Worker, database and project folder. Fix the cause below, then
 repeat the failed step; do not restart the installation.
 
-| What you see                                  | Next action                                                                                                                                                                                                                                                                        |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No automatic run appears after the timer time | Open the existing Worker’s **Observability → Events**. A GitHub HTTP 401/403 usually means the update key expired, lost repository access or lacks Actions read/write. Repeat steps 17–25 with the correct key. Check the GitHub opt-in variable and that the workflow is enabled. |
-| Setup check reports HTTP 422                  | The household workflow is old or does not accept the timer inputs. Follow [existing-installation setup](UPDATES.md) to install the released workflow before retrying.                                                                                                              |
-| Step 7 reports `ENOENT`                       | The saved settings file is missing or you are in the wrong folder. Return to the original setup folder; do not create a replacement database.                                                                                                                                      |
-| GitHub has no **Run workflow** button         | Check that you opened your own fork, that `main` contains the workflow, and that Actions is enabled (step 12).                                                                                                                                                                     |
-| Workflow says the Cloudflare build is missing | Check that the existing Worker is connected to this exact fork and `main` (steps 2–3), then check the watch paths (step 11).                                                                                                                                                       |
-| Cloudflare build fails                        | Open the Worker's **Deployments**, select the failed build and read its first error. Check build settings (steps 4–9), then retry step 13.                                                                                                                                         |
-| Workflow reports custom changes               | Stop. Keep those changes and use [the custom-change instructions](UPDATES.md#if-the-updater-reports-custom-changes).                                                                                                                                                               |
-| Workflow succeeds but the app fails           | Do not mark the update complete. Keep the database and follow [setup troubleshooting](DEPLOYMENT.md#when-something-fails).                                                                                                                                                         |
+| What you see                                  | Next action                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No automatic run appears                      | In your repository, check **Settings → General → Default branch** shows `main`, that `main` contains `.github/workflows/update-household.yml`, that **Actions → Update Family Wishlist** is enabled, and that step 16’s variable is exactly `true`. If these match and a full day passes with no **schedule** event, save the repository link and last manual run link for GitHub Support. Do not create another installation or change credentials. |
+| Step 7 reports `ENOENT`                       | The saved settings file is missing or you are in the wrong folder. Return to the original setup folder; do not create a replacement database.                                                                                                                                                                                                                                                                                                        |
+| GitHub has no **Run workflow** button         | Check that you opened your own fork, that `main` contains the workflow, and that Actions is enabled (step 12).                                                                                                                                                                                                                                                                                                                                       |
+| Workflow says the Cloudflare build is missing | Check that the existing Worker is connected to this exact fork and `main` (steps 2–3), then check the watch paths (step 11).                                                                                                                                                                                                                                                                                                                         |
+| Cloudflare build fails                        | Open the Worker's **Deployments**, select the failed build and read its first error. Check build settings (steps 4–9), then retry step 13.                                                                                                                                                                                                                                                                                                           |
+| Workflow reports custom changes               | Stop. Keep those changes and use [the custom-change instructions](UPDATES.md#if-the-updater-reports-custom-changes).                                                                                                                                                                                                                                                                                                                                 |
+| Workflow succeeds but the app fails           | Do not mark the update complete. Keep the database and follow [setup troubleshooting](DEPLOYMENT.md#when-something-fails).                                                                                                                                                                                                                                                                                                                           |
 
 ## What happens after setup
 
-- Cloudflare starts the workflow every six hours. The release is installed after its Cloudflare build succeeds; updates are not instant.
+- GitHub schedules a check every six hours. It can delay or drop individual scheduled runs during high load; a later check will still pick up the latest tested release.
 - Only published releases that passed our checks are installed. Everyday changes to the project's development files are not installed.
 - Even when there is no new release, the tool republishes the current version about once a month
-  to exercise the deployment connection. The automatic timer runs on Cloudflare.
+  to keep the automatic checks active on GitHub.
 - If Cloudflare fails to publish an update, later checks keep reporting that failure until it is fixed.
 - Your saved website settings stay in place. If you have changed the app's files yourself, the tool
   stops rather than overwriting those changes.
@@ -401,16 +294,9 @@ repeat the failed step; do not restart the installation.
   automatically undone; keep the database and follow the reported error rather than starting over.
 
 To retry, use **Run workflow** on the same updater. To switch to manual updates, change
-`WISHLIST_AUTO_UPDATE` to `false`, then remove the timer key from the terminal:
-
-```sh
-npm run installation:wrangler -- secret delete WISHLIST_UPDATE_CONFIG
-```
-
-The manual button still works. Let any running update finish first. To resume automatic updates,
-repeat steps 16–28. The older separate installation-repository updater is legacy and has its
+`WISHLIST_AUTO_UPDATE` to `false`; the manual button still works. This affects future scheduled runs;
+let any running update finish before starting another. Set it back to `true` to resume automatic updates. The older separate installation-repository updater is legacy and has its
 own [migration notes](INSTALLATION_UPDATES.md).
 
 Platform references: [Cloudflare Git integration](https://developers.cloudflare.com/workers/ci-cd/builds/),
-[Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/),
-[GitHub workflow dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
+[GitHub scheduled workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).

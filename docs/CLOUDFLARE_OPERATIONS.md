@@ -52,8 +52,8 @@ shared source during installation.
 
 Use [the update guide](UPDATES.md) to choose between manual and automatic updates. Both GitHub
 options use the household fork's **Update Family Wishlist** workflow and verify the resulting
-Cloudflare build. Manual users start it themselves. Automatic users connect the existing Worker’s Cloudflare timer to that same workflow with a
-repository-scoped GitHub Actions key, and opt in to checks for tested `stable` releases every six hours. Manual deployment from a computer is also documented.
+Cloudflare build. Manual users start it themselves. Automatic users opt in to checks for tested
+`stable` releases every six hours. Manual deployment from a computer is also documented.
 
 The normal settings are production branch `main`, build `npm run build`, deploy
 `npm run deploy:production`, Node.js `24`, and the saved `WISHLIST_INSTALLATION` build variable.

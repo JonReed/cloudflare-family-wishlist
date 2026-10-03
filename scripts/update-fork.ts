@@ -201,9 +201,7 @@ if (entryPoint && import.meta.url === pathToFileURL(entryPoint).href) {
     }
     const result = updateFork({
       apply: mode === '--apply',
-      forceBuild:
-        process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
-        process.env.WISHLIST_AUTOMATIC_CHECK !== 'true'
+      forceBuild: process.env.GITHUB_EVENT_NAME === 'workflow_dispatch'
     });
     console.log(JSON.stringify(result));
     if (process.env.GITHUB_OUTPUT)

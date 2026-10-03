@@ -1,17 +1,10 @@
 name: Update Family Wishlist
-run-name: ${{ inputs.automatic && format('Automatic release check {0}', inputs.scheduled_time) || 'Manual update' }}
+run-name: ${{ github.event_name == 'schedule' && 'Automatic release check' || 'Manual update' }}
 
 on:
   workflow_dispatch:
-    inputs:
-      automatic:
-        description: 'Automatic timer check (leave unchecked for a manual update)'
-        type: boolean
-        default: false
-      scheduled_time:
-        description: 'Cloudflare timer time (leave empty for a manual update)'
-        type: string
-        default: ''
+  schedule:
+    - cron: '37 */6 * * *'
 
 permissions:
   contents: write
@@ -26,7 +19,7 @@ jobs:
   update:
     if: >-
       github.repository != 'JonReed/cloudflare-family-wishlist' &&
-      (!inputs.automatic || vars.WISHLIST_AUTO_UPDATE == 'true')
+      (github.event_name == 'workflow_dispatch' || vars.WISHLIST_AUTO_UPDATE == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -39,8 +32,6 @@ jobs:
           node-version: '24'
       - name: Get the next tested release
         id: update
-        env:
-          WISHLIST_AUTOMATIC_CHECK: ${{ inputs.automatic }}
         run: node scripts/update-fork.ts --apply
       - name: Check the Cloudflare build
         if: steps.update.outputs.deployment_commit != ''
