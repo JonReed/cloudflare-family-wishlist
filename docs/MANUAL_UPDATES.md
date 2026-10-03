@@ -5,7 +5,7 @@ between updates. Publishing a release does not update a manual installation for 
 
 The original standard setup used manual updates, even when Cloudflare automatically deployed changes
 from your own repository. The separate experimental installation-repository updater was an exception.
-You can keep updating manually or [enable automatic updates](REPAIR_UPDATES.md) later.
+You can keep updating manually or [enable automatic updates](UPDATES.md) later.
 
 ## Set up release notifications once
 
@@ -28,8 +28,8 @@ Both routes update your existing Worker and database. Do not run the new-househo
 ### One-time setup
 
 If your repository does not contain `.github/workflows/update-household.yml`, follow
-[repair steps 1–4](REPAIR_UPDATES.md#1-keep-your-installation-settings) to bring in the update tools.
-That initial repair brings in current `main`; subsequent runs select tested `stable` releases.
+[setup steps 1–4](UPDATES.md#1-keep-your-installation-settings) to bring in the update tools.
+That initial setup brings in current `main`; subsequent runs select tested `stable` releases.
 
 Complete [update connection steps 1–15](AUTOMATIC_UPDATES.md#1-open-your-existing-worker), including
 the first manual run and app check. **Skip step 16** (the automatic schedule). Complete step 17
@@ -38,7 +38,7 @@ to receive failure notifications. In your repository's
 set it to `false`. The workflow must remain enabled for its manual button to work.
 
 If you installed the earlier fork workflow that has no `WISHLIST_AUTO_UPDATE` condition, first
-update that workflow through the repair guide. Setting a variable alone cannot change an old workflow.
+update that workflow through the update setup guide. Setting a variable alone cannot change an old workflow.
 Until that is done, disable the old workflow in Actions to stop its schedule.
 
 ### Each time you want to update
@@ -119,7 +119,7 @@ cd cloudflare-family-wishlist
 ```
 
 **Done when:** you are in the existing checkout, not a new empty folder. If you no longer have it,
-recover the installation settings and use the [existing-installation guide](REPAIR_UPDATES.md).
+recover the installation settings and use the [existing-installation guide](UPDATES.md).
 
 ### 2. Check for local changes
 

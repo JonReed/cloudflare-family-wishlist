@@ -18,7 +18,7 @@ Open [GitHub](https://github.com/) and select your `cloudflare-family-wishlist` 
 repository list. Keep that tab open. Its address must contain **your** username, not `JonReed`.
 Whenever this guide says “your GitHub repository”, it means that tab.
 
-Already using the app? Start with [Repair an existing installation](REPAIR_UPDATES.md).
+Already using the app? Start with [Choose your update option](UPDATES.md).
 
 These instructions describe the new fork updater. Its Git operations and failure handling have
 local integration tests. A live scheduled run through a separate household's Cloudflare account
@@ -152,7 +152,7 @@ enable that workflow if GitHub shows an **Enable workflow** button.
 
 **Done when:** **Update Family Wishlist** is listed in the Actions sidebar and has a **Run workflow**
 button. Bookmark this page: you will use it to check updates or retry a failed run. If the workflow
-is missing, stop and use [the existing-installation guide](REPAIR_UPDATES.md).
+is missing, stop and use [the existing-installation guide](UPDATES.md).
 
 ## 13. Run the updater once
 
@@ -171,7 +171,7 @@ the specific error and retry. The workflow waits for Cloudflare for up to 25 min
 ## 15. Check your family app
 
 Open your usual wishlist address, sign in and confirm your existing lists are present. The footer
-shows the installed application version. A repair from `main` may already contain changes newer
+shows the installed application version. Initial setup from `main` may already contain changes newer
 than the latest release; the updater keeps those until the release channel catches up.
 
 **Done when:** the usual app and data work.
@@ -218,7 +218,7 @@ repeat the failed step; do not restart the installation.
 | GitHub has no **Run workflow** button         | Check that you opened your own fork, that `main` contains the workflow, and that Actions is enabled (step 12).                                |
 | Workflow says the Cloudflare build is missing | Check that the existing Worker is connected to this exact fork and `main` (steps 2–3), then check the watch paths (step 11).                  |
 | Cloudflare build fails                        | Open the Worker's **Deployments**, select the failed build and read its first error. Check build settings (steps 4–9), then retry step 13.    |
-| Workflow reports custom changes               | Stop. Keep those changes and use [the custom-change instructions](REPAIR_UPDATES.md#if-the-updater-reports-custom-changes).                   |
+| Workflow reports custom changes               | Stop. Keep those changes and use [the custom-change instructions](UPDATES.md#if-the-updater-reports-custom-changes).                          |
 | Workflow succeeds but the app fails           | Do not mark the update complete. Keep the database and follow [setup troubleshooting](DEPLOYMENT.md#when-something-fails).                    |
 
 ## What happens after setup

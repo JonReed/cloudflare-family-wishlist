@@ -48,12 +48,12 @@ is `@cf/google/gemma-4-26b-a4b-it`; the application also accepts `@cf/zai-org/gl
 before changing those defaults. Keep household overrides in Worker settings rather than changing
 shared source during installation.
 
-## Connect automatic deployments
+## Choose manual or automatic updates
 
-Automatic release updates are a required part of the household guide. Follow
-[Connect release updates](AUTOMATIC_UPDATES.md): the household fork checks our tested `stable`
-channel every six hours, publishes application changes to its own `main`, and verifies the resulting
-Cloudflare build. Existing installations use [the one-time repair](REPAIR_UPDATES.md).
+Use [the update guide](UPDATES.md) to choose between manual and automatic updates. Both GitHub
+options use the household fork's **Update Family Wishlist** workflow and verify the resulting
+Cloudflare build. Manual users start it themselves. Automatic users opt in to checks for tested
+`stable` releases every six hours. Manual deployment from a computer is also documented.
 
 The normal settings are production branch `main`, build `npm run build`, deploy
 `npm run deploy:production`, Node.js `24`, and the saved `WISHLIST_INSTALLATION` build variable.

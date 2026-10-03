@@ -134,7 +134,7 @@ the completeness of any particular household's backup or its separately managed 
 
 Households that choose automatic updates follow [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md). The scheduled
 fork workflow receives tested stable releases and Cloudflare runs pending migrations before deploying.
-Users installed with the earlier guide can [enable automatic updates](REPAIR_UPDATES.md) or keep
+Users installed with the earlier guide can [enable automatic updates](UPDATES.md) or keep
 using [manual updates](MANUAL_UPDATES.md). D1 Time Travel
 provides the platform recovery window described above; keep periodic private exports for longer-term
 recovery. Release authors must test migrations against the previous app before promoting stable.

@@ -74,22 +74,22 @@ alone. It records the upstream SHA in `.wishlist-upstream.json`. Cloudflare Buil
 household commit with `npm run deploy:production` and the updater verifies Cloudflare's check result.
 
 The updater refuses downgrades, unrelated history, dirty checkouts and application customisations.
-It uses a normal push so concurrent owner commits are never force-overwritten. A repair from `main`
+It uses a normal push so concurrent owner commits are never force-overwritten. Initial setup from `main`
 can be ahead of stable: it waits for the next descendant release. A small activity commit after 28
 days without commits keeps public forks active; it also exercises the deployment connection.
 
 Follow [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md) for setup and
-[REPAIR_UPDATES.md](REPAIR_UPDATES.md) for the one-time existing-user repair. The old separate
+[UPDATES.md](UPDATES.md) for existing users choosing their update option. The old separate
 bootstrap repository has [migration instructions](INSTALLATION_UPDATES.md). Both GitHub update modes use the same
 fork workflow. [Manual updates](MANUAL_UPDATES.md) also document direct terminal deployments.
 Do not add an app deployment button or a second scheduler.
 
 Application source updates include the updater scripts, but `.github/` stays owned by the household.
 Keep the workflow/script interface backwards-compatible. A future change to workflow permissions or
-steps needs an explicit installer repair and release note; ordinary releases must not depend on it.
+steps needs an explicit update setup step and release note; ordinary releases must not depend on it.
 In particular, forks with the first schedule-only workflow need to update that workflow before the
 `WISHLIST_AUTO_UPDATE` variable can control it; disable the old workflow to stop unattended runs
-until repaired. The current workflow defaults to manual mode when the variable is absent.
+until the workflow is updated. The current workflow defaults to manual mode when the variable is absent.
 
 ### Verification status
 

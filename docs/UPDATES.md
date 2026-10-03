@@ -1,16 +1,26 @@
-# Restore automatic updates for an existing household
+# Choose how to update
 
-The earlier setup connected some households to Cloudflare Builds but did not enable automatic
-delivery of upstream releases. Other households deployed directly from a computer. The original
-standard setup therefore required manual updates. A separate experimental installation-repository
-updater existed; see [its migration notes](INSTALLATION_UPDATES.md) if you enabled that.
+Choose when new releases are installed in your existing family wishlist:
 
-**Choose what you want:** keep control with [manual updates](MANUAL_UPDATES.md), or complete this
-one-time setup to enable automatic updates. Publishing a new version alone cannot enable automatic
-updates in an existing installation. Manual users do not need to opt in.
+| Option                | What happens                                                                    | Instructions                                     |
+| --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **Manual updates**    | You start each update when you are ready.                                       | [Update manually](MANUAL_UPDATES.md)             |
+| **Automatic updates** | After you opt in, your installation checks for tested releases every six hours. | [Set up automatic updates](AUTOMATIC_UPDATES.md) |
 
-Keep your current Worker, D1 database, Access application, address and runtime secrets. This repair
-connects future releases to those existing resources. It does not reinstall the household.
+Both options keep your current Worker, database, sign-in settings and website address. You can
+change your choice later. Automatic updates are off until you explicitly enable them.
+
+## Already using the app?
+
+The original standard setup used manual updates. You can continue with the
+[manual update guide](MANUAL_UPDATES.md), or choose automatic updates. A separate experimental
+updater was available; if you enabled it, use [its migration instructions](INSTALLATION_UPDATES.md).
+
+If your GitHub copy already contains `.github/workflows/update-household.yml` with the
+`WISHLIST_AUTO_UPDATE` setting, go straight to your chosen guide above. Otherwise, follow steps 1–4
+below to add the current update tools, then step 5 for your chosen option. These preparation steps
+apply to automatic updates and manual updates through GitHub. Manual updates from your computer
+use [their own instructions](MANUAL_UPDATES.md#manual-updates-from-your-computer).
 
 ## 1. Keep your installation settings
 
@@ -58,20 +68,24 @@ in your GitHub account, copying only `main`.
 `app-version.json` and installer scripts, it is the older bootstrap installation; follow its
 [migration notes](INSTALLATION_UPDATES.md) instead of using GitHub Sync fork.
 
-## 4. Bring in the repair
+## 4. Add the current update tools
 
 For an existing application fork, select **Sync fork → Update branch** on its GitHub home page.
-A newly created fork already contains the repair. Do not choose **Discard commits**. If GitHub reports
+A newly created fork already contains these tools. Do not choose **Discard commits**. If GitHub reports
 conflicts, preserve your changes and resolve them with an assistant before proceeding.
 
 **Done when:** your repository contains `.github/workflows/update-household.yml` and
 `scripts/update-fork.ts`. Connecting Builds alone does not enable upstream updates.
 
-## 5. Connect and verify automatic updates
+## 5. Set up your chosen option
 
-Complete [automatic update setup](AUTOMATIC_UPDATES.md) using the **existing** Worker and the saved
-installation settings. Do not stop after enabling Actions: run it once and require the Cloudflare
-build verification to pass.
+- **Automatic:** follow [automatic update setup](AUTOMATIC_UPDATES.md#1-open-your-existing-worker),
+  including the step that enables the schedule.
+- **Manual through GitHub:** follow [manual update setup](MANUAL_UPDATES.md#one-time-setup),
+  leaving the automatic schedule off.
+
+Use the **existing** Worker and saved installation settings. Run the workflow once and wait for its
+Cloudflare build check to pass.
 
 **Done when:** the update workflow is green and you can still sign in and see your household's lists.
 
@@ -86,12 +100,11 @@ future releases can be applied without manual merges.
 
 ## Message for existing users
 
-> We found a gap in the original setup: Cloudflare could deploy your repository, but it was not
-> automatically receiving our new releases. We should have made that limitation clear. You can
-> now choose [automatic updates](REPAIR_UPDATES.md) or follow the [manual update instructions](MANUAL_UPDATES.md)
-> for each release. Both keep your existing site and family data. Automatic updates need a one-time
-> setup; they are not switched on just because we publish a release.
+> You can choose how your Family Wishlist receives new versions: update manually when you are
+> ready, or opt in to automatic updates. The original standard setup used manual updates. Follow
+> [the update guide](UPDATES.md) to choose your option. Both keep your existing site and family data.
+> Automatic updates need a one-time setup; publishing a release does not enable them for you.
 
-Maintainer: link this page in release notes and send the notice through your existing support
-channel. Users on old versions cannot see a new in-app notice until their app has been upgraded.
-Do not claim every existing household is repaired merely because the upstream workflow passed.
+Maintainer: link this guide from release notes. Users on older versions cannot see a new in-app
+notice until their app has been upgraded. Describe automatic updates as enabled only after the
+household has chosen that option and verified its update connection.

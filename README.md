@@ -64,7 +64,7 @@ Choose how to receive releases:
 
 The original standard setup required manual updates: Cloudflare could deploy your repository, but
 publishing an upstream release did not update it. Existing users can keep updating manually or
-[enable automatic updates](docs/REPAIR_UPDATES.md). A separate experimental updater was available
+[enable automatic updates](docs/UPDATES.md). A separate experimental updater was available
 for some older installations. The new fork updater still requires live scheduled end-to-end verification.
 
 ## Turn a shopping link into a useful wish
@@ -197,7 +197,7 @@ Cloudflare configuration.
 
 ## Deployment model
 
-`main` is the development channel and continues to power the reference installation. `stable` is the recommended release channel: publishing a stable GitHub release runs both repository gates and advances it to the tested tagged commit. The first successful release creates the branch. The household updater follows `stable` and Cloudflare deploys the resulting commits. See [Release channels](docs/RELEASES.md) for promotion and verification status. Existing users need the [one-time repair](docs/REPAIR_UPDATES.md).
+`main` is the development channel and continues to power the reference installation. `stable` is the recommended release channel: publishing a stable GitHub release runs both repository gates and advances it to the tested tagged commit. The first successful release creates the branch. The household updater follows `stable` and Cloudflare deploys the resulting commits. See [Release channels](docs/RELEASES.md) for promotion and verification status. Existing users can choose their [update option](docs/UPDATES.md).
 
 A normal family installation runs with a free Cloudflare account and the included `workers.dev`
 address; a paid plan and custom domain are optional. The [installation guide](docs/DEPLOYMENT.md) starts before account setup. The

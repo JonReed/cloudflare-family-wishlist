@@ -392,7 +392,7 @@ npm run installation:wrangler -- d1 migrations apply DB --remote
 
 Choose automatic or manual release updates in step 31. A custom domain remains optional.
 Already installed using the old guide? Keep [updating manually](MANUAL_UPDATES.md), or
-[enable automatic updates](REPAIR_UPDATES.md).
+[enable automatic updates](UPDATES.md).
 
 - [Back up and update your installation](BACKUP_RESTORE_UPGRADE.md).
 - [Automatic updates](AUTOMATIC_UPDATES.md), [manual updates](MANUAL_UPDATES.md) and [optional custom domains](CLOUDFLARE_OPERATIONS.md#add-a-custom-domain-optional).
