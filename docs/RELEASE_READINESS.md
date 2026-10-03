@@ -132,11 +132,30 @@ candidate `0d79dd413e63a1b808c06282541f4b7a5cf8d789`. The household started at `
 | Scheduled delivery              | Pending: the test workflow is enabled with the opt-in variable set, but no timer-triggered run has yet been observed. Manual runs are not scheduler evidence.                                                                                                                                 |
 
 The fixture uses the candidate's updater and build-verification scripts unchanged, with a wrapper
-selecting a disposable upstream repository. Its timer is accelerated to five minutes; the shipped
-workflow checks every six hours. These differences allow controlled releases without publishing an
+selecting a disposable upstream repository. That initial fixture used a five-minute GitHub schedule; it did not produce an observed scheduled
+run and has since been replaced by the Cloudflare timer described below. These differences allow controlled releases without publishing an
 untested application release. The tests use synthetic data and the application's normal fail-closed
 response without Access configuration; they do not repeat authenticated family workflows or new-account
 onboarding. Production Cloudflare resources were not changed by this test.
 
-The disposable resources remain in place for the pending timer check. v1.1.1 remains a draft until
-scheduled delivery has been observed and the final repository gates pass.
+### Cloudflare timer replacement — v1.1.1 candidate
+
+Candidate `6b9554f9ee3131c9f955fbe926ba8eac58882e5f` replaces GitHub scheduling with a
+Cloudflare Cron Trigger on the existing Worker. It starts the same release-only workflow, using a
+fine-grained key limited to GitHub Actions on the household repository. Manual installations have
+no update key and make no outbound timer request. The production interval is six hours; the new
+fixture interval is one minute.
+
+The replacement passed 580 application tests, eight Git integration tests, formatting, linting,
+type checks, script imports and the production build; dependency audit found no vulnerabilities.
+Reference CI `37133223644` and reference Cloudflare build `4400d6c5-9976-48af-a97b-2564c6c19e90`
+passed. These checks do not prove timed delivery.
+
+The disposable household's manual bootstrap run `37133258320` passed. Cloudflare build
+`97f2cf2d-f947-4147-8406-a5328240606c` deployed the replacement handler; version
+`006ecd4c-4508-4b0b-a268-b41dbf47d09d` receives all traffic. Synthetic data and all 13 migrations
+remain unchanged, with SQLite quick check `ok` and no foreign-key violations.
+
+The repository-only test key and a real Cloudflare timed dispatch are still pending. The disposable
+resources remain in place for that check. v1.1.1 remains a draft until timed release delivery has
+been observed and the final repository gates pass.
