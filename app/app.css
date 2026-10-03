@@ -2077,6 +2077,83 @@ button:disabled {
   margin-top: 2rem;
 }
 
+.page-contents {
+  display: grid;
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem 2rem;
+  align-items: center;
+  border-block: 3px double rgb(48 51 41 / 0.28);
+  padding-block: 0.65rem;
+}
+
+.page-contents > p {
+  margin: 0;
+  color: var(--rust);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.page-contents ol {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.5rem;
+  list-style: none;
+}
+
+.page-contents a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration-color: var(--kraft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3rem;
+}
+
+.page-contents a:hover {
+  color: var(--leaf-dark);
+  text-decoration-color: var(--rust);
+}
+
+.page-contents a:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.page-contents a span {
+  color: var(--rust);
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 48rem) {
+  .page-contents {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .page-contents ol {
+    gap: 0 1.15rem;
+  }
+}
+
+.family-sheet :is(#family-members-title, #add-family-member-title, #family-sharing) {
+  scroll-margin-top: 1.5rem;
+}
+
 .family-admin-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 23rem);

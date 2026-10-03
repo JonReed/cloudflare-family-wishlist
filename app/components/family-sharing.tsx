@@ -80,6 +80,7 @@ export function FamilySharing({
       className="profile-shares family-sharing"
       id="family-sharing"
       aria-labelledby="family-sharing-title"
+      tabIndex={-1}
     >
       <div className="profile-shares-heading">
         <p className="profile-kicker">Gift ideas for relatives and friends</p>

@@ -60,7 +60,8 @@ plan, so check that you are removing the right item.
 
 ## Share ideas outside the family
 
-Open **Manage** and find **Sharing links**. Tick one or more people's lists, give the link a
+Open **Manage** and choose **Sharing links** from the **Go straight to** menu below the heading.
+Tick one or more people's lists, give the link a
 private name you will recognise, then choose **Create sharing link** and copy the address.
 **Share this list** on a wishlist takes you to the same form with that list already ticked.
 Anyone in the family can create and manage sharing links.

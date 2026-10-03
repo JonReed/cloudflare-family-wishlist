@@ -3,6 +3,7 @@ import { data, Form, redirect } from 'react-router';
 import { AddFamilyMemberForm } from '../components/add-family-member-form';
 import { FamilyMemberRemoval } from '../components/family-member-removal';
 import { FamilySharing } from '../components/family-sharing';
+import { PageContents } from '../components/page-contents';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import {
@@ -398,6 +399,19 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
             </p>
           </div>
 
+          <PageContents
+            label="Manage sections"
+            links={[
+              ...(loaderData.member.role === 'admin'
+                ? [
+                    { href: '#family-members-title', label: 'Family members' },
+                    { href: '#add-family-member-title', label: 'Add someone' }
+                  ]
+                : []),
+              { href: '#family-sharing', label: 'Sharing links' }
+            ]}
+          />
+
           {loaderData.repaired ? (
             <div role="status" className="profile-saved family-page-message">
               Their access is ready again. They can sign in from the wishlist homepage.
@@ -414,7 +428,9 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
             <div className="family-admin-grid">
               <section aria-labelledby="family-members-title">
                 <div className="family-section-heading">
-                  <h2 id="family-members-title">Family members</h2>
+                  <h2 id="family-members-title" tabIndex={-1}>
+                    Family members
+                  </h2>
                   <p>
                     {joinedCount} joined{waitingCount ? ` · ${waitingCount} waiting` : ''}
                   </p>
@@ -433,7 +449,9 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
 
               <aside className="family-add-panel" aria-labelledby="add-family-member-title">
                 <span aria-hidden="true" className="add-panel-tape" />
-                <h2 id="add-family-member-title">Add someone</h2>
+                <h2 id="add-family-member-title" tabIndex={-1}>
+                  Add someone
+                </h2>
                 <p>
                   Their wishlist will be ready straight away, even before they sign in. Use the
                   exact email address they’ll sign in with. Sharing the homepage link and sign-in

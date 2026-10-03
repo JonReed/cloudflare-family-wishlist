@@ -42,6 +42,7 @@
     "../app/components/family-member-removal.tsx",
     "../app/components/in-place-action-form.tsx",
     "../app/components/member-avatar.tsx",
+    "../app/components/page-contents.tsx",
     "../app/components/product-image-field.tsx",
     "../app/components/product-diagnostics.tsx",
     "../app/components/site-header.tsx",

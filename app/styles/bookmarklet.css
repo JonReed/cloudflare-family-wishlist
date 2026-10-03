@@ -62,68 +62,6 @@
   line-height: 1.75;
 }
 
-.device-contents {
-  display: grid;
-  margin-top: clamp(2rem, 5vw, 3.5rem);
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.75rem 2rem;
-  align-items: center;
-  border-block: 3px double rgb(48 51 41 / 0.28);
-  padding-block: 0.65rem;
-}
-
-.device-contents > p {
-  margin: 0;
-  color: var(--rust);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.device-contents ol {
-  display: flex;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  flex-wrap: wrap;
-  gap: 0.15rem 1.5rem;
-  list-style: none;
-}
-
-.device-contents a {
-  display: inline-flex;
-  min-height: 2.75rem;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
-  text-decoration-color: var(--kraft);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.3rem;
-}
-
-.device-contents a:hover {
-  color: var(--leaf-dark);
-  text-decoration-color: var(--rust);
-}
-
-.device-contents a:focus-visible {
-  outline: 2px solid var(--rust);
-  outline-offset: 3px;
-}
-
-.device-contents a span {
-  color: var(--rust);
-  font-family: var(--font-sans);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
 .android-share-setup,
 .shortcut-setup,
 .browser-button-setup {
@@ -643,15 +581,6 @@
 
   .bookmarklet-steps {
     grid-template-columns: 1fr;
-  }
-
-  .device-contents {
-    grid-template-columns: 1fr;
-    gap: 0.15rem;
-  }
-
-  .device-contents ol {
-    gap: 0 1.15rem;
   }
 
   .shortcut-steps,

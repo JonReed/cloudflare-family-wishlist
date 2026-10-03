@@ -61,7 +61,10 @@ search field, exact choice and visible result. Every route must explicitly end a
 not imply that a wish is saved automatically.
 
 Sharing lives on **Manage** for every member. Household administration on that page is visible
-only to the organiser. Adding
+only to the organiser. Below its heading, reuse the ruled **Go straight to** subheader menu from
+**Add from anywhere**. Show **Sharing links** for everyone and **Family members** and **Add someone**
+for the organiser, so sharing is visible before scrolling. These are ordinary section jump links
+that work without JavaScript. Adding
 someone creates their wishlist immediately; their exact email remains required. Show **Not signed
 in yet** until their first authenticated visit, keep the optional **Copy sign-in details** control available, and allow
 the organiser to remove access even before that visit. After a successful addition, clear the add

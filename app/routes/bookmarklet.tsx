@@ -1,4 +1,5 @@
 import { GiftIcon } from '../components/brand';
+import { PageContents } from '../components/page-contents';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { createAddPageHref, createBookmarkletHref } from '../lib/bookmarklet';
@@ -54,29 +55,14 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
 
-          <nav className="device-contents" aria-label="Go straight to your device instructions">
-            <p>Go straight to</p>
-            <ol>
-              <li>
-                <a href="#android-instructions">
-                  <span aria-hidden="true">01</span>
-                  Android phone or tablet
-                </a>
-              </li>
-              <li>
-                <a href="#apple-instructions">
-                  <span aria-hidden="true">02</span>
-                  iPhone or iPad
-                </a>
-              </li>
-              <li>
-                <a href="#desktop-instructions">
-                  <span aria-hidden="true">03</span>
-                  Laptop or desktop
-                </a>
-              </li>
-            </ol>
-          </nav>
+          <PageContents
+            label="Go straight to your device instructions"
+            links={[
+              { href: '#android-instructions', label: 'Android phone or tablet' },
+              { href: '#apple-instructions', label: 'iPhone or iPad' },
+              { href: '#desktop-instructions', label: 'Laptop or desktop' }
+            ]}
+          />
 
           <section
             id="android-instructions"
