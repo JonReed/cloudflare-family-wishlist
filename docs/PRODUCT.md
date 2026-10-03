@@ -27,10 +27,15 @@ The wishlist is immediately available for family members to add wishes, even bef
 in. First sign-in reuses that member and wishlist by email and preserves all existing wishes. The
 initial organiser is the only person whose record is created at first sign-in.
 
-The application records who has not signed in yet and prepares a friendly invitation for the organiser
-to share through email, WhatsApp or any preferred private channel. Cloudflare handles sign-in, so
+The application records who has not signed in yet and offers optional sign-in details for the organiser
+to share through email, WhatsApp or any preferred private channel. The message contains the ordinary
+wishlist homepage and the email to use; access is already ready, with nothing to accept. Cloudflare handles sign-in, so
 the family gets one-time PIN access without an application password or reset flow. Removing access
-preserves the person's wishlist and history in D1 for the family.
+preserves the person's wishlist and history in D1, but hides their list from the family and from
+every viewing link as soon as they are disabled. Their shared pictures also become unavailable.
+After removal finishes, the organiser can add the same email again to restore access and visibility
+to that existing wishlist. A failed re-invitation leaves their access and list disabled until it
+succeeds or is repaired.
 Cloudflare Access also owns sign-out: ending a session signs that email out on all of their devices,
 so Profile labels the account-wide effect before linking to the Access logout endpoint. Other family
 members use separate identities and remain signed in.
@@ -49,7 +54,8 @@ members use separate identities and remain signed in.
 1. The organiser enters a name and exact sign-in email on **Manage**.
 2. The Worker adds an exact-email Allow policy in Cloudflare Access, then atomically activates the
    invitation and creates the member and wishlist. The family can start adding wishes immediately.
-3. The organiser copies and privately shares the application link.
+3. The organiser may copy and privately share the homepage link and sign-in details. This is optional;
+   the person can already sign in using their admitted email.
 4. The person requests and enters Cloudflare's one-time PIN.
 5. The Worker validates the signed Access assertion.
 6. The application resolves their existing member and wishlist by email and records their first sign-in.
@@ -142,7 +148,8 @@ family admission controls on the same page remain organiser-only.
 1. One deployment represents one trusted family group.
 2. One authenticated email maps to one member.
 3. One member owns exactly one wishlist.
-4. Every admitted member can view and edit every wishlist.
+4. Every admitted member can view and edit every enabled family member's wishlist. Disabled owners'
+   retained lists cannot be viewed, edited or newly shared, including through existing viewing links.
 5. A list owner never receives claim or purchase information for their own items.
 6. An item can have at most one active claim.
 7. Core wishlist and claim actions work without browser JavaScript.

@@ -18,6 +18,16 @@ const settings = {
   databaseName: 'test-db'
 };
 const expected = { commit, repository: 'JonReed/cloudflare-family-wishlist', settings };
+const builtConfig = JSON.stringify(
+  installationWranglerConfig(
+    JSON.stringify({
+      ai: { binding: 'AI' },
+      browser: { binding: 'BROWSER' },
+      d1_databases: [{ binding: 'DB' }]
+    }),
+    settings
+  )
+);
 const receipt = {
   protocol: 1,
   repository: expected.repository,
@@ -62,18 +72,8 @@ describe('installation delivery boundaries', () => {
     expect(() => validateBuildReceipt(value, expected)).toThrow('matching successful build');
   });
   it('tags the deployed Worker with the upstream SHA after migrations', () => {
-    const config = JSON.stringify(
-      installationWranglerConfig(
-        JSON.stringify({
-          ai: { binding: 'AI' },
-          browser: { binding: 'BROWSER' },
-          d1_databases: [{ binding: 'DB' }]
-        }),
-        settings
-      )
-    );
     const runner = vi.fn();
-    deployProduction(settings, config, 'source.json', 'built.json', runner, commit);
+    deployProduction(settings, builtConfig, 'source.json', 'built.json', runner, commit);
     expect(runner.mock.calls[0][0]).toContain('migrations');
     expect(runner.mock.calls[1][0]).toEqual([
       'deploy',
@@ -85,13 +85,36 @@ describe('installation delivery boundaries', () => {
     ]);
     runner.mockClear();
     expect(() =>
-      deployProduction(settings, config, 'source.json', 'built.json', runner, 'main')
+      deployProduction(settings, builtConfig, 'source.json', 'built.json', runner, 'main')
     ).toThrow('full SHA');
     expect(runner).not.toHaveBeenCalled();
     expect(() =>
-      deployProduction(settings, config, 'source.json', 'built.json', runner, commit + '\n')
+      deployProduction(settings, builtConfig, 'source.json', 'built.json', runner, commit + '\n')
     ).toThrow('full SHA');
     expect(runner).not.toHaveBeenCalled();
+  });
+  it('stops before updating the Worker when applying pending migrations fails', () => {
+    const runner = vi.fn(() => {
+      throw new Error('Migration failed');
+    });
+    expect(() =>
+      deployProduction(settings, builtConfig, 'source.json', 'built.json', runner)
+    ).toThrow('Migration failed');
+    expect(runner.mock.calls).toEqual([
+      [['d1', 'migrations', 'apply', 'DB', '--remote', '--config', 'source.json']]
+    ]);
+  });
+  it('does not undo successful migrations when the Worker deployment fails', () => {
+    const runner = vi.fn((args: string[]) => {
+      if (args[0] === 'deploy') throw new Error('Worker deployment failed');
+    });
+    expect(() =>
+      deployProduction(settings, builtConfig, 'source.json', 'built.json', runner)
+    ).toThrow('Worker deployment failed');
+    expect(runner.mock.calls).toEqual([
+      [['d1', 'migrations', 'apply', 'DB', '--remote', '--config', 'source.json']],
+      [['deploy', '--config', 'built.json', '--keep-vars']]
+    ]);
   });
 });
 

@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  FamilyMemberInputError,
   activateFamilyInvitation,
   beginFamilyInvitation,
   cancelPendingFamilyInvitation,
@@ -15,9 +16,24 @@ import { ensureMemberForEmail } from '../app/lib/db/members';
 import {
   createWishlistItem,
   claimWishlistItem,
-  listFamilyWishlists
+  listFamilyWishlists,
+  setOwnClaimState
 } from '../app/lib/db/wishlists';
 import { inviteAndProvisionMember } from './family-fixtures';
+
+async function removedMemberFixture() {
+  const admin = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
+  const member = await inviteAndProvisionMember(env.DB, admin, 'returning@example.com');
+  const original = await env.DB.prepare(
+    'SELECT id, access_policy_id FROM family_invitations WHERE email = ?1'
+  )
+    .bind(member.email)
+    .first<{ id: string; access_policy_id: string }>();
+  if (!original) throw new Error('Expected original invitation');
+  await prepareFamilyMemberRemoval(env.DB, admin.id, member.id);
+  await completeFamilyMemberRemoval(env.DB, member.id);
+  return { admin, member, original };
+}
 
 describe('family member administration', () => {
   beforeEach(async () => {
@@ -315,6 +331,232 @@ describe('family member administration', () => {
     await expect(listFamilyPeople(env.DB)).resolves.not.toContainEqual(
       expect.objectContaining({ id: member.id })
     );
+  });
+
+  it.each([false, true])(
+    're-adds a removed member while preserving their wishlist and sign-in history (signed in: %s)',
+    async (signedIn) => {
+      const admin = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
+      const original = await beginFamilyInvitation(env.DB, admin.id, {
+        email: 'returning@example.com',
+        displayName: 'Returning relative'
+      });
+      await activateFamilyInvitation(env.DB, original.id, crypto.randomUUID());
+      if (signedIn) await ensureMemberForEmail(env.DB, original.email);
+      const before = await env.DB.prepare(
+        `SELECT members.id, first_signed_in_at, wishlists.id AS wishlist_id
+         FROM members INNER JOIN wishlists ON wishlists.owner_member_id = members.id
+         WHERE members.email = ?1`
+      )
+        .bind(original.email)
+        .first<{ id: string; first_signed_in_at: string | null; wishlist_id: string }>();
+      if (!before) throw new Error('Expected invited member and wishlist');
+      await createWishlistItem(env.DB, admin.id, before.wishlist_id, {
+        title: 'A warm scarf',
+        notes: '',
+        productUrl: '',
+        imageUrl: '',
+        price: '',
+        priority: 'high'
+      });
+      const item = (await listFamilyWishlists(env.DB, admin.id)).find(
+        (list) => list.id === before.wishlist_id
+      )?.items[0];
+      if (!item) throw new Error('Expected wish');
+      await claimWishlistItem(env.DB, admin.id, item.id);
+      await setOwnClaimState(env.DB, admin.id, item.id, 'purchased');
+      const claimsBefore = await env.DB.prepare('SELECT * FROM claims').all();
+
+      await prepareFamilyMemberRemoval(env.DB, admin.id, before.id);
+      await completeFamilyMemberRemoval(env.DB, before.id);
+      const invitation = await beginFamilyInvitation(env.DB, admin.id, {
+        email: ' RETURNING@example.com ',
+        displayName: 'Welcome back'
+      });
+      expect(invitation.id).not.toBe(original.id);
+      await expect(ensureMemberForEmail(env.DB, original.email)).rejects.toThrow(
+        'no longer has access'
+      );
+      await activateFamilyInvitation(env.DB, invitation.id, crypto.randomUUID());
+
+      expect(
+        await env.DB.prepare('SELECT first_signed_in_at, disabled_at FROM members WHERE id = ?1')
+          .bind(before.id)
+          .first()
+      ).toEqual({ first_signed_in_at: before.first_signed_in_at, disabled_at: null });
+      expect(await listFamilyPeople(env.DB)).toContainEqual(
+        expect.objectContaining({
+          status: signedIn ? 'joined' : 'waiting',
+          email: original.email,
+          displayName: 'Welcome back'
+        })
+      );
+      const restored = await ensureMemberForEmail(env.DB, original.email);
+      expect(restored).toMatchObject({
+        id: before.id,
+        wishlistId: before.wishlist_id,
+        displayName: 'Welcome back',
+        role: 'member'
+      });
+      const ownList = (await listFamilyWishlists(env.DB, restored.id)).find(
+        (list) => list.id === before.wishlist_id
+      );
+      expect(ownList?.items[0]).toMatchObject({ id: item.id, claimVisibility: 'hidden' });
+      expect(ownList?.items[0]).not.toHaveProperty('claim');
+      expect((await env.DB.prepare('SELECT * FROM claims').all()).results).toEqual(
+        claimsBefore.results
+      );
+      expect(await env.DB.prepare('SELECT count(*) AS total FROM members').first()).toEqual({
+        total: 2
+      });
+      expect(await env.DB.prepare('SELECT count(*) AS total FROM wishlists').first()).toEqual({
+        total: 2
+      });
+    }
+  );
+
+  it('requires removal cleanup to finish before re-adding a member', async () => {
+    const admin = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
+    const member = await inviteAndProvisionMember(env.DB, admin, 'returning@example.com');
+    await prepareFamilyMemberRemoval(env.DB, admin.id, member.id);
+
+    await expect(
+      beginFamilyInvitation(env.DB, admin.id, { email: member.email, displayName: 'Welcome back' })
+    ).rejects.toThrow('already part');
+    await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+      'no longer has access'
+    );
+    expect(await listFamilyPeople(env.DB)).toContainEqual(
+      expect.objectContaining({ status: 'removing', id: member.id })
+    );
+  });
+
+  it('does not restore a removed member by repeating their old active invitation', async () => {
+    const admin = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
+    const member = await inviteAndProvisionMember(env.DB, admin, 'returning@example.com');
+    const invitation = await env.DB.prepare(
+      'SELECT id, access_policy_id FROM family_invitations WHERE email = ?1'
+    )
+      .bind(member.email)
+      .first<{ id: string; access_policy_id: string }>();
+    if (!invitation) throw new Error('Expected invitation');
+    // Removal can be interrupted between disabling the member and updating the invitation.
+    await env.DB.prepare("UPDATE members SET disabled_at = '2026-10-03' WHERE id = ?1")
+      .bind(member.id)
+      .run();
+    await activateFamilyInvitation(env.DB, invitation.id, invitation.access_policy_id);
+    await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+      'no longer has access'
+    );
+  });
+
+  it('accepts only one concurrent re-invitation and rejects stale activation', async () => {
+    const { admin, member, original } = await removedMemberFixture();
+    const outcomes = await Promise.allSettled(
+      Array.from({ length: 4 }, () =>
+        beginFamilyInvitation(env.DB, admin.id, {
+          email: 'RETURNING@example.com',
+          displayName: 'Welcome back'
+        })
+      )
+    );
+    const prepared = outcomes.filter((outcome) => outcome.status === 'fulfilled');
+    expect(prepared).toHaveLength(1);
+    const rejected = outcomes.filter((outcome) => outcome.status === 'rejected');
+    expect(rejected).toHaveLength(3);
+    for (const outcome of rejected) expect(outcome.reason).toBeInstanceOf(FamilyMemberInputError);
+    const invitation = prepared[0]?.value;
+    if (!invitation) throw new Error('Expected one prepared invitation');
+    expect(invitation.id).not.toBe(original.id);
+    await expect(
+      activateFamilyInvitation(env.DB, original.id, original.access_policy_id)
+    ).rejects.toThrow('could not be completed');
+    await expect(completeFamilyMemberRemoval(env.DB, member.id)).rejects.toThrow('needs attention');
+    await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+      'no longer has access'
+    );
+    expect(
+      await env.DB.prepare('SELECT id, status FROM family_invitations WHERE email = ?1')
+        .bind(member.email)
+        .first()
+    ).toEqual({ id: invitation.id, status: 'pending' });
+    await activateFamilyInvitation(env.DB, invitation.id, crypto.randomUUID());
+    expect(await ensureMemberForEmail(env.DB, member.email)).toMatchObject({
+      id: member.id,
+      wishlistId: member.wishlistId
+    });
+  });
+
+  it('keeps interrupted re-invitations disabled, visible and repairable', async () => {
+    const { admin, member } = await removedMemberFixture();
+    const invitation = await beginFamilyInvitation(env.DB, admin.id, {
+      email: member.email,
+      displayName: 'Welcome back'
+    });
+    expect(await listFamilyPeople(env.DB)).toContainEqual(
+      expect.objectContaining({ status: 'attention', id: invitation.id })
+    );
+    const policyId = crypto.randomUUID();
+    await markFamilyInvitationForCleanup(env.DB, invitation.id, policyId);
+    await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+      'no longer has access'
+    );
+    const repair = await getFamilyInvitationForRepair(env.DB, admin.id, invitation.id);
+    expect(repair.accessPolicyId).toBe(policyId);
+    expect(await listFamilyPeople(env.DB)).toContainEqual(
+      expect.objectContaining({ status: 'attention', id: invitation.id })
+    );
+    await expect(getFamilyInvitationForRepair(env.DB, member.id, invitation.id)).rejects.toThrow(
+      'family organiser'
+    );
+    await activateFamilyInvitation(env.DB, repair.id, policyId);
+    expect(await ensureMemberForEmail(env.DB, member.email)).toMatchObject({ id: member.id });
+  });
+
+  it('allows retrying a cancelled re-invitation without enabling the retained member', async () => {
+    const { admin, member } = await removedMemberFixture();
+    const input = { email: member.email, displayName: 'Welcome back' };
+    const invitation = await beginFamilyInvitation(env.DB, admin.id, input);
+    await cancelPendingFamilyInvitation(env.DB, invitation.id);
+    await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+      'no longer has access'
+    );
+    const retried = await beginFamilyInvitation(env.DB, admin.id, input);
+    await activateFamilyInvitation(env.DB, retried.id, crypto.randomUUID());
+    expect(await ensureMemberForEmail(env.DB, member.email)).toMatchObject({
+      id: member.id,
+      wishlistId: member.wishlistId
+    });
+  });
+
+  it('rolls back restored access when later wishlist provisioning fails', async () => {
+    const { admin, member } = await removedMemberFixture();
+    const invitation = await beginFamilyInvitation(env.DB, admin.id, {
+      email: member.email,
+      displayName: 'Welcome back'
+    });
+    await env.DB.prepare(
+      "CREATE TRIGGER fail_returning_wishlist BEFORE INSERT ON wishlists BEGIN SELECT RAISE(ABORT, 'test failure'); END"
+    ).run();
+    try {
+      await expect(
+        activateFamilyInvitation(env.DB, invitation.id, crypto.randomUUID())
+      ).rejects.toThrow();
+      expect(
+        await env.DB.prepare(
+          'SELECT status, access_policy_id FROM family_invitations WHERE id = ?1'
+        )
+          .bind(invitation.id)
+          .first()
+      ).toEqual({ status: 'pending', access_policy_id: null });
+      await expect(ensureMemberForEmail(env.DB, member.email)).rejects.toThrow(
+        'no longer has access'
+      );
+    } finally {
+      await env.DB.prepare('DROP TRIGGER fail_returning_wishlist').run();
+    }
+    await activateFamilyInvitation(env.DB, invitation.id, crypto.randomUUID());
+    expect(await ensureMemberForEmail(env.DB, member.email)).toMatchObject({ id: member.id });
   });
 
   it('backfills completed legacy invitations without changing existing member or wishlist IDs', async () => {

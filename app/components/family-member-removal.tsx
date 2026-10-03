@@ -13,7 +13,8 @@ export function FamilyMemberRemoval({
       <div className="family-remove-access-body">
         <p>
           <strong>{displayName}</strong> will no longer be able to sign in. Their wishlist and
-          wishes will stay here. Everyone will be signed out so the change takes effect.
+          wishes will be kept, but hidden from everyone until you add them again. Everyone will be
+          signed out so the change takes effect.
         </p>
         <Form method="post">
           <input type="hidden" name="intent" value="remove-member" />

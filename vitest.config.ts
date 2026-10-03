@@ -14,6 +14,8 @@ export default defineConfig(async () => {
         remoteBindings: false,
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
+          // Upgrade tests start with an older schema without resetting the main test database.
+          d1Databases: { UPGRADE_DB: 'wishlist-upgrade-test' },
           bindings: { TEST_MIGRATIONS: migrations }
         }
       })

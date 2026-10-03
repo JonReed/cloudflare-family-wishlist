@@ -109,8 +109,23 @@ policy. Duplicate or incomplete results fail closed.
 Removing an ordinary member first sets `members.disabled_at`, so a still-valid Access session cannot
 reach application data, then deletes the exact-email policy and revokes every session for this Access
 application. The final D1 state retains the member, wishlist and history while removing admission.
+Family-list reads filter disabled owners and require an enabled viewer. Wish and claim mutations
+also reject disabled owners, including stale form submissions, preserving their retained data.
 An interrupted removal remains visible and can be finished safely; deleting an already absent policy
 is idempotent.
+
+Re-inviting a removed email replaces only a fully `revoked` invitation with a fresh `pending`
+invitation ID. Active members and unfinished admission or removal states still block duplicate adds;
+the conditional write permits only one concurrent re-invitation. The retained member stays disabled
+through Access policy creation. Activation clears `disabled_at` and updates the supplied display
+name in the same D1 batch, preserving the member ID, wishlist ID, first-sign-in timestamp, wishes and
+claims. Interrupted re-invitations remain visible for repair even when their disabled member has
+already signed in before. Fresh invitation IDs prevent an old activation from restoring access.
+
+Copying sign-in details is an optional browser convenience after admission succeeds. It copies the
+ordinary homepage URL and the admitted email, with no acceptance token or additional activation.
+The helper delegates clicks so rows inserted by fetcher revalidation or client-side navigation work
+immediately; unavailable clipboard access exposes the address and email for manual copying.
 
 The organiser must be authenticated before inviting anyone. Invitation activation creates the
 member/list in the same D1 batch, after the exact-email Access policy succeeds. An invited owner need
@@ -310,7 +325,7 @@ owner's single-list link returns the same 404 as an unknown link; a group link o
 list and returns 404 if no enabled lists remain. Image GET and HEAD requests return 404 before
 fetching or consuming a budget. Sharing choices and guarded creation reject disabled owners too,
 including a mixed selection that would otherwise create a partial link. Existing sharing tokens and
-selections remain stored for management.
+selections remain stored for management and become usable again if their owner is re-added.
 
 Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`, carry a site-wide
 `X-Robots-Tag` no-indexing directive and load no third-party scripts or fonts. Application logs redact
@@ -572,6 +587,14 @@ automatic after a push; pending D1 migrations run through `deploy:production` be
 Access, DNS and token setup remain separate operations. The setup command and first viewing-link
 action use that scoped token to configure only the documented public paths. Later exact-email
 additions are deliberately performed by the organiser from `/family`.
+
+The removal/re-invitation update uses existing `disabled_at` and invitation states without a new
+backfill. Previously removed members are restored in place, and supported named sharing tokens are
+retained. Upgrade regressions populate a database at migration `0011`, apply the remaining migrations
+in order and repeat the migration run, checking preserved IDs, wishes, claims, invitations and links.
+The group-sharing migration is additive so the previous Worker can continue using its existing
+tables during deployment. Production command tests also enforce stopping on migration failure and
+retaining applied SQL when the subsequent Worker deployment fails.
 
 Public fork setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md). The maintainer checkout may also
 contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context; it must remain private.

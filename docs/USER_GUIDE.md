@@ -88,8 +88,16 @@ Profile includes the link and a preview. Until a photo is available, your initia
 A changed photo may take a few minutes to appear. Photos stay within the signed-in family space.
 
 The organiser uses **Manage** to invite people by their exact email address. The wishlist does not
-send invitation emails; the organiser shares the address and instructions directly. This organiser
+send invitation emails. Once added, people can sign in from the wishlist homepage using that email.
+**Copy sign-in details** is an optional way to share the homepage address and instructions; there is
+no invitation to accept. This organiser
 role controls admission, not exclusive ownership of everybody's lists.
+
+Removing someone’s access keeps their wishlist and wishes, but hides their list from everyone,
+including people with an existing viewing link. A link sharing several lists keeps showing the other
+enabled members' lists. Once removal has finished, the organiser can use **Add someone** with the
+same email address to restore their list and its existing viewing links. If Manage says the
+removal needs attention, choose **Finish removal** before adding them again.
 
 If sign-in fails, check you used the invited email address and ask your organiser to check access.
 For hosting or update problems, the organiser can use the

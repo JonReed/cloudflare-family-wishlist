@@ -20,7 +20,9 @@ describe('FamilyMemberRemoval', () => {
     expect(html).toContain('<summary>Remove access</summary>');
     expect(html).toContain('<strong>Granny Smith</strong>');
     expect(html).toContain('will no longer be able to sign in');
-    expect(html).toContain('Their wishlist and wishes will stay here.');
+    expect(html).toContain(
+      'Their wishlist and wishes will be kept, but hidden from everyone until you add them again.'
+    );
     expect(html).toContain('Everyone will be signed out');
     expect(html).toContain('name="intent" value="remove-member"');
     expect(html).toContain('name="memberId" value="member-2"');

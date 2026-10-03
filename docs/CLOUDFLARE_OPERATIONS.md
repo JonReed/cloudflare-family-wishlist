@@ -111,14 +111,22 @@ Those early links must be created again after that upgrade. Migration `0012` add
 first-sign-in column and prepares wishlists for completed invitations. Apply all pending migrations
 before deploying code that uses them; the normal deployment command does this automatically.
 
-Migration `0013` adds group sharing tables without changing existing named single-list links.
-The normal `deploy:production` command applies it automatically when pending.
+The removal and re-invitation fixes use existing member and invitation fields. They need no manual
+backfill or Access configuration change: existing removed members become eligible for re-invitation,
+and their retained lists and pictures are hidden immediately when the updated Worker runs. Re-adding
+keeps the original member/list IDs, wishes, claims and viewing links. Migration `0013` adds the group
+sharing tables without changing those existing records or named single-list links; include it with
+the source when deploying this version. `deploy:production` applies it automatically when pending.
 
 ## Removing a family member
 
 In **Manage**, choose **Remove access** and confirm. The app disables that person, removes their
 exact-email policy and revokes all application sessions, signing everyone out once. It retains the
 removed person's wishlist and history.
+
+Their list and pictures are hidden from family views and existing viewing links while disabled.
+Group links can still show their other enabled lists. Add the person again after removal completes
+to restore the retained list; interrupted removals must be finished first.
 
 If Cloudflare is unavailable, the disabled person remains blocked and the organiser can choose
 **Finish removal** later. Interrupted invitations similarly offer a repair action. Do not manually

@@ -311,7 +311,7 @@ function FamilyPersonRow({
               : person.status === 'waiting'
                 ? 'Not signed in yet'
                 : person.status === 'attention'
-                  ? 'Invitation needs attention'
+                  ? 'Access needs attention'
                   : 'Removal needs attention'}
           </span>
         </div>
@@ -332,7 +332,7 @@ function FamilyPersonRow({
             data-invitation-url={invitationUrl}
             data-invitation-email={person.email}
           >
-            Copy invitation
+            Copy sign-in details
           </button>
           <span className="family-copy-status" role="status" aria-live="polite" />
           {person.memberId ? (
@@ -346,7 +346,7 @@ function FamilyPersonRow({
           <input type="hidden" name="intent" value="repair-invitation" />
           <input type="hidden" name="invitationId" value={person.id} />
           <button type="submit" className="button-quiet">
-            Repair invitation
+            Finish adding them
           </button>
         </Form>
       ) : null}
@@ -400,7 +400,7 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
 
           {loaderData.repaired ? (
             <div role="status" className="profile-saved family-page-message">
-              Their invitation is ready again.
+              Their access is ready again. They can sign in from the wishlist homepage.
             </div>
           ) : null}
 
@@ -436,8 +436,8 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
                 <h2 id="add-family-member-title">Add someone</h2>
                 <p>
                   Their wishlist will be ready straight away, even before they sign in. Use the
-                  exact email address they’ll sign in with. We won’t email them; you’ll get an
-                  invitation to copy instead.
+                  exact email address they’ll sign in with. Sharing the homepage link and sign-in
+                  details with them is optional.
                 </p>
 
                 <AddFamilyMemberForm
@@ -502,8 +502,8 @@ export default function Family({ loaderData, actionData }: Route.ComponentProps)
                         className="profile-saved family-add-success"
                         hidden={!succeeded}
                       >
-                        Added to your family. Their wishlist is ready for wishes. Copy their
-                        invitation from the family list and send it however you like.
+                        Added to your family. Their wishlist is ready, and they can sign in now.
+                        Sharing the homepage link and sign-in details is optional.
                       </div>
                     </>
                   )}

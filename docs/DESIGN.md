@@ -63,7 +63,7 @@ not imply that a wish is saved automatically.
 Sharing lives on **Manage** for every member. Household administration on that page is visible
 only to the organiser. Adding
 someone creates their wishlist immediately; their exact email remains required. Show **Not signed
-in yet** until their first authenticated visit, keep the invitation copy control available, and allow
+in yet** until their first authenticated visit, keep the optional **Copy sign-in details** control available, and allow
 the organiser to remove access even before that visit. After a successful addition, clear the add
 form, return focus to the name field and show the confirmation beside the form so the organiser can
 see immediately that the person and wishlist are ready. It shows
@@ -71,7 +71,8 @@ joined people and those waiting for their first login, with an add form kept apa
 wishlist. Cloudflare policy terminology and deployment setup stay out of family-facing copy so the
 normal list never feels like an admin console. Put **Remove access** behind a native disclosure with
 a second explicit action. Its warning must say that the person can no longer sign in, everyone will
-be signed out once, and the person's wishlist and wishes remain.
+be signed out once, and the person's wishlist and wishes are kept but hidden from everyone until
+the organiser adds them again.
 
 **Manage** is the single creation and management surface for sharing links. A visible
 **Share this list** shortcut in the active wishlist heading opens that page's **Sharing links**
@@ -103,10 +104,15 @@ Keep **Sign out on all devices** with the signed-in email on Profile, behind a n
 states the effect and requires a second, explicit **Yes, sign out everywhere** action. Reassure the
 person that other family members stay signed in.
 
-The page calls the admin the “family organiser”. Waiting rows offer a prepared invitation to copy,
-but must not claim that an email was sent: the application authorises the exact address and the
-organiser shares the message through their preferred private channel. Status is plain text rather
+The page calls the admin the “family organiser”. Waiting rows offer optional sign-in details to copy:
+the normal homepage address and the exact email to use. The add form and success message make clear
+that access is already ready and sending this message is optional. The copy control must work as
+soon as a new waiting row appears without a refresh, including after client-side navigation. Do not
+claim that an email was sent. The organiser can share the message through their preferred private channel. Status is plain text rather
 than a pill or software-dashboard badge.
+
+An incomplete addition shows **Access needs attention** and **Finish adding them**, so the required
+access repair stays distinct from the optional message.
 
 ## Core journeys
 

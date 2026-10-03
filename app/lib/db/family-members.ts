@@ -152,6 +152,7 @@ export async function listFamilyPeople(db: D1Database): Promise<FamilyPerson[]> 
          SELECT 1
          FROM members
          WHERE members.email = family_invitations.email COLLATE NOCASE
+           AND family_invitations.status = 'active'
            AND (members.first_signed_in_at IS NOT NULL OR members.disabled_at IS NOT NULL)
        )
        ORDER BY family_invitations.created_at, family_invitations.display_name COLLATE NOCASE`
@@ -210,9 +211,11 @@ export async function beginFamilyInvitation(
          (SELECT role FROM members WHERE id = ?1 AND disabled_at IS NULL LIMIT 1) AS inviter_role,
          EXISTS(
            SELECT 1 FROM members WHERE email = ?2 COLLATE NOCASE
+             AND (disabled_at IS NULL OR role != 'member')
          ) AS member_exists,
          EXISTS(
            SELECT 1 FROM family_invitations WHERE email = ?2 COLLATE NOCASE
+             AND status != 'revoked'
          ) AS invitation_exists`
     )
     .bind(invitedByMemberId, email)
@@ -232,6 +235,8 @@ export async function beginFamilyInvitation(
     displayName
   };
 
+  // Reuse only a fully revoked invitation. A fresh ID fences off stale activation
+  // attempts, while the retained member stays disabled until Access succeeds.
   try {
     const result = await db
       .prepare(
@@ -250,17 +255,24 @@ export async function beginFamilyInvitation(
            AND NOT EXISTS (
              SELECT 1 FROM members existing_member
              WHERE existing_member.email = ?2 COLLATE NOCASE
-           )`
+               AND (existing_member.disabled_at IS NULL OR existing_member.role != 'member')
+           )
+         ON CONFLICT (email) DO UPDATE SET
+           id = excluded.id,
+           display_name = excluded.display_name,
+           status = 'pending',
+           invited_by_member_id = excluded.invited_by_member_id,
+           created_at = excluded.created_at
+         WHERE family_invitations.status = 'revoked'
+           AND family_invitations.access_policy_id IS NULL`
       )
       .bind(invitation.id, invitation.email, invitation.displayName, invitedByMemberId)
       .run();
 
     if (!result.success || result.meta.changes !== 1) {
-      throw new FamilyAdminRequiredError('Only the family organiser can add someone.');
+      throw new FamilyMemberInputError('That email address has already been added.');
     }
-  } catch (error) {
-    if (error instanceof FamilyAdminRequiredError) throw error;
-
+  } catch {
     throw new FamilyMemberInputError(
       'That email address has already been added. Refresh the page to see the latest family list.'
     );
@@ -276,7 +288,21 @@ export async function activateFamilyInvitation(
 ): Promise<void> {
   // Activation and the member/list pair commit together: failed provisioning
   // leaves the invitation pending so the caller can safely compensate Access.
-  const [result] = await db.batch([
+  // Returning members keep their IDs and first-sign-in history in this batch.
+  const [, result] = await db.batch([
+    db
+      .prepare(
+        `UPDATE members
+       SET display_name = (SELECT display_name FROM family_invitations WHERE id = ?1),
+           disabled_at = NULL,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE email = (
+         SELECT email FROM family_invitations
+         WHERE id = ?1 AND status IN ('pending', 'cleanup_required')
+       ) COLLATE NOCASE
+         AND disabled_at IS NOT NULL AND role = 'member'`
+      )
+      .bind(invitationId),
     db
       .prepare(
         `UPDATE family_invitations

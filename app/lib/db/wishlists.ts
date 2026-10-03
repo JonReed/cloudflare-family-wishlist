@@ -101,6 +101,8 @@ const LIST_FAMILY_WISHLISTS = `
     ON claims.item_id = items.id
     AND wishlists.owner_member_id <> ?1
   LEFT JOIN members AS claimants ON claimants.id = claims.claimed_by_member_id
+  WHERE members.disabled_at IS NULL
+    AND EXISTS (SELECT 1 FROM members AS viewers WHERE viewers.id = ?1 AND viewers.disabled_at IS NULL)
   ORDER BY
     CASE WHEN wishlists.owner_member_id = ?1 THEN 0 ELSE 1 END,
     members.display_name COLLATE NOCASE,
@@ -280,7 +282,9 @@ export async function createWishlistItem(
          ), 0),
          ?9
        FROM wishlists
-       WHERE wishlists.id = ?10`
+       INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+       WHERE wishlists.id = ?10 AND owners.disabled_at IS NULL
+         AND EXISTS (SELECT 1 FROM members WHERE id = ?9 AND disabled_at IS NULL)`
     )
     .bind(
       crypto.randomUUID(),
@@ -354,6 +358,8 @@ export async function createWishlistItems(
          FROM selected_wishlists AS available_wishlists
          INNER JOIN wishlists AS existing_wishlists
            ON existing_wishlists.id = available_wishlists.wishlist_id
+         INNER JOIN members AS owners ON owners.id = existing_wishlists.owner_member_id
+         WHERE owners.disabled_at IS NULL
        )`
     )
     .bind(
@@ -396,7 +402,11 @@ export async function updateWishlistItem(
          price_currency = ?6,
          priority = ?7,
          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-       WHERE id = ?8`
+       WHERE id = ?8 AND EXISTS (
+         SELECT 1 FROM wishlists
+         INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+         WHERE wishlists.id = items.wishlist_id AND owners.disabled_at IS NULL
+       )`
     )
     .bind(
       item.title,
@@ -415,7 +425,16 @@ export async function updateWishlistItem(
 
 export async function deleteWishlistItem(db: D1Database, itemId: string): Promise<void> {
   const targetItemId = requireUuid(itemId, 'The item');
-  const result = await db.prepare('DELETE FROM items WHERE id = ?1').bind(targetItemId).run();
+  const result = await db
+    .prepare(
+      `DELETE FROM items WHERE id = ?1 AND EXISTS (
+         SELECT 1 FROM wishlists
+         INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+         WHERE wishlists.id = items.wishlist_id AND owners.disabled_at IS NULL
+       )`
+    )
+    .bind(targetItemId)
+    .run();
 
   requireChanged(result, 'We couldn’t find that wish. It may have been removed.');
 }
@@ -434,8 +453,11 @@ export async function claimWishlistItem(
        SELECT items.id, ?1
        FROM items
        INNER JOIN wishlists ON wishlists.id = items.wishlist_id
+       INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
        WHERE items.id = ?2
          AND wishlists.owner_member_id <> ?1
+         AND owners.disabled_at IS NULL
+         AND EXISTS (SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL)
        ON CONFLICT (item_id) DO NOTHING`
     )
     .bind(actorId, targetItemId)
@@ -461,7 +483,13 @@ export async function setOwnClaimState(
     .prepare(
       `UPDATE claims
        SET state = ?1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-       WHERE item_id = ?2 AND claimed_by_member_id = ?3`
+       WHERE item_id = ?2 AND claimed_by_member_id = ?3
+         AND EXISTS (
+           SELECT 1 FROM items
+           INNER JOIN wishlists ON wishlists.id = items.wishlist_id
+           INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+           WHERE items.id = claims.item_id AND owners.disabled_at IS NULL
+         )`
     )
     .bind(state, targetItemId, actorId)
     .run();
@@ -477,7 +505,15 @@ export async function unclaimWishlistItem(
   const actorId = requireUuid(actorMemberId, 'The signed-in member');
   const targetItemId = requireUuid(itemId, 'The item');
   const result = await db
-    .prepare('DELETE FROM claims WHERE item_id = ?1 AND claimed_by_member_id = ?2')
+    .prepare(
+      `DELETE FROM claims WHERE item_id = ?1 AND claimed_by_member_id = ?2
+         AND EXISTS (
+           SELECT 1 FROM items
+           INNER JOIN wishlists ON wishlists.id = items.wishlist_id
+           INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+           WHERE items.id = claims.item_id AND owners.disabled_at IS NULL
+         )`
+    )
     .bind(targetItemId, actorId)
     .run();
 

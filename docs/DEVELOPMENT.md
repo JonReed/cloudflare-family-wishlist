@@ -174,6 +174,11 @@ device. Keep the manual current-UI recipe as a recovery route and follow
 5. Run the complete quality gate.
 6. Update architecture, deployment or product docs if the persistent model changed.
 
+Test upgrades with populated data from the previous schema as well as a fresh database. Preserve
+existing member/list IDs, wishes, claims, invitation repair states and supported viewing links.
+Pending migrations must remain compatible with the running Worker, and retrying the production
+command must apply only outstanding migrations before updating the Worker.
+
 `npm run db:migrate:remote` mutates production data. Run it only when explicitly authorised and only
 after reading the account-specific private handoff and verifying the active Wrangler profile.
 
@@ -202,6 +207,8 @@ after reading the account-specific private handoff and verifying the active Wran
   `INITIAL_ORGANISER_EMAIL`; local development may use its fixed loopback-only identity.
 - Disable a removed member in D1 before deleting their Access policy, revoke application sessions,
   and preserve their wishlist and history. Keep interrupted invitations and removals repairable.
+- Filter disabled owners from family/public reads and shared-image queries, and reject stale wish,
+  claim and sharing mutations. Keep the retained data hidden until re-invitation succeeds.
 - Treat `ACCESS_MANAGEMENT_API_TOKEN` as a secret. Keep the account and application identifiers in
   deployment configuration, not family-facing output.
 - Keep the Access application at the setup-enforced 30-day duration. Run
@@ -275,6 +282,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/check-upstream-update.test.ts`    | updater inputs, channel ancestry and version file writes                        |
 | `test/promote-release.test.ts`          | stable release eligibility, ancestry and concurrent promotion                   |
 | `test/installation-delivery.test.ts`    | build receipts, deploy tags and desired/live version comparison                 |
+| `test/household-upgrade.test.ts`        | populated older-schema upgrades, retained data/links and removal repair         |
 | `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks                 |
 | `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts                |
 | `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback               |
@@ -284,7 +292,9 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures              |
 | `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction                 |
 | `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion                |
+| `test/disabled-wishlists.test.ts`       | disabled-owner reads, stale mutations, public 404s and restored list privacy    |
 | `test/family-route.test.ts`             | enhanced add results and native redirect fallback                               |
+| `test/family-members-script.test.ts`    | immediate copying for new rows, current sign-in details and clipboard failures  |
 | `test/member-provisioning.test.ts`      | email validation, idempotent first login and one-list constraint                |
 | `test/product-image.test.ts`            | same-origin proxy types, redirects and response-byte boundary                   |
 | `test/product-images.test.ts`           | member-scoped image burst/day budgets and reset boundaries                      |
