@@ -19,7 +19,7 @@ Prepare:
 
 - one organiser mailbox, one invited-member mailbox and one unrelated mailbox;
 - a new Cloudflare account with Workers, D1, Zero Trust and a `workers.dev` subdomain available;
-- a disposable GitHub fork for the required automatic release updates;
+- a disposable GitHub fork for testing automatic and manual GitHub updates;
 - Git, Node.js and npm versions supported by [the installation guide](DEPLOYMENT.md); and
 - an optional test domain in the same account if custom-domain behaviour is in scope.
 
@@ -60,7 +60,10 @@ record.
 4. Exercise installation guide steps 22–30 using the three test
    identities. In particular, verify that the unrelated address cannot enter and that a wishlist
    owner never receives their own item's claim or purchase state.
-5. Complete [automatic updates](AUTOMATIC_UPDATES.md). Verify the build uses its
+5. Test both update choices. Start with [manual GitHub updates](MANUAL_UPDATES.md): leave
+   `WISHLIST_AUTO_UPDATE` absent or `false`, verify scheduled jobs skip updates and a manual run
+   deploys successfully. Then complete [automatic updates](AUTOMATIC_UPDATES.md), explicitly setting
+   the variable to `true`. Verify the build uses its
    `WISHLIST_INSTALLATION` settings without tracked household-specific changes to `wrangler.jsonc`.
    Require a manual updater run, then an observed `schedule` event, to trigger a successful Cloudflare
    build. Using disposable source/releases, exercise a new stable release and an intentional build

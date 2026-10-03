@@ -2,8 +2,8 @@
 
 This guide creates a private wishlist in **your own Cloudflare account**. You will get a free website
 address, email-code sign-in and a wishlist for each invited family member. Cloudflare runs the app
-and stores its database. Automatic release updates are part of setup. You do not need to know
-Cloudflare beforehand.
+and stores its database. Choose automatic or manual updates at the end of setup. You do not need
+to know Cloudflare beforehand.
 
 Follow the steps in order. Each numbered step has one action. Run each command separately and wait
 for it to finish. If a command fails, stop at that step; see [When something fails](#when-something-fails).
@@ -322,15 +322,17 @@ Try an email address you control that has not been invited, using a signed-out p
 **Done when:** that address cannot reach the family lists. Cloudflare's login screen may give a generic
 response; receiving an email alone is not evidence of admission.
 
-### 31. Connect automatic release updates
+### 31. Choose how to update
 
-Complete [Connect release updates](AUTOMATIC_UPDATES.md) using this same Worker and your GitHub copy.
-Run its first update check and require a successful Cloudflare build.
+- **Automatic:** complete [automatic update setup](AUTOMATIC_UPDATES.md). Verify its first Cloudflare
+  build and explicitly enable the schedule.
+- **Manual:** follow [manual update setup](MANUAL_UPDATES.md). Leave the schedule off and bookmark
+  the instructions for each release. You can use GitHub or deploy from your computer.
 
-**Done when:** the update workflow and its Cloudflare build check are green. A working site alone
-does not prove that future releases will arrive.
+**Done when:** you have chosen an option, completed its setup and know how you will receive releases.
+A working site alone does not prove that automatic updates are enabled.
 
-The installation is complete after the app checks and update connection pass. Add other family members through
+The installation is complete after the app checks and your chosen update setup pass. Add other family members through
 **Manage**. [Everyday use](USER_GUIDE.md) explains adding wishes, sharing lists and saving from a phone.
 
 ## When something fails
@@ -388,11 +390,12 @@ npm run installation:wrangler -- d1 migrations apply DB --remote
 
 ## Updates and optional features
 
-Automatic release updates are included in step 31. A custom domain remains optional.
-Already installed using the old guide? Follow [the one-time update repair](REPAIR_UPDATES.md).
+Choose automatic or manual release updates in step 31. A custom domain remains optional.
+Already installed using the old guide? Keep [updating manually](MANUAL_UPDATES.md), or
+[enable automatic updates](REPAIR_UPDATES.md).
 
 - [Back up and update your installation](BACKUP_RESTORE_UPGRADE.md).
-- [Automatic release updates](AUTOMATIC_UPDATES.md) and [optional custom domains](CLOUDFLARE_OPERATIONS.md#add-a-custom-domain-optional).
+- [Automatic updates](AUTOMATIC_UPDATES.md), [manual updates](MANUAL_UPDATES.md) and [optional custom domains](CLOUDFLARE_OPERATIONS.md#add-a-custom-domain-optional).
 - [Cloudflare allowances and optional product-import services](CLOUDFLARE_OPERATIONS.md#what-cloudflare-provides).
 - [Installation settings](INSTALLATION_CONFIG.md), if you need to move or restore the setup computer.
 

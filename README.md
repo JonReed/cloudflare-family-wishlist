@@ -53,9 +53,19 @@ Links you paste may already contain tracking parameters; Cloudflare still proces
 host and protect your installation.
 
 **Ready for everyday family use.** See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest), with private sign-in,
-shared wishlists, surprise-preserving gifts and public viewing links. [Automatic release updates](docs/AUTOMATIC_UPDATES.md) are part of household setup. Existing
-installations need the [one-time update repair](docs/REPAIR_UPDATES.md). The new fork workflow still
-requires a live scheduled end-to-end verification.
+shared wishlists, surprise-preserving gifts and public viewing links.
+
+Choose how to receive releases:
+
+| Update option                                  | What you do                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------- |
+| [Automatic updates](docs/AUTOMATIC_UPDATES.md) | Opt in once; your installation checks for tested releases every six hours. |
+| [Manual updates](docs/MANUAL_UPDATES.md)       | Check release notifications and start each update when you are ready.      |
+
+The original standard setup required manual updates: Cloudflare could deploy your repository, but
+publishing an upstream release did not update it. Existing users can keep updating manually or
+[enable automatic updates](docs/REPAIR_UPDATES.md). A separate experimental updater was available
+for some older installations. The new fork updater still requires live scheduled end-to-end verification.
 
 ## Turn a shopping link into a useful wish
 
@@ -119,8 +129,8 @@ checks after each stage. The setup commands save settings and find Cloudflare ID
 No additional plugin is required. The repository includes an
 [installation skill](.agents/skills/wishlist-install/SKILL.md) for assistants that support skills.
 Keep API tokens and email codes out of chat; enter the scoped token through the command's hidden
-terminal prompt. The installation includes a household GitHub fork and [automatic release updates](docs/AUTOMATIC_UPDATES.md).
-After sign-in works, connect the existing Worker and verify the updater’s first Cloudflare build.
+terminal prompt. Choose [automatic](docs/AUTOMATIC_UPDATES.md) or [manual](docs/MANUAL_UPDATES.md)
+updates during setup. Both GitHub options use the same release workflow; only automatic mode runs it on a schedule.
 
 ## Stack
 

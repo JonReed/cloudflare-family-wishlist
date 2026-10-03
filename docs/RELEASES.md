@@ -66,8 +66,9 @@ back to an older stable version therefore requires a compatibility check, not ju
 
 ## Delivery to household installations
 
-Publishing a stable release advances `stable` only after the release gates pass. Each configured
-household fork runs **Update Family Wishlist** every six hours. It copies the stable application
+Publishing a stable release advances `stable` only after the release gates pass. Households choose
+automatic or manual updates. With repository variable `WISHLIST_AUTO_UPDATE=true`, the fork runs
+**Update Family Wishlist** every six hours. Otherwise, only a manual dispatch runs the update job. It copies the stable application
 snapshot into a normal commit on its own `main`, leaving `.github/` and ignored household settings
 alone. It records the upstream SHA in `.wishlist-upstream.json`. Cloudflare Builds deploys that
 household commit with `npm run deploy:production` and the updater verifies Cloudflare's check result.
@@ -79,12 +80,16 @@ days without commits keeps public forks active; it also exercises the deployment
 
 Follow [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md) for setup and
 [REPAIR_UPDATES.md](REPAIR_UPDATES.md) for the one-time existing-user repair. The old separate
-bootstrap repository has [migration instructions](INSTALLATION_UPDATES.md). There is one normal
-update mechanism: the fork workflow. Do not add an app deployment button or a second scheduler.
+bootstrap repository has [migration instructions](INSTALLATION_UPDATES.md). Both GitHub update modes use the same
+fork workflow. [Manual updates](MANUAL_UPDATES.md) also document direct terminal deployments.
+Do not add an app deployment button or a second scheduler.
 
 Application source updates include the updater scripts, but `.github/` stays owned by the household.
 Keep the workflow/script interface backwards-compatible. A future change to workflow permissions or
 steps needs an explicit installer repair and release note; ordinary releases must not depend on it.
+In particular, forks with the first schedule-only workflow need to update that workflow before the
+`WISHLIST_AUTO_UPDATE` variable can control it; disable the old workflow to stop unattended runs
+until repaired. The current workflow defaults to manual mode when the variable is absent.
 
 ### Verification status
 

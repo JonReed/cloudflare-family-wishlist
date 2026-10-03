@@ -1,8 +1,11 @@
-# Connect release updates
+# Set up automatic updates
 
-Complete this once after the first deployment. Your GitHub copy checks for tested releases every
-six hours. When there is a new release, it updates your copy and Cloudflare builds and deploys it.
-You do not need a second repository, a deploy hook, a personal GitHub token or an update button.
+Complete this once after the first deployment if you want automatic updates. Your GitHub copy then
+checks for tested releases every six hours. When there is a new release, it updates your copy and
+Cloudflare builds and deploys it.
+
+Prefer to choose when updates happen? Follow [manual updates](MANUAL_UPDATES.md). Manual GitHub
+updates use steps 1–15 below but skip step 16. Enabling Actions alone does not enable the schedule.
 
 Already using the app? Start with [Repair an existing installation](REPAIR_UPDATES.md).
 
@@ -130,6 +133,15 @@ than the latest release; the updater keeps those until the release channel catch
 **Done when:** the usual app and data work. Keep GitHub Actions failure notifications enabled in
 [your GitHub notification settings](https://github.com/settings/notifications).
 
+## 16. Enable automatic updates
+
+In **your GitHub repository → Settings → Secrets and variables → Actions → Variables**, choose
+**New repository variable**. Enter `WISHLIST_AUTO_UPDATE` as the name and `true` as the value, then
+save it. This is a repository variable, not a secret or Cloudflare build variable.
+
+**Done when:** the variable is listed with value `true`. Only now will scheduled runs perform updates.
+Manual mode leaves it absent or sets it to `false`.
+
 ## What happens after setup
 
 - The workflow checks every six hours. GitHub can delay scheduled jobs; updates are not instant.
@@ -143,9 +155,9 @@ than the latest release; the updater keeps those until the release channel catch
 - A failed build leaves the running Worker in place. A successful database migration is not undone
   if deployment fails, so releases must keep migrations compatible with the previous Worker.
 
-To retry, use **Run workflow** on the same updater. To pause updates, disable **Update Family
-Wishlist** in Actions. Re-enable and run it to resume. This is the single supported update path for
-normal household forks. The older separate installation-repository updater is legacy and has its
+To retry, use **Run workflow** on the same updater. To switch to manual updates, change
+`WISHLIST_AUTO_UPDATE` to `false`; the manual button still works. This affects future scheduled runs;
+let any running update finish before starting another. Set it back to `true` to resume automatic updates. The older separate installation-repository updater is legacy and has its
 own [migration notes](INSTALLATION_UPDATES.md).
 
 Platform references: [Cloudflare Git integration](https://developers.cloudflare.com/workers/ci-cd/builds/),

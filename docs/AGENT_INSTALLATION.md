@@ -14,12 +14,14 @@ For installation, obtain only these missing decisions:
 
 - the Cloudflare account that should own the app;
 - the organiser's exact sign-in email;
-- an unused Worker name (default `family-wishlist`); and
+- an unused Worker name (default `family-wishlist`);
+- automatic or manual release updates; and
 - approval to create this household's Worker, D1 database, exact-email Access application and narrow
   viewing-link exceptions on free plans, create or use their GitHub fork, connect that existing Worker
-  to Builds and enable the release updater.
+  to Builds if wanted, and enable scheduled updates only if they chose automatic updates.
 
-Use `workers.dev` and a household fork connected to automatic release updates. Offer a custom domain
+Use `workers.dev` and respect the chosen update mode. Manual mode is a complete supported setup;
+hand over [the repeatable update instructions](MANUAL_UPDATES.md). Offer a custom domain
 only after sign-in works and if the owner wants it. Do not infer the household account from the Git
 remote, existing maintainer credentials or a browser session. Do not alter paid plans, unrelated
 resources, DNS or account-wide protection.
@@ -252,7 +254,9 @@ hostname. Do not expose `/assets/*`, private pages, the generic image proxy or w
 
 ## Verify what the owner actually experiences
 
-Follow setup guide steps 22–30, then complete step 31 and [automatic update verification](AUTOMATIC_UPDATES.md). Require observed organiser login, invitation, a wish prepared before
+Follow setup guide steps 22–30, then complete step 31 for the chosen update mode. For automatic
+updates, require [update verification](AUTOMATIC_UPDATES.md); for manual updates, record the chosen
+procedure and confirm the schedule is off. Require observed organiser login, invitation, a wish prepared before
 first login, invited-member login to that same list, hidden claims/purchases, public sharing and
 revocation, and denial of an unrelated email. The owner/testers enter their own codes.
 
@@ -288,8 +292,9 @@ On resumption, verify live IDs before repeating creates. Treat conflict or ambig
 a reason to investigate, not a reason to create duplicates or delete resources.
 
 End with the site address, source version, verified checks, outstanding checks and how to invite
-family. Record the household GitHub repository, enabled **Update Family Wishlist** workflow,
-first successful updater run and matching Cloudflare build. Setup is incomplete until this connection
-is verified. Follow [AUTOMATIC_UPDATES.md](AUTOMATIC_UPDATES.md); use [REPAIR_UPDATES.md](REPAIR_UPDATES.md)
-for households installed with the earlier guide. Never report a successful Git push as a verified
-live deployment. Mention any unobserved scheduled run explicitly.
+family. Record the chosen update mode. For GitHub updates, record the household repository, first
+successful updater run and matching Cloudflare build. For automatic mode, also record the explicit
+`WISHLIST_AUTO_UPDATE=true` setting; mention any unobserved scheduled run. For terminal-only manual
+mode, hand over [MANUAL_UPDATES.md](MANUAL_UPDATES.md) and confirm the owner has their checkout,
+installation settings and release notifications. Manual mode does not require an automatic update
+connection. Never report a successful Git push as a verified live deployment.
