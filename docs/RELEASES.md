@@ -67,8 +67,10 @@ back to an older stable version therefore requires a compatibility check, not ju
 ## Delivery to household installations
 
 Publishing a stable release advances `stable` only after the release gates pass. Households choose
-automatic or manual updates. With repository variable `WISHLIST_AUTO_UPDATE=true`, the fork runs
-**Update Family Wishlist** every six hours. Otherwise, only a manual dispatch runs the update job. It copies the stable application
+automatic or manual updates. Automatic mode uses the existing Worker’s Cloudflare Cron Trigger
+every six hours to dispatch **Update Family Wishlist**, with a fine-grained GitHub key limited to
+Actions read/write on the household repository. `WISHLIST_AUTO_UPDATE=true` allows those automatic
+requests. The workflow has no GitHub schedule; manual users dispatch it themselves. It copies the stable application
 snapshot into a normal commit on its own `main`, leaving `.github/` and ignored household settings
 alone. It records the upstream SHA in `.wishlist-upstream.json`. Cloudflare Builds deploys that
 household commit with `npm run deploy:production` and the updater verifies Cloudflare's check result.
@@ -97,5 +99,5 @@ Local real-Git integration tests cover repeated releases, preserved workflows/se
 ahead of stable, customisation conflicts, dirty/invalid states, concurrent pushes and the inactivity
 keepalive. Cloudflare build result classification is tested separately. Earlier bootstrap tests proved
 that a GitHub bot push can trigger Cloudflare Builds, but they do not prove this fork workflow's
-scheduled end-to-end path. Observe that path on a disposable household installation before claiming
+Cloudflare-timer end-to-end path. Observe that path on a disposable household installation before claiming
 unattended delivery has passed. Failed builds must remain visible on subsequent updater runs.

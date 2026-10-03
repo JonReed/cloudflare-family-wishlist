@@ -5,6 +5,8 @@ import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/
 import { RequestSecurityError, secureMutationRequest } from '../app/lib/request-security';
 import { isPublicShareRequest, redactedRequestPath } from '../app/lib/public-share-path';
 import { withSecurityHeaders } from '../app/lib/security-headers';
+import { automaticUpdateSecret } from '../app/lib/updates/config';
+import { dispatchAutomaticUpdate } from '../app/lib/updates/dispatch';
 
 const requestHandler = createRequestHandler(
   async () => {
@@ -33,6 +35,18 @@ export function createAppWorker(
   routerRequestHandler: RouterRequestHandler = requestHandler
 ): ExportedHandler<Env> {
   return {
+    async scheduled(controller, env): Promise<void> {
+      // Manual installations have no update secret. Validate this optional binding at runtime.
+      const config: unknown = Reflect.get(env, automaticUpdateSecret);
+      const result = await dispatchAutomaticUpdate(config, controller.scheduledTime);
+      console.log(
+        JSON.stringify({
+          event: 'automatic_update_trigger',
+          result,
+          scheduledTime: controller.scheduledTime
+        })
+      );
+    },
     async fetch(request, env, ctx): Promise<Response> {
       const context = new RouterContextProvider();
       const cspNonce = createCspNonce();

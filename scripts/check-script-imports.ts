@@ -16,3 +16,4 @@ import './create-installation.ts';
 import './check-installation-status.ts';
 import './update-fork.ts';
 import './verify-update-build.ts';
+import './configure-updates.ts';

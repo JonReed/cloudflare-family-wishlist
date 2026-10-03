@@ -28,6 +28,7 @@
     "access:configure-sharing": "node scripts/configure-access-sharing.ts",
     "setup:check": "node scripts/check-setup.ts",
     "setup:access": "node scripts/finish-access-setup.ts",
+    "updates:configure": "node scripts/configure-updates.ts",
     "setup:config": "node scripts/setup-household.ts",
     "setup:access-app": "node scripts/setup-access-application.ts",
     "scripts:check": "node scripts/check-script-imports.ts",

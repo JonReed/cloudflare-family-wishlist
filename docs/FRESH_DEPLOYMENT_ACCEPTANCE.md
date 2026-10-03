@@ -65,8 +65,9 @@ record.
    deploys successfully. Then complete [automatic updates](AUTOMATIC_UPDATES.md), explicitly setting
    the variable to `true`. Verify the build uses its
    `WISHLIST_INSTALLATION` settings without tracked household-specific changes to `wrangler.jsonc`.
-   Require a manual updater run, then an observed `schedule` event, to trigger a successful Cloudflare
-   build. Using disposable source/releases, exercise a new stable release and an intentional build
+   Require a manual updater run, then an observed real Cloudflare scheduled event dispatching an
+   automatic GitHub run, to trigger a successful Cloudflare build. A CLI setup-check dispatch is not
+   timer evidence. Remove GitHub scheduling from the household workflow; there is one timer. Using disposable source/releases, exercise a new stable release and an intentional build
    failure; confirm subsequent checks keep reporting that failure, a retry succeeds, and synthetic
    family records remain intact. Never advance the real stable branch just to manufacture test data.
 6. Re-run `npm run setup:check` without the Access environment variables. Confirm the Wrangler, D1 and
