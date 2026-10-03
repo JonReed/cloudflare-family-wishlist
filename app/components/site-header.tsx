@@ -1,11 +1,12 @@
 import { Brand } from './brand';
+import { MemberAvatar } from './member-avatar';
 
 import type { MemberWithWishlist } from '../lib/db/members';
 
 export type SiteSection = 'wishlists' | 'add-from-anywhere' | 'family' | 'profile';
 
 type SiteHeaderProps = {
-  member: Pick<MemberWithWishlist, 'displayName' | 'role'>;
+  member: Pick<MemberWithWishlist, 'id' | 'displayName' | 'role'>;
   current: SiteSection;
 };
 
@@ -21,9 +22,6 @@ export function SiteHeader({ member, current }: SiteHeaderProps) {
       </a>
 
       <nav className="account-links" aria-label="Your Family Wishlist">
-        <span className="account-greeting" title={member.displayName}>
-          Hello, <strong>{member.displayName}</strong>
-        </span>
         <a href="/" aria-current={currentPage(current, 'wishlists')}>
           Wishlists
         </a>
@@ -35,10 +33,20 @@ export function SiteHeader({ member, current }: SiteHeaderProps) {
             Your family
           </a>
         ) : null}
-        <a href="/profile" aria-current={currentPage(current, 'profile')}>
-          Profile
-        </a>
       </nav>
+
+      <a
+        href="/profile"
+        className="account-profile"
+        aria-current={currentPage(current, 'profile')}
+        title={`Your profile · ${member.displayName}`}
+      >
+        <span className="account-profile-text">
+          <strong>{member.displayName}</strong>
+          <span>Profile</span>
+        </span>
+        <MemberAvatar member={member} />
+      </a>
     </header>
   );
 }

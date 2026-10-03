@@ -58,6 +58,11 @@ identity only after the organiser has invited that precise address.
 
 ### Maintain a wishlist
 
+The signed-in header puts the member's name, photo and Profile link on the right. Their existing
+Gravatar appears there and beside their wishlist heading; initials stand in when no photo is
+available. Profile explains how to create or change a photo on Gravatar with their sign-in email.
+Photos are optional and do not affect sign-in or editing. Public viewing links do not show avatars.
+
 Any member can choose any family member's list and add, edit or remove an item. An item can contain:
 
 - a short name;

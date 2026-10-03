@@ -2,6 +2,7 @@ import type { FamilyWishlist } from '../../lib/db/wishlists';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ShareWishlistPanel } from './share-panel';
 import { WishlistItemRow } from './item-row';
+import { MemberAvatar } from '../member-avatar';
 
 function focusEditedWishSummary(form: HTMLFormElement): void {
   const editor = form.closest('details');
@@ -71,7 +72,8 @@ export function WishlistSheet({
       <span aria-hidden="true" className="paper-tape paper-tape-right" />
 
       <header className="wishlist-heading">
-        <div>
+        <div className="wishlist-owner">
+          <MemberAvatar member={wishlist.owner} />
           <h2 tabIndex={-1}>{possessiveName} wishlist</h2>
         </div>
         <div className="wishlist-heading-tools">

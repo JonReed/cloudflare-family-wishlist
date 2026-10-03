@@ -75,6 +75,11 @@ Use **Profile** to change the name your family sees and manage viewing links. Re
 notice: Cloudflare Access sign-out can also sign you out of other applications in the same Access
 account, not just the wishlist.
 
+Your name and profile photo sit at the right of the top menu. Photos come from
+[Gravatar](https://gravatar.com/): use the same email you sign in with to create or change yours.
+Profile includes the link and a preview. Until a photo is available, your initials appear instead.
+A changed photo may take a few minutes to appear. Photos stay within the signed-in family space.
+
 The organiser uses **Family** to invite people by their exact email address. The wishlist does not
 send invitation emails; the organiser shares the address and instructions directly. This organiser
 role controls admission, not exclusive ownership of everybody's lists.

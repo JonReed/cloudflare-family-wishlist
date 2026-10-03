@@ -4,6 +4,7 @@ import { data, Form, redirect, useNavigation } from 'react-router';
 import { AccessSignOut } from '../components/access-sign-out';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
+import { MemberAvatar } from '../components/member-avatar';
 import { StopSharingForm } from '../components/stop-sharing-form';
 import { cloudflareContext, identityContext, organiserEmailForRequest } from '../lib/context';
 import { ensureMemberForEmail, MemberInputError, updateMemberDisplayName } from '../lib/db/members';
@@ -168,6 +169,24 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
             </Form>
 
             <aside className="profile-identity" aria-label="Sign-in details">
+              <div className="profile-photo">
+                <MemberAvatar member={member} large />
+                <div>
+                  <h2>Profile photo</h2>
+                  <p>
+                    Your photo comes from Gravatar, using your sign-in email below. No photo yet?
+                    Create one there and it will appear here too.
+                  </p>
+                  <a
+                    href="https://gravatar.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="profile-photo-link"
+                  >
+                    Add or change your photo on Gravatar <span aria-hidden="true">↗</span>
+                  </a>
+                </div>
+              </div>
               <p className="profile-identity-label">Signed in as</p>
               <p className="profile-email">
                 {emailLocalPart}

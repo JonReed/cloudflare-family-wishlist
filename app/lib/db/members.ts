@@ -14,6 +14,25 @@ export class MemberInputError extends Error {}
 
 export class MemberAdmissionError extends Error {}
 
+/** Private avatar lookup; callers must first resolve an admitted viewer. */
+export async function findMemberAvatarIdentity(
+  db: D1Database,
+  memberId: unknown
+): Promise<{ email: string; displayName: string } | null> {
+  if (
+    typeof memberId !== 'string' ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId)
+  ) {
+    return null;
+  }
+  return db
+    .prepare(
+      'SELECT email, display_name AS displayName FROM members WHERE id = ?1 AND disabled_at IS NULL'
+    )
+    .bind(memberId)
+    .first<{ email: string; displayName: string }>();
+}
+
 type MemberWithWishlistRow = {
   id: string;
   email: string;

@@ -281,6 +281,26 @@ Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`,
 capability-bearing paths. Cloudflare's edge can necessarily see the requested URL, so families should
 treat each link like an invitation and stop sharing it if it travels beyond the intended people.
 
+## Member photos
+
+Signed-in headers, private wishlist headings and Profile use `/avatar/<member UUID>`. The resource
+route resolves an admitted viewer before reading an enabled target member's email and display name
+from D1. Removed members' avatar URLs return 404 without an upstream fetch. It hashes the trimmed,
+lower-case email with SHA-256 on the server and requests a 160px,
+G-rated Gravatar with `d=404`, following [Gravatar's avatar documentation](https://docs.gravatar.com/sdk/images/).
+Avatar URLs include the displayed initials as a cache version, so a saved name refreshes its fallback
+immediately; the route always derives the image from D1 and ignores those query values. Raw emails
+and their hashes never enter avatar URLs in HTML or loader data. Gravatar receives the
+email hash from the Worker; it receives no browser cookies, Access assertions, family request headers
+or client referrer. Public sharing routes do not use this endpoint or include photos.
+
+Avatar GETs share the existing per-viewer image fetch budget and bounded raster proxy checks.
+Missing, unsupported or unavailable images and an exhausted budget return a locally generated
+initials SVG. Only letters and numbers enter its text; remote SVGs remain rejected. HEAD requests
+verify the member and viewer without an upstream fetch or budget consumption. Successful photos
+have a five-minute private browser cache; fallback responses remain uncached so a new photo can
+appear on refresh. No schema, credentials or external browser image origins are needed.
+
 ## Server-first user interface
 
 The application uses progressively enhanced server-rendered pages and ordinary HTML forms. Core

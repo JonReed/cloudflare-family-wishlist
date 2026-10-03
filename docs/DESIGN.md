@@ -29,10 +29,18 @@ The signed-in home has four stable regions:
    **Source code** remains a secondary link to GitHub, and **Set up your own** links to the repository's
    setup instructions.
 
-The signed-in header is identical on every route for the same member. It always includes “Hello” and
-their display name, Wishlists, Add from anywhere and Profile; the family organiser also sees Your
-family in the same position. Keep the current destination in place and mark it with a quiet strip of
-parcel tape rather than removing its link or changing the navigation order.
+The signed-in header is identical on every route for the same member. The mark sits at the left,
+followed by Wishlists, Add from anywhere and, for the organiser, Your family. The member's display
+name, photo and Profile link form one destination at the far right. On phones, keep the mark and
+profile on the first row and the other destinations below. Long names truncate in the header while
+the full name remains available in the link's title. Keep the current destination in place and mark
+navigation links with a quiet strip of parcel tape.
+
+Show the owner's Gravatar beside the active wishlist heading and a larger preview on Profile.
+Use restrained square photos with slightly softened corners; missing or unavailable photos show
+the person's initials. The photo repeats the adjacent name, so it has empty alternative text.
+Profile links to Gravatar with guidance to create or change a photo using the same sign-in email.
+Keep this help off the everyday wishlist and keep avatars within the signed-in family space.
 
 Only one wishlist is rendered as the active working area. This prevents a family with many members
 or long lists from becoming one enormous dashboard. The selected list is represented by a `list`

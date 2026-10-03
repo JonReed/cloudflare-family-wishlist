@@ -7,6 +7,7 @@ export default [
     route('bookmarklet', 'routes/bookmarklet.tsx'),
     route('family', 'routes/family.tsx'),
     route('profile', 'routes/profile.tsx'),
+    route('avatar/:memberId', 'routes/avatar.ts'),
     route('product-image', 'routes/product-image.ts'),
     route('product-details', 'routes/product-details.ts'),
     route('share-target', 'routes/share-target.ts')

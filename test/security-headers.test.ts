@@ -39,4 +39,14 @@ describe('security headers', () => {
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
     expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
   });
+
+  it('gives avatars a short private cache without widening the image policy', () => {
+    const response = withSecurityHeaders(
+      new Response('image', { headers: { 'X-Member-Avatar': '1' } }),
+      'test-nonce'
+    );
+    expect(response.headers.get('Cache-Control')).toBe('private, max-age=300');
+    expect(response.headers.has('X-Member-Avatar')).toBe(false);
+    expect(response.headers.get('Content-Security-Policy')).toContain("img-src 'self' data:");
+  });
 });
