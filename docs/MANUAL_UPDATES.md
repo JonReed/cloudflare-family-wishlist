@@ -32,7 +32,8 @@ If your repository does not contain `.github/workflows/update-household.yml`, fo
 That initial repair brings in current `main`; subsequent runs select tested `stable` releases.
 
 Complete [update connection steps 1–15](AUTOMATIC_UPDATES.md#1-open-your-existing-worker), including
-the first manual run and app check. **Skip step 16.** In your repository's
+the first manual run and app check. **Skip step 16** (the automatic schedule). Complete step 17
+to receive failure notifications. In your repository's
 **Settings → Secrets and variables → Actions → Variables**, leave `WISHLIST_AUTO_UPDATE` absent or
 set it to `false`. The workflow must remain enabled for its manual button to work.
 
@@ -42,20 +43,59 @@ Until that is done, disable the old workflow in Actions to stop its schedule.
 
 ### Each time you want to update
 
-1. Read [the latest release notes](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest).
-   Check for any release-specific preparation.
-2. Make a [recovery point](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point), especially before a
-   significant update.
-3. Open **your GitHub repository → Actions → Update Family Wishlist**.
-4. Choose **Run workflow → main → Run workflow**. This installs the latest tested release when it
-   is newer, or rebuilds the current version for a retry. It will not downgrade newer code.
-5. Open the new run and wait until **Check the Cloudflare build** succeeds. A skipped job is not a
-   successful update. If the workflow is disabled, enable it and repeat step 4.
-6. Open your usual app address and sign in. Confirm your family's existing lists and wishes are
-   present, and check the version in the footer against the release notes.
+#### 1. Read the release notes
 
-**Done when:** the Cloudflare check succeeds and the app works with your existing data. If a run
-fails, read its error, fix that cause and repeat step 4. Do not reset your fork or delete your database.
+Open [the latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest).
+
+**Done when:** you have checked whether the release asks for any preparation before updating.
+
+#### 2. Open your database
+
+Open [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) and select the database
+named `databaseName` in your saved `.wishlist-installation.json`. Use the household's account.
+
+**Done when:** the database name and ID match your installation settings. Do not select a database
+based only on a similar name.
+
+#### 3. Record the recovery time
+
+Open the database's **Time Travel** tab. Note the current UTC time in a private note so you can
+identify the point before this update if recovery is needed. Do not select **Restore**.
+
+**Done when:** you have recorded the database ID and pre-update UTC time. For a portable SQL backup,
+use the optional export steps in [the backup guide](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point).
+
+#### 4. Open the update workflow
+
+Open the GitHub workflow page bookmarked during setup. If you do not have it bookmarked, open
+[GitHub](https://github.com/), select **your** `cloudflare-family-wishlist` repository, select
+**Actions**, then **Update Family Wishlist** in the left sidebar.
+
+**Done when:** the page shows **Run workflow**. If it shows **Enable workflow**, enable it first.
+If the workflow is absent, stop and complete the one-time setup above.
+
+#### 5. Start the update
+
+Choose **Run workflow**, select branch **main**, then press the green **Run workflow** button.
+
+**Done when:** a new run appears in the list. This installs a newer tested release or rebuilds the
+current version for a retry. It will not downgrade newer code.
+
+#### 6. Check the build result
+
+Open the new run and wait for **Check the Cloudflare build** to succeed. This can take up to 25 minutes.
+
+**Done when:** that check is green. A skipped job is not a successful update. If it fails, read the
+first error in that job, correct that cause and repeat step 5. Do not delete the database or reset the fork.
+
+#### 7. Check your app
+
+Open your usual wishlist address and sign in.
+
+**Done when:** the family's existing lists and wishes are present. The footer shows the installed
+version; compare it with the release notes. If your installation was already ahead of the stable
+release, keeping that newer code is expected.
+
 GitHub's automatic schedule may be disabled after inactivity; manual runs do not require that schedule.
 
 ## Manual updates from your computer
@@ -103,11 +143,17 @@ Worker's bindings or its `WISHLIST_INSTALLATION` build variable using
 
 ### 4. Make a recovery point
 
-Follow [Create a recovery point](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point) on the currently
-installed revision. If an old Windows script fails, stop and use an assistant to update its tooling;
-do not bypass the account/database checks by guessing a Wrangler command.
+Run this from the existing project folder before changing its source:
 
-**Done when:** you have recorded a D1 recovery point for the correct database.
+```sh
+npm run installation:wrangler -- d1 time-travel info DB
+```
+
+**Done when:** Wrangler prints a recovery bookmark for your saved database. Keep the bookmark and
+current UTC time in a private note. If the older script fails on Windows, use browser steps 2–3
+under **Each time you want to update** above to record a recovery time for the same database.
+Stop if you cannot verify the database. A portable SQL export is optional; see
+[the backup guide](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point).
 
 ### 5. Download the tested release history
 

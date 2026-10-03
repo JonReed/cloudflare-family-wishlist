@@ -14,22 +14,43 @@ connects future releases to those existing resources. It does not reinstall the 
 
 ## 1. Keep your installation settings
 
-Locate the project folder used during setup and confirm `.wishlist-installation.json` is there.
-It contains the selected account, Worker and D1 identifiers. Keep a private copy of it.
+Open a terminal in the project folder used during setup. Use PowerShell or Command Prompt on
+Windows, Terminal on macOS, or your Linux terminal. Paste this command to create a dated backup
+beside the project folder:
 
-**Done when:** you have those existing identifiers. If the file is missing, recover them from the
-Worker's Cloudflare bindings or its `WISHLIST_INSTALLATION` build variable before proceeding.
-Never create a replacement database because this file is missing.
+```sh
+node -e "const fs=require('node:fs'); const p='../wishlist-installation-backup-'+Date.now()+'.json'; fs.writeFileSync(p,fs.readFileSync('.wishlist-installation.json'),{flag:'wx',mode:0o600}); console.log('Saved '+p)"
+```
+
+It copies only the saved account, Worker and database identifiers; it does not change Cloudflare.
+
+**Done when:** the command prints `Saved` and the backup filename. Keep that file private. If it
+reports `ENOENT`, first check that you are in the original project folder. If the settings are lost,
+open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages), select your
+existing Worker, then **Settings → Builds → Variables and secrets**. Recover the complete
+`WISHLIST_INSTALLATION` value into `.wishlist-installation.json` in your project folder. If there is
+no saved build variable either, stop and have an assistant recover the existing IDs from the Worker
+and its D1 binding. Never create a replacement database because this file is missing.
 
 ## 2. Make a recovery point
 
-Follow the [pre-upgrade backup instructions](BACKUP_RESTORE_UPGRADE.md). Keep the export private.
+In the same project folder, run:
 
-**Done when:** you have a recovery point for the current D1 database.
+```sh
+npm run installation:wrangler -- d1 time-travel info DB
+```
+
+**Done when:** you have copied the recovery bookmark and current UTC time into a private note. If
+an old Windows script fails, open [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1),
+select the exact database from your saved settings and open **Time Travel**. Record its database ID
+and current UTC time; do not click **Restore**. Stop if you cannot identify the correct database.
+A portable SQL export is also available in [the backup guide](BACKUP_RESTORE_UPGRADE.md#create-a-recovery-point).
 
 ## 3. Find or create your GitHub copy
 
-If your Worker is connected to GitHub, use the repository shown in **Worker → Settings → Builds**.
+Open [Workers & Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages), select your
+existing Worker and open **Settings → Builds**. If a GitHub repository is listed, follow its link
+and keep that repository tab open.
 If you installed straight from this project's source, [create a fork](https://github.com/JonReed/cloudflare-family-wishlist/fork)
 in your GitHub account, copying only `main`.
 

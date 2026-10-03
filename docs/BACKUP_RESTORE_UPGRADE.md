@@ -12,26 +12,69 @@ quiet maintenance window.
 
 ## Create a recovery point
 
-1. Work from a clean, reviewed checkout. Read `.private/WRANGLER_PROFILE.md` when it exists.
-2. Confirm `npm run installation:wrangler -- whoami --json` shows the account ID in your
-   [installation settings](INSTALLATION_CONFIG.md).
-3. Run `npm run setup:check`; stop on a mismatch or pending migration you did not expect.
-4. Capture the current recoverable bookmark:
+Run these steps from the original project folder before bringing in a new release. These commands
+work in PowerShell, Command Prompt, macOS Terminal and Linux. Run one command at a time; stop on an
+error. If this is the maintainer's deployment, read `.private/WRANGLER_PROFILE.md` first.
 
-   ```sh
-   npm run installation:wrangler -- d1 time-travel info DB
-   ```
+### 1. Check the working folder
 
-   Record the bookmark, UTC time, deployed commit and operator in a private operational note. Do not
-   put family data or credentials in the note.
+```sh
+git status --short
+```
 
-5. For a significant release, export schema and data to an encrypted or access-controlled location
-   outside the repository:
+**Done when:** no changed files are printed. Preserve and review any listed changes before continuing.
 
-   ```sh
-   npm run installation:wrangler -- d1 export DB --remote --output=/absolute/private/path/family-wishlist-YYYY-MM-DD.sql
-   shasum -a 256 /absolute/private/path/family-wishlist-YYYY-MM-DD.sql
-   ```
+### 2. Check your Cloudflare account
+
+```sh
+npm run installation:wrangler -- whoami --json
+```
+
+**Done when:** the account ID matches `accountId` in your `.wishlist-installation.json`.
+
+### 3. Check the existing deployment
+
+```sh
+npm run setup:check
+```
+
+**Done when:** the deployment checks pass. Stop on a mismatch or unexpected pending migration.
+
+### 4. Get a recovery bookmark
+
+```sh
+npm run installation:wrangler -- d1 time-travel info DB
+```
+
+**Done when:** Wrangler prints the bookmark. Copy it and the current UTC time into a private note.
+The bookmark identifies a recoverable database state; it is not a downloaded backup.
+
+### 5. Export a portable backup (optional)
+
+For a significant update or longer retention, choose a private folder outside this repository.
+Replace `BACKUP-FILE` below with a **new, unused full filename** in that folder, keeping the quotes.
+For example, Windows might use `C:/Users/Alex/Private Backups/wishlist-2026-10-03.sql`;
+macOS might use `/Users/alex/Private Backups/wishlist-2026-10-03.sql`;
+Linux might use `/home/alex/private-backups/wishlist-2026-10-03.sql`.
+Use your own username and date. The parent folder must already exist.
+
+```sh
+npm run installation:wrangler -- d1 export DB --remote --output="BACKUP-FILE"
+```
+
+**Done when:** Wrangler reports success and the SQL file exists in that private folder. The file
+contains private family data; keep it encrypted or in an access-controlled location.
+
+### 6. Record the backup checksum (optional)
+
+Replace `BACKUP-FILE` with the same full filename used in step 5. Keep the quotes.
+
+```sh
+node -e "const fs=require('node:fs'); const c=require('node:crypto'); console.log(c.createHash('sha256').update(fs.readFileSync(process.argv[1])).digest('hex'))" "BACKUP-FILE"
+```
+
+**Done when:** a 64-character checksum is printed. Keep it with the backup record so you can check
+later that the file has not changed. This command works on Windows without installing `shasum`.
 
 Never place an export in the checkout, commit it, attach it to a public issue or store it unencrypted
 in a public cloud folder. The Time Travel bookmark is a recovery coordinate, not a portable backup.

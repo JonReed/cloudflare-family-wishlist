@@ -33,6 +33,27 @@ The maintainer checkout may contain `.private/WRANGLER_PROFILE.md`. It is delibe
 contains account-specific operational context. Read it before using Wrangler against the reference
 deployment, never quote its contents into public files, and never commit it.
 
+## Installation and update documentation standard
+
+Write for someone who has never used Cloudflare or a terminal. This applies to human guides and
+agent instructions, including installation, manual updates, automatic updates and recovery:
+
+- Use numbered steps with one action per step and an observable **Done when** result.
+- Put each terminal command in its own copyable block. State which folder to run it in.
+- Prefer commands that work unchanged in Windows PowerShell/Command Prompt, macOS and Linux.
+  Where a platform differs, give separately labelled commands; do not assume Unix shell tools.
+- Link directly to the relevant dashboard or download page. Where the URL depends on the user's
+  account/repository, explain how to locate it; never link to the maintainer's resources as a target.
+- Name the exact screen, field and value for browser actions. Distinguish values to paste into a
+  web form from commands to run in a terminal. Explain every placeholder before its first use.
+- Include prerequisites and tool installation instructions before using a command. Do not assume
+  knowledge of accounts, bindings, tokens, Builds, branches or where Cloudflare puts a setting.
+- Keep the normal path in order. Avoid sending readers through a chain of other documents to finish
+  one step; put routine commands inline and link separately to optional background or recovery.
+- Say where to stop on failure and how to resume without losing existing settings or family data.
+- Review commands, links and step references when editing. State what was actually tested; passing
+  local checks is not proof of a successful household installation or automatic update.
+
 ## Stack
 
 - React Router v8, React 19 and TypeScript

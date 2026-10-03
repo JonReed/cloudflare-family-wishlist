@@ -7,6 +7,17 @@ Cloudflare builds and deploys it.
 Prefer to choose when updates happen? Follow [manual updates](MANUAL_UPDATES.md). Manual GitHub
 updates use steps 1–15 below but skip step 16. Enabling Actions alone does not enable the schedule.
 
+## Before you start
+
+Keep your original project folder open in a terminal. Use PowerShell or Command Prompt on Windows,
+Terminal on macOS, or your Linux terminal. Run terminal commands one at a time; stop on any error.
+You need the Node.js and Git installed in [setup steps 1–2](DEPLOYMENT.md#1-install-nodejs), your
+working wishlist address, and access to the GitHub and Cloudflare accounts used during setup.
+
+Open [GitHub](https://github.com/) and select your `cloudflare-family-wishlist` repository from the
+repository list. Keep that tab open. Its address must contain **your** username, not `JonReed`.
+Whenever this guide says “your GitHub repository”, it means that tab.
+
 Already using the app? Start with [Repair an existing installation](REPAIR_UPDATES.md).
 
 These instructions describe the new fork updater. Its Git operations and failure handling have
@@ -58,7 +69,22 @@ This applies pending migrations to the household database before deploying the a
 
 ## 6. Set the Node.js version
 
-Under **Builds → Variables and secrets**, add a text build variable named `NODE_VERSION` with value `24`.
+Under **Settings → Builds → Variables and secrets**, add a **text** variable with these fields.
+Paste these values into the web form, not the terminal.
+
+Name:
+
+```text
+NODE_VERSION
+```
+
+Value:
+
+```text
+24
+```
+
+Save the variable.
 
 **Done when:** the variable appears in the build settings.
 
@@ -76,29 +102,45 @@ These are the account, Worker and database identifiers saved during setup, not A
 
 ## 8. Save those settings for future builds
 
-Under **Builds → Variables and secrets**, add a **text** variable named `WISHLIST_INSTALLATION`.
-Paste the complete JSON object from step 7 as its value, including both braces.
+Under **Settings → Builds → Variables and secrets**, add a **text** variable. Paste this into **Name**:
+
+```text
+WISHLIST_INSTALLATION
+```
+
+Paste the complete output from step 7 into **Value**, including both braces, then save. Do not paste
+only the database ID or include the terminal prompt.
 
 **Done when:** the build variable exists. This is separate from the Worker's runtime secrets.
 
 ## 9. Check the build token's database permission
 
-Open **Builds → API token**. Use a token for this account with **Account → D1 → Edit**, in addition
-to its Worker deployment permissions. Create or edit it through
-[Cloudflare API tokens](https://dash.cloudflare.com/profile/api-tokens) if necessary.
+The build token lets Cloudflare deploy the app. It also needs permission to update your existing
+database. Keep the token already selected for this Worker and add the missing permission:
+
+1. In the Worker's **Settings → Builds → API token**, note the selected token's name.
+2. Open [Cloudflare API tokens](https://dash.cloudflare.com/profile/api-tokens) in another tab.
+3. Find that exact token and choose **Edit** from its menu.
+4. Under **Permissions**, add **Account → D1 → Edit**. Keep its existing deployment permissions.
+5. Check **Account Resources** includes the household's account, then save the token changes.
+
+If you cannot find or edit the selected token, stop here and ask the account owner to grant access.
+Do not replace it with the Access invitation token or paste a token into a public issue.
 
 **Done when:** the selected build token can deploy the Worker and apply D1 migrations.
 The invitation token used by the app is a different token; do not replace it.
 
 ## 10. Disable preview builds
 
-Disable builds for non-production branches in the Worker's build settings.
+In the same Worker's **Settings → Builds → Branch control**, turn off non-production branch
+builds and save. These are previews of other branches; they must not update your family database.
 
 **Done when:** only production `main` can run the production migration command.
 
 ## 11. Remove build path filters
 
-Leave **Build watch paths** at its default of building all changes. Remove any custom filters.
+In the same Worker's **Settings → Builds → Build watch paths**, keep the default that includes
+all files. Remove custom include/exclude filters if you previously added them, then save.
 
 **Done when:** changing `.wishlist-upstream.json` will also trigger a build.
 
@@ -108,7 +150,9 @@ Open **your GitHub repository → Actions**. If prompted, choose
 **I understand my workflows, go ahead and enable them**. Select **Update Family Wishlist** and
 enable that workflow if GitHub shows an **Enable workflow** button.
 
-**Done when:** **Update Family Wishlist** is enabled. If it is missing, use the repair guide.
+**Done when:** **Update Family Wishlist** is listed in the Actions sidebar and has a **Run workflow**
+button. Bookmark this page: you will use it to check updates or retry a failed run. If the workflow
+is missing, stop and use [the existing-installation guide](REPAIR_UPDATES.md).
 
 ## 13. Run the updater once
 
@@ -130,17 +174,52 @@ Open your usual wishlist address, sign in and confirm your existing lists are pr
 shows the installed application version. A repair from `main` may already contain changes newer
 than the latest release; the updater keeps those until the release channel catches up.
 
-**Done when:** the usual app and data work. Keep GitHub Actions failure notifications enabled in
-[your GitHub notification settings](https://github.com/settings/notifications).
+**Done when:** the usual app and data work.
 
 ## 16. Enable automatic updates
 
 In **your GitHub repository → Settings → Secrets and variables → Actions → Variables**, choose
-**New repository variable**. Enter `WISHLIST_AUTO_UPDATE` as the name and `true` as the value, then
-save it. This is a repository variable, not a secret or Cloudflare build variable.
+**New repository variable**. Paste these into the web form.
+
+Name:
+
+```text
+WISHLIST_AUTO_UPDATE
+```
+
+Value:
+
+```text
+true
+```
+
+Save the variable. Use the **Variables** tab, not **Secrets**. This setting belongs to GitHub,
+not Cloudflare.
 
 **Done when:** the variable is listed with value `true`. Only now will scheduled runs perform updates.
 Manual mode leaves it absent or sets it to `false`.
+
+## 17. Turn on failure notifications
+
+Open [GitHub notification settings](https://github.com/settings/notifications). Under **Actions**,
+enable email notifications for failed workflow runs and save your preference.
+
+**Done when:** GitHub is configured to email you when an update fails. If you use manual updates,
+this notification step is still useful; do not enable step 16's schedule.
+
+## If a step fails
+
+Stop at that step. Keep the existing Worker, database and project folder. Fix the cause below, then
+repeat the failed step; do not restart the installation.
+
+| What you see                                  | Next action                                                                                                                                   |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Step 7 reports `ENOENT`                       | The saved settings file is missing or you are in the wrong folder. Return to the original setup folder; do not create a replacement database. |
+| GitHub has no **Run workflow** button         | Check that you opened your own fork, that `main` contains the workflow, and that Actions is enabled (step 12).                                |
+| Workflow says the Cloudflare build is missing | Check that the existing Worker is connected to this exact fork and `main` (steps 2–3), then check the watch paths (step 11).                  |
+| Cloudflare build fails                        | Open the Worker's **Deployments**, select the failed build and read its first error. Check build settings (steps 4–9), then retry step 13.    |
+| Workflow reports custom changes               | Stop. Keep those changes and use [the custom-change instructions](REPAIR_UPDATES.md#if-the-updater-reports-custom-changes).                   |
+| Workflow succeeds but the app fails           | Do not mark the update complete. Keep the database and follow [setup troubleshooting](DEPLOYMENT.md#when-something-fails).                    |
 
 ## What happens after setup
 
