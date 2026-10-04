@@ -109,3 +109,40 @@ describe('installation-scoped cf commands', () => {
     expect(() => installationCfArgs(args)).toThrow();
   });
 });
+
+describe('agent household setup', () => {
+  it('creates without a terminal but never automatically adopts a discovered database', async () => {
+    const fresh = fixture();
+    await expect(
+      prepareHousehold(input, fresh.runner, () => Promise.resolve(true), null, null)
+    ).resolves.toEqual(existing);
+    const found = fixture(true);
+    await expect(
+      prepareHousehold(input, found.runner, () => Promise.resolve(true), null, null)
+    ).rejects.toThrow('--reuse-database-id');
+    expect(found.calls.some((args) => args[1] === 'create')).toBe(false);
+  });
+  it('reuses only an explicitly selected live UUID, or a verified saved installation', async () => {
+    const found = fixture(true);
+    await expect(
+      prepareHousehold(input, found.runner, () => Promise.resolve(true), null, database.uuid)
+    ).resolves.toEqual(existing);
+    await expect(
+      prepareHousehold(input, found.runner, () => Promise.resolve(true), existing, null)
+    ).resolves.toEqual(existing);
+    await expect(
+      prepareHousehold(
+        input,
+        found.runner,
+        () => Promise.resolve(true),
+        existing,
+        'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+      )
+    ).rejects.toThrow('explicitly selected');
+    const absent = fixture();
+    await expect(
+      prepareHousehold(input, absent.runner, () => Promise.resolve(true), null, database.uuid)
+    ).rejects.toThrow('No replacement');
+    expect(absent.calls.some((args) => args[1] === 'create')).toBe(false);
+  });
+});

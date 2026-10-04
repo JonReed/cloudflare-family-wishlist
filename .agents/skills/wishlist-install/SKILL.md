@@ -8,8 +8,9 @@ description: Guide a household through installing Family Wishlist in its own Clo
 Use the existing setup tools and docs; do not build another installer or require a plugin.
 
 1. Read [the agent installation guide](../../../docs/AGENT_INSTALLATION.md) and follow its resumable
-   checklist. Read the relevant sections of [the deployment guide](../../../docs/DEPLOYMENT.md)
-   before each setup stage; it owns commands, permissions and Access configuration.
+   checklist. Prefer the existing setup commands’ explicit-input mode when supported by the
+   installed release; do not reconstruct API payloads for a terminal limitation. Use the
+   [human deployment guide](../../../docs/DEPLOYMENT.md) for additional browser detail or recovery.
 2. Confirm the intended household account, resources and update route before remote changes. An
    installation request does not authorise changing the maintainer's instance, unrelated resources,
    paid plans or account-wide permissions. Honour the user's explicit choices and approval scope.

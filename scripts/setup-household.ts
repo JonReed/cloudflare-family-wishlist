@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 import {
   INSTALLATION_FILE,
   parseInstallationSettings,
@@ -11,6 +12,38 @@ import {
 } from './installation-config.ts';
 import type { WranglerRunner } from './check-setup.ts';
 import { globalCfRunner, listCfResources } from './setup-access-application.ts';
+
+export function householdArguments(args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      'account-id': { type: 'string' },
+      'worker-name': { type: 'string' },
+      'database-name': { type: 'string' },
+      'reuse-database-id': { type: 'string' },
+      yes: { type: 'boolean' }
+    },
+    strict: true,
+    allowPositionals: false
+  });
+  if (!args.length) return null;
+  if (!values.yes || !values['account-id'] || !values['worker-name'])
+    throw new Error(
+      'Non-interactive setup requires --account-id, --worker-name and --yes. Use --help.'
+    );
+  const input = {
+    accountId: values['account-id'],
+    workerName: values['worker-name'],
+    databaseName: values['database-name'] ?? values['worker-name']
+  };
+  parseInstallationSettings(
+    JSON.stringify({
+      ...input,
+      databaseId: values['reuse-database-id'] ?? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    })
+  );
+  return { ...input, reuseDatabaseId: values['reuse-database-id'] ?? null };
+}
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -33,7 +66,8 @@ export async function prepareHousehold(
   input: { accountId: string; workerName: string; databaseName: string },
   runner: WranglerRunner,
   confirm: (message: string) => Promise<boolean>,
-  existing: InstallationSettings | null = null
+  existing: InstallationSettings | null = null,
+  expectedDatabaseId?: string | null
 ): Promise<InstallationSettings> {
   // Reuse the strict identifier validator before any remote work.
   parseInstallationSettings(
@@ -72,6 +106,10 @@ export async function prepareHousehold(
     throw new Error(
       'Several databases have the selected name. Resolve the ambiguity before continuing.'
     );
+  if (expectedDatabaseId && (matches.length !== 1 || matches[0].uuid !== expectedDatabaseId))
+    throw new Error(
+      'The explicitly selected database ID does not match the live database. No replacement was created.'
+    );
   if (existing) {
     if (matches.length !== 1 || matches[0].uuid !== existing.databaseId)
       throw new Error(
@@ -80,6 +118,10 @@ export async function prepareHousehold(
     return existing;
   }
   if (matches.length) {
+    if (expectedDatabaseId === null)
+      throw new Error(
+        `A database already exists with this name (${matches[0].uuid}). Verify that it belongs to this household, then rerun with --reuse-database-id and that UUID. No settings were saved.`
+      );
     if (
       !(await confirm(
         `Reuse existing D1 database ${input.databaseName} (${matches[0].uuid}) in account ${input.accountId}?`
@@ -108,11 +150,11 @@ async function main(): Promise<void> {
   try {
     if (process.argv.includes('--help')) {
       console.log(
-        'Usage: npm run setup:config\nChecks your account, creates or explicitly reuses one D1 database, and saves ignored household settings. Rerun to verify an interrupted setup.'
+        'Usage: npm run setup:config [-- --account-id ACCOUNT_ID --worker-name WORKER_NAME --yes [--database-name DATABASE_NAME] [--reuse-database-id DATABASE_UUID]]\nExplicit inputs allow agents to run without a terminal. --yes records already-granted approval; existing databases require a saved identity or an explicit UUID.\nChecks your account, creates or explicitly reuses one D1 database, and saves ignored household settings. Rerun to verify an interrupted setup.'
       );
       return;
     }
-    if (process.argv.length > 2) throw new Error('setup:config takes no arguments. Use --help.');
+    const options = householdArguments(process.argv.slice(2));
     if (process.env.WISHLIST_INSTALLATION !== undefined)
       throw new Error(
         'Remove the WISHLIST_INSTALLATION build override before preparing a local household.'
@@ -123,20 +165,24 @@ async function main(): Promise<void> {
       );
     const existing = readInstallationSettings();
     const { createInterface } = await import('node:readline/promises');
-    if (!process.stdin.isTTY)
+    if (!options && !process.stdin.isTTY)
       throw new Error(
-        'Run setup:config in a terminal. Agents can instead write the four installation fields documented in docs/INSTALLATION_CONFIG.md.'
+        'Use an interactive terminal or supply --account-id, --worker-name and --yes. See --help.'
       );
-    const prompt = createInterface({ input: process.stdin, output: process.stdout });
+    const prompt = options
+      ? null
+      : createInterface({ input: process.stdin, output: process.stdout });
     try {
       const accountId =
+        options?.accountId ??
         existing?.accountId ??
-        (await prompt.question('Cloudflare account ID (from npx wrangler whoami): ')).trim();
+        (await prompt!.question('Cloudflare account ID (from npx wrangler whoami): ')).trim();
       const workerName =
+        options?.workerName ??
         existing?.workerName ??
-        ((await prompt.question('Choose an unused Worker name [family-wishlist]: ')).trim() ||
+        ((await prompt!.question('Choose an unused Worker name [family-wishlist]: ')).trim() ||
           'family-wishlist');
-      const databaseName = existing?.databaseName ?? workerName;
+      const databaseName = options?.databaseName ?? existing?.databaseName ?? workerName;
       if (process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_ACCOUNT_ID !== accountId)
         throw new Error(
           'CLOUDFLARE_ACCOUNT_ID selects another account. Remove that override before continuing.'
@@ -182,9 +228,11 @@ async function main(): Promise<void> {
         { accountId, workerName, databaseName },
         runner,
         async (message) =>
-          (await prompt.question(`${message} Type yes to continue: `)).trim().toLowerCase() ===
-          'yes',
-        existing
+          options !== null ||
+          (await prompt!.question(`${message} Type yes to continue: `)).trim().toLowerCase() ===
+            'yes',
+        existing,
+        options?.reuseDatabaseId
       );
       if (!existing)
         writeFileSync(INSTALLATION_FILE, `${JSON.stringify(settings, null, 2)}\n`, {
@@ -196,7 +244,7 @@ async function main(): Promise<void> {
         'Household settings saved and database identity verified. Next: npm run quality, then npm run audit, then npm run deploy.'
       );
     } finally {
-      prompt.close();
+      prompt?.close();
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Household setup failed.');

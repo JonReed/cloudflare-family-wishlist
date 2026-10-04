@@ -110,18 +110,30 @@ processing. This is not an offline or home-server deployment. See the
 
 ## Install with Codex
 
-Open this project in Codex or another coding assistant and paste:
+Use a coding assistant with terminal access and, ideally, browser control. Give it this prompt;
+you should only need to supply household choices and complete private sign-in/consent steps.
 
 ```text
-Help me set up Family Wishlist in my own Cloudflare account. Follow AGENTS.md,
-docs/DEPLOYMENT.md and docs/AGENT_INSTALLATION.md. Work through one step at a time,
-run the commands and check each result. First confirm my intended Cloudflare account
-and organiser email, then explain the resources you will create. Use the free setup
-and a workers.dev address. Handle the configuration yourself; ask me to complete
-browser sign-in, account consent, private token entry and email codes when needed.
-Verify the deployed database before first login, then check sign-in, invitations,
-gift privacy and public sharing. Keep a private progress note so we can resume.
+Install Family Wishlist for my household from the latest tested release at
+https://github.com/JonReed/cloudflare-family-wishlist (the stable branch).
+Read the checkout's AGENTS.md and docs/AGENT_INSTALLATION.md and follow the
+wishlist-install skill if supported. Inspect existing setup before creating anything.
+Ask together for the missing Cloudflare account choice, organiser email, desired
+Worker name and automatic/manual update choice. Explain the resources and get my
+approval once, then do the terminal and browser setup yourself within that scope.
+Use the existing setup commands; prefer their explicit-input mode when supported.
+Do not ask me to discover resource IDs, edit JSON, interpret API errors or copy
+routine commands between tools. Pause only for choices you cannot infer, missing
+authority, private sign-in/consent/token entry, or checks that need my email code.
+Use free plans and a workers.dev address. Preserve my existing resources and data.
+Verify the deployed app and the chosen update connection. Record progress privately
+so we can resume. Distinguish checks that passed from checks still waiting; do not
+promise that a scheduled update will run immediately.
 ```
+
+The assistant handles configuration and ID discovery. You still need Cloudflare/GitHub accounts,
+service consent, a scoped token entered privately and email-code sign-in. Setup time depends on
+those steps and cloud builds; this is not an instant or unattended installation.
 
 The [step-by-step guide](docs/DEPLOYMENT.md) also works without an assistant. It includes commands
 for installing Wrangler and the Cloudflare CLI, direct dashboard links, Windows instructions and

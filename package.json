@@ -40,9 +40,10 @@
     "lint": "react-router typegen && eslint . --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run scripts:check && npm run test && npm run test:updater && npm run build",
+    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run scripts:check && npm run test:setup && npm run test && npm run test:updater && npm run build",
     "audit": "npm audit --audit-level=moderate",
-    "test:updater": "node --test scripts/update-fork.integration.test.ts"
+    "test:updater": "node --test scripts/update-fork.integration.test.ts",
+    "test:setup": "node --test scripts/setup-agent.test.ts"
   },
   "dependencies": {
     "isbot": "^5.1.36",

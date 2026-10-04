@@ -2,12 +2,35 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 import {
   parseAccessSetup,
   verifyAccessApplication,
   type AccessSetup
 } from './finish-access-setup.ts';
 import { readInstallationSettings, type InstallationSettings } from './installation-config.ts';
+
+export function accessArguments(args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      'organiser-email': { type: 'string' },
+      hostname: { type: 'string' },
+      yes: { type: 'boolean' }
+    },
+    strict: true,
+    allowPositionals: false
+  });
+  if (!args.length) return null;
+  if (!values.yes || !values['organiser-email'] || !values.hostname)
+    throw new Error(
+      'Non-interactive setup requires --organiser-email, --hostname and --yes. Use --help.'
+    );
+  return {
+    organiserEmail: values['organiser-email'].trim().toLowerCase(),
+    hostname: values.hostname
+  };
+}
 
 export type CfRunner = (args: string[]) => unknown;
 type JsonRecord = Record<string, unknown>;
@@ -79,6 +102,14 @@ export async function prepareAccessApplication(
       otpId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     })
   );
+  if (
+    previous &&
+    (previous.organiserEmail.toLowerCase() !== input.organiserEmail.toLowerCase() ||
+      previous.hostname !== input.hostname)
+  )
+    throw new Error(
+      'The requested email or hostname differs from the saved Access setup. No resources were changed.'
+    );
   const organisation = runner(['zero-trust', 'organization', 'get']);
   if (!record(organisation) || typeof organisation.auth_domain !== 'string') {
     throw new Error(
@@ -273,12 +304,11 @@ async function main(): Promise<void> {
   try {
     if (process.argv.includes('--help')) {
       console.log(
-        'Usage: npm run setup:access-app\nUses cf to identify the saved Worker, create or verify email-code login and exact-email Worker protection, then saves .private/access-setup.json. Requires Zero Trust onboarding and cf auth login.'
+        'Usage: npm run setup:access-app [-- --organiser-email EMAIL --hostname HOSTNAME --yes]\nExplicit inputs allow agents to run without a terminal. --yes records already-granted approval; resource and policy checks still apply.\nUses cf to identify the saved Worker, create or verify email-code login and exact-email Worker protection, then saves .private/access-setup.json. Requires Zero Trust onboarding and cf auth login.'
       );
       return;
     }
-    if (process.argv.length > 2)
-      throw new Error('setup:access-app takes no arguments. Use --help.');
+    const options = accessArguments(process.argv.slice(2));
     const installation = readInstallationSettings({ required: true });
     if (!installation) throw new Error('Complete setup:config first.');
     if (
@@ -290,21 +320,25 @@ async function main(): Promise<void> {
       );
     const file = resolve('.private/access-setup.json');
     const previous = existsSync(file) ? parseAccessSetup(readFileSync(file, 'utf8')) : null;
-    if (!process.stdin.isTTY)
+    if (!options && !process.stdin.isTTY)
       throw new Error(
-        'Run setup:access-app in a terminal. Agents can use the documented cf commands to create the same exact application.'
+        'Use an interactive terminal or supply --organiser-email, --hostname and --yes. See --help.'
       );
     const { createInterface } = await import('node:readline/promises');
-    const prompt = createInterface({ input: process.stdin, output: process.stdout });
+    const prompt = options
+      ? null
+      : createInterface({ input: process.stdin, output: process.stdout });
     try {
       const organiserEmail =
+        options?.organiserEmail ??
         previous?.organiserEmail ??
-        (await prompt.question('Exact email address you will use to sign in: '))
+        (await prompt!.question('Exact email address you will use to sign in: '))
           .trim()
           .toLowerCase();
       const address =
+        options?.hostname ??
         previous?.hostname ??
-        (await prompt.question('Paste the https:// address printed by npm run deploy: ')).trim();
+        (await prompt!.question('Paste the https:// address printed by npm run deploy: ')).trim();
       const url = new URL(address.includes('://') ? address : `https://${address}`);
       if (
         url.protocol !== 'https:' ||
@@ -321,8 +355,9 @@ async function main(): Promise<void> {
         { organiserEmail, hostname: url.hostname },
         globalCfRunner(installation.accountId),
         async (message) =>
-          (await prompt.question(`${message} Type yes to continue: `)).trim().toLowerCase() ===
-          'yes',
+          options !== null ||
+          (await prompt!.question(`${message} Type yes to continue: `)).trim().toLowerCase() ===
+            'yes',
         previous
       );
       if (
@@ -342,7 +377,7 @@ async function main(): Promise<void> {
         'Exact-email Worker protection verified. Settings saved privately. Next: create the scoped Access token, then npm run setup:access -- .private/access-setup.json'
       );
     } finally {
-      prompt.close();
+      prompt?.close();
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Access application setup failed.');

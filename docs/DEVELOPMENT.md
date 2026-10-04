@@ -338,3 +338,18 @@ the wrong Cloudflare account, is ignored by Git, and must stay private.
 - Run `npm run quality` and `npm run audit`.
 - For UI work, test the real form flow on desktop and mobile.
 - Explain changed behaviour, verification performed and any remaining risk.
+
+## Agent setup inputs
+
+`setup:config` accepts `--account-id`, `--worker-name`, optional `--database-name` and `--yes`.
+Non-interactive reuse of a discovered database additionally requires `--reuse-database-id` with its
+verified UUID; a missing or different database stops without creating a replacement. Saved settings
+are revalidated. `setup:access-app` accepts `--organiser-email`, `--hostname` and `--yes`, and rejects
+changes to saved Access identity before API calls. Both commands retain interactive mode with no
+arguments. No tokens are accepted in these flags. See their `--help` output and the agent guide.
+
+These flags were added after v1.1.1. `npm run test:setup` runs the argument and non-TTY entry-point
+checks in Node and is included in `npm run quality`; resource safety remains tested in Vitest.
+Local tests cover argument validation, explicit reuse, account
+mismatches and saved Access identity conflicts. They do not establish a new fresh-account walkthrough
+or a measured installation time; those require the live acceptance procedure.

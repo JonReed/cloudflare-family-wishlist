@@ -221,3 +221,16 @@ describe('Access application CLI setup', () => {
     ).toBe(false);
   });
 });
+
+describe('agent Access setup', () => {
+  it.each([
+    { ...input, organiserEmail: 'different@example.invalid' },
+    { ...input, hostname: 'another.example.workers.dev' }
+  ])('rejects changes to a saved identity before any API call', async (changed) => {
+    const runner = vi.fn();
+    await expect(
+      prepareAccessApplication(installation, changed, runner, () => Promise.resolve(true), setup)
+    ).rejects.toThrow('differs from the saved');
+    expect(runner).not.toHaveBeenCalled();
+  });
+});
