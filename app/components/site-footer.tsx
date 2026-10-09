@@ -20,6 +20,7 @@ export function SiteFooter() {
         </div>
 
         <nav aria-label="Project links" className="footer-links">
+          <a href="#cookie-information">Cookies</a>
           <a href={repositoryUrl} target="_blank" rel="noreferrer">
             Source code
           </a>

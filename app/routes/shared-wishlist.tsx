@@ -43,13 +43,14 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     const { env } = context.get(cloudflareContext);
     const token = params.token;
     if (!token) notFound();
-    const secret = readGuestSecret(request) ?? createGuestSecret();
-    const wishlists = await getSharedWishlists(env.DB, token, await hashGuestSecret(secret));
-    if (!wishlists.length) notFound();
-    return data(
-      { wishlists, token, recoveryCode: secret },
-      { headers: { 'Set-Cookie': guestCookie(request, secret) } }
+    const secret = readGuestSecret(request);
+    const wishlists = await getSharedWishlists(
+      env.DB,
+      token,
+      secret ? await hashGuestSecret(secret) : null
     );
+    if (!wishlists.length) notFound();
+    return data({ wishlists, token, recoveryCode: secret });
   } catch (error) {
     if (error instanceof SharedWishlistInputError) {
       notFound();
@@ -73,15 +74,16 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   const token = params.token;
   if (!token || !(await getSharedWishlists(env.DB, token)).length) notFound();
   try {
-    const secret = readGuestSecret(secured);
-    if (!secret)
-      throw new SharedWishlistInputError(
-        'Allow cookies, then refresh this page before reserving a gift.'
-      );
-    const guestHash = await hashGuestSecret(secret);
-    await consumeGuestClaimBudget(env.DB, token, guestHash);
     const form = await secured.formData();
     const intent = form.get('intent');
+    const existingSecret = readGuestSecret(secured);
+    if (!existingSecret && intent !== 'claim' && intent !== 'recover')
+      throw new SharedWishlistInputError(
+        'This browser has no reservation code. Allow required cookies and recover your reservations using your saved code.'
+      );
+    const secret = existingSecret ?? createGuestSecret();
+    const guestHash = await hashGuestSecret(secret);
+    await consumeGuestClaimBudget(env.DB, token, guestHash);
     if (intent === 'recover') {
       const code = form.get('recoveryCode');
       if (
@@ -100,7 +102,10 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     if (typeof itemId !== 'string')
       throw new SharedWishlistInputError('Choose a gift from the list.');
     await changeGuestClaim(env.DB, token, guestHash, itemId, intent);
-    return redirect(`/shared/${token}#wish-${itemId}`, { status: 303 });
+    return redirect(`/shared/${token}#wish-${itemId}`, {
+      status: 303,
+      headers: { 'Set-Cookie': guestCookie(request, secret) }
+    });
   } catch (error) {
     if (error instanceof GuestClaimLimitError)
       return data({ error: error.message }, { status: 429, headers: { 'Retry-After': '3600' } });
@@ -219,6 +224,10 @@ export default function SharedWishlistPage({ loaderData, actionData }: Route.Com
           <p>
             Everyone with this link can see which gifts are reserved, including the wishlist owner.
           </p>
+          <p>
+            Reserving or recovering a gift uses a required cookie to remember your reservations for
+            up to one year. <a href="#cookie-information">Cookie details</a>
+          </p>
           {actionData?.error ? (
             <p role="alert" className="form-error">
               {actionData.error}
@@ -226,20 +235,26 @@ export default function SharedWishlistPage({ loaderData, actionData }: Route.Com
           ) : null}
           <details className="guest-recovery">
             <summary>Keep or recover your reservations</summary>
-            <p>
-              This browser remembers your reservations. Save this private code to manage them on
-              another device. Anyone with it can manage your reservations.
-            </p>
-            <label>
-              Your recovery code
-              <input
-                aria-label="Your recovery code"
-                readOnly
-                value={recoveryCode}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </label>
+            {recoveryCode ? (
+              <>
+                <p>
+                  This browser remembers your reservations. Save this private code to manage them on
+                  another device. Anyone with it can manage your reservations.
+                </p>
+                <label>
+                  Your recovery code
+                  <input
+                    aria-label="Your recovery code"
+                    readOnly
+                    value={recoveryCode}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </label>
+              </>
+            ) : (
+              <p>Your private recovery code will appear here after you reserve a gift.</p>
+            )}
             <form method="post" action={`/shared/${token}`}>
               <label>
                 Have a saved code?

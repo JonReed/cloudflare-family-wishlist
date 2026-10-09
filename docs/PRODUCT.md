@@ -150,6 +150,10 @@ family admission controls on the same page remain organiser-only.
 
 ## Product invariants
 
+Cookies support family sign-in/security and guest reservation ownership only. Explain them site-wide
+and before guest reservation actions. Viewing a shared link must not create or renew a guest cookie.
+Do not add advertising or analytics tracking without revisiting the notice and applicable consent rules.
+
 1. One deployment represents one trusted family group.
 2. One authenticated email maps to one member.
 3. One member owns exactly one wishlist.

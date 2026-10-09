@@ -225,7 +225,7 @@ describe('guest reservations', () => {
       consumeGuestClaimBudget(env.DB, f.token, await hashGuestSecret(createGuestSecret()), 7200000)
     ).rejects.toThrow('Too many');
   });
-  it('sets a private cookie and handles plain form actions, recovery and missing cookies', async () => {
+  it('reads without setting cookies and handles private form cookies, recovery and missing cookies', async () => {
     const f = await fixture();
     const args = {
       params: { token: f.token },
@@ -235,17 +235,30 @@ describe('guest reservations', () => {
       url: new URL(`${origin}/shared/${f.token}`)
     };
     const loaded = await loader(args);
-    expect(loaded.data.recoveryCode).toHaveLength(43);
-    const cookie = new Headers(loaded.init?.headers).get('Set-Cookie')!;
-    expect(cookie).toContain('HttpOnly');
-    expect(cookie).toContain('Secure');
-    expect(cookie).toContain('SameSite=Lax');
+    expect(loaded.data.recoveryCode).toBeNull();
+    expect(new Headers(loaded.init?.headers).has('Set-Cookie')).toBe(false);
     const claimed = await action({
       ...args,
       request: request(f.token, f.secret, 'claim', f.item.id)
     });
     expect(claimed).toBeInstanceOf(Response);
-    if (claimed instanceof Response) expect(claimed.status).toBe(303);
+    if (claimed instanceof Response) {
+      expect(claimed.status).toBe(303);
+      const cookie = claimed.headers.get('Set-Cookie')!;
+      expect(cookie).toContain('HttpOnly');
+      expect(cookie).toContain('Secure');
+      expect(cookie).toContain('SameSite=Lax');
+      expect(cookie).toContain('Max-Age=31536000');
+    }
+    const returning = await loader({
+      ...args,
+      request: new Request(args.request.url, {
+        headers: { Cookie: `__Host-wishlist-guest=${f.secret}` }
+      })
+    });
+    expect(returning.data.recoveryCode).toBe(f.secret);
+    expect(returning.data.wishlists[0].items[0].reservation).toBe('yours');
+    expect(new Headers(returning.init?.headers).has('Set-Cookie')).toBe(false);
     expect(await hasGuestClaims(env.DB, f.token, f.hash)).toBe(true);
     const recovered = await action({
       ...args,
@@ -266,6 +279,37 @@ describe('guest reservations', () => {
         request: request(f.token, f.secret, 'recover', '', { recoveryCode: createGuestSecret() })
       })
     ).toMatchObject({ init: { status: 409 } });
+  });
+  it('creates the guest cookie only after a successful first reservation or recovery', async () => {
+    const f = await fixture();
+    const args = {
+      params: { token: f.token },
+      context: context(),
+      pattern: '/shared/:token',
+      url: new URL(`${origin}/shared/${f.token}`)
+    };
+    const firstRequest = request(f.token, f.secret, 'claim', f.item.id);
+    firstRequest.headers.delete('Cookie');
+    const claimed = await action({ ...args, request: firstRequest });
+    expect(claimed).toBeInstanceOf(Response);
+    if (!(claimed instanceof Response)) throw new Error('Expected reservation redirect');
+    const cookie = claimed.headers.get('Set-Cookie')!;
+    const secret = readGuestSecret(
+      new Request(origin, { headers: { Cookie: cookie.split(';')[0] } })
+    )!;
+    expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(true);
+    const recovery = request(f.token, f.secret, 'recover', '', { recoveryCode: secret });
+    recovery.headers.delete('Cookie');
+    const recovered = await action({ ...args, request: recovery });
+    expect(recovered).toBeInstanceOf(Response);
+    if (recovered instanceof Response)
+      expect(recovered.headers.get('Set-Cookie')).toContain(secret);
+    const conflict = request(f.token, f.secret, 'claim', f.item.id);
+    conflict.headers.delete('Cookie');
+    const rejected = await action({ ...args, request: conflict });
+    expect(rejected).toMatchObject({ init: { status: 409 } });
+    if (!(rejected instanceof Response))
+      expect(new Headers(rejected.init?.headers).has('Set-Cookie')).toBe(false);
   });
   it('does not accept injected, malformed or duplicate guest cookies', () => {
     const secret = createGuestSecret();

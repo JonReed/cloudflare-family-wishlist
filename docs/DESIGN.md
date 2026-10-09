@@ -18,6 +18,11 @@ novelty.
 
 ## Information architecture
 
+Every application page starts with a compact “Required cookies only” native disclosure. Keep the
+explanation in normal document flow, available without JavaScript, and reachable through the footer's
+Cookies link. It is an information notice, not an accept/reject dialog. Do not store dismissal state
+or introduce a cookie just to remember that the notice was read.
+
 The signed-in home has four stable regions:
 
 1. **Identity:** the Family Wishlist mark and the current member.

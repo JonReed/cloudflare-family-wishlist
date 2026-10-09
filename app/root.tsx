@@ -1,6 +1,7 @@
 import { isRouteErrorResponse, Link, Links, Meta, Outlet, useRouteLoaderData } from 'react-router';
 
 import { ClientRuntime } from './components/client-runtime';
+import { CookieNotice } from './components/cookie-notice';
 import { cloudflareContext } from './lib/context';
 import { isPublicSharePath } from './lib/public-share-path';
 import type { Route } from './+types/root';
@@ -32,7 +33,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             during hydration. */}
         <Links nonce="" />
       </head>
-      <body>{children}</body>
+      <body>
+        <CookieNotice />
+        {children}
+      </body>
     </html>
   );
 }

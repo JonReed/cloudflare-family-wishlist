@@ -2835,3 +2835,41 @@ button:disabled {
   gap: 0.6rem;
   flex-wrap: wrap;
 }
+
+.cookie-notice {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper, #faf6ed);
+  padding: 0.65rem max(1rem, calc((100vw - 76rem) / 2));
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.cookie-notice summary {
+  cursor: pointer;
+  width: fit-content;
+  font-weight: 600;
+}
+.cookie-notice summary span {
+  font-weight: 400;
+}
+.cookie-notice summary:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 4px;
+}
+.cookie-information {
+  max-width: 48rem;
+  padding-block: 0.5rem 1rem;
+  overflow-wrap: anywhere;
+}
+.cookie-information h2 {
+  margin: 1rem 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.cookie-information p + p {
+  margin-top: 0.75rem;
+}
+.cookie-information a,
+.guest-sharing-intro a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}

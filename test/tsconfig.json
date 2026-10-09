@@ -47,6 +47,7 @@
     "../app/components/product-diagnostics.tsx",
     "../app/components/site-header.tsx",
     "../app/components/site-footer.tsx",
+    "../app/components/cookie-notice.tsx",
     "../app/lib/auth/access.ts",
     "../app/lib/bookmarklet.ts",
     "../app/lib/cloudflare/access-membership.ts",
