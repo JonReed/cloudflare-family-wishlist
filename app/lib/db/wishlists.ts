@@ -8,7 +8,7 @@ export type ClaimState = (typeof CLAIM_STATES)[number];
 
 type ClaimDetails = {
   state: ClaimState;
-  claimedByMemberId: string;
+  claimedByMemberId: string | null;
   claimedByDisplayName: string;
   isClaimedByViewer: boolean;
 };
@@ -241,15 +241,14 @@ export async function listFamilyWishlists(
       continue;
     }
 
-    const claim =
-      row.claim_state && row.claimed_by_member_id && row.claimed_by_display_name
-        ? {
-            state: row.claim_state,
-            claimedByMemberId: row.claimed_by_member_id,
-            claimedByDisplayName: row.claimed_by_display_name,
-            isClaimedByViewer: row.claimed_by_member_id === viewerId
-          }
-        : null;
+    const claim = row.claim_state
+      ? {
+          state: row.claim_state,
+          claimedByMemberId: row.claimed_by_member_id,
+          claimedByDisplayName: row.claimed_by_display_name ?? 'A guest',
+          isClaimedByViewer: row.claimed_by_member_id === viewerId
+        }
+      : null;
 
     wishlist.items.push({ ...item, claimVisibility: 'visible', claim });
   }
@@ -518,4 +517,25 @@ export async function unclaimWishlistItem(
     .run();
 
   requireChanged(result, 'Only the person getting this gift can leave it for someone else.');
+}
+
+/** Recover an abandoned guest reservation without exposing it to its wishlist owner. */
+export async function releaseGuestClaim(
+  db: D1Database,
+  actorMemberId: string,
+  itemId: string
+): Promise<void> {
+  const actorId = requireUuid(actorMemberId, 'The signed-in member');
+  const id = requireUuid(itemId, 'The item');
+  const result = await db
+    .prepare(
+      `DELETE FROM claims WHERE item_id = ?2 AND guest_token_hash IS NOT NULL
+    AND EXISTS (SELECT 1 FROM items INNER JOIN wishlists ON wishlists.id = items.wishlist_id
+      INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
+      WHERE items.id = claims.item_id AND owners.disabled_at IS NULL AND owners.id <> ?1)
+    AND EXISTS (SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL)`
+    )
+    .bind(actorId, id)
+    .run();
+  requireChanged(result, 'Only another family member can clear a guest reservation.');
 }

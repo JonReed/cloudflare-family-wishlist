@@ -23,6 +23,19 @@ export function ClaimStatus({ wishlist, item }: ClaimProps) {
 
 export function ClaimControls({ wishlist, item }: ClaimProps) {
   if (wishlist.isOwn || item.claimVisibility === 'hidden') return null;
+  if (item.claim && !item.claim.claimedByMemberId)
+    return (
+      <details className="guest-claim-controls">
+        <summary>Clear a guest reservation</summary>
+        <p>Check with the guest first so this gift is not bought twice.</p>
+        <form method="post" action={wishlistFormAction(wishlist.id)}>
+          <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+          <button className="button-quiet" name="intent" value="release-guest">
+            Yes, clear this reservation
+          </button>
+        </form>
+      </details>
+    );
   if (item.claim && !item.claim.isClaimedByViewer) return null;
   const bought = item.claim?.state === 'purchased';
   const intent = !item.claim ? 'claim-item' : bought ? 'mark-not-purchased' : 'mark-purchased';

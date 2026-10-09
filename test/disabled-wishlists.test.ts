@@ -186,7 +186,7 @@ describe('disabled wishlist visibility', () => {
         data: 'Not found',
         init: { status: 404 }
       });
-    expect((await loadShared(groupToken)).wishlists.map((list) => list.id)).toEqual([
+    expect((await loadShared(groupToken)).data.wishlists.map((list) => list.id)).toEqual([
       other.wishlistId
     ]);
     await prepareFamilyMemberRemoval(env.DB, admin.id, other.id);

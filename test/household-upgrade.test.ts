@@ -18,7 +18,9 @@ async function snapshot(db: D1Database) {
     db.prepare('SELECT * FROM members ORDER BY id'),
     db.prepare('SELECT * FROM wishlists ORDER BY id'),
     db.prepare('SELECT * FROM items ORDER BY id'),
-    db.prepare('SELECT * FROM claims ORDER BY item_id'),
+    db.prepare(
+      'SELECT item_id, claimed_by_member_id, state, created_at, updated_at FROM claims ORDER BY item_id'
+    ),
     db.prepare('SELECT * FROM family_invitations ORDER BY id'),
     db.prepare('SELECT * FROM wishlist_share_links ORDER BY id')
   ]);

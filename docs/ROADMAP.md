@@ -53,14 +53,15 @@ happens directly on `main`, and each step keeps the application deployable with 
 - [x] Optional notes, price guidance, priority and safe external product links.
 - [x] Look up product details from a pasted link and offer them as editable suggestions.
 - [x] Add products to one or more family lists from a browser bookmarklet.
-- [x] Share one person's list outside the family with removable, named, read-only links.
+- [x] Share selected lists outside the family with removable, named links and guest reservations.
 - [x] Validate every mutation server-side.
 
 ## Phase 6 — Secret claims
 
 - [x] Claim, unclaim and mark an item purchased.
 - [x] Show claim state to other gift-givers.
-- [x] Prove through query-level tests that owners never receive their own claim information.
+- [x] Prove through query-level tests that signed-in owners never receive their own claim information.
+- [x] Allow anonymous reservations on all shared links, accepting public availability visibility.
 - [x] Handle competing claims safely.
 
 ## Phase 7 — First release

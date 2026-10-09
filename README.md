@@ -41,7 +41,7 @@ useful. Buying plans stay hidden from the person receiving the gift.
 - **Keep it in the family.** Private, invitation-only sign-in and a wishlist ready for each person.
 - **Save it while you see it.** Add from a shopping link, your phone's Share menu or a browser button.
 - **Make someone's day.** Coordinate gifts without spoiling the surprise or buying the same thing twice.
-- **Let others join the giving.** Share a read-only list with friends or relatives, and stop sharing whenever you like.
+- **Let others join the giving.** Share lists with friends or relatives so they can reserve gifts without signing in.
 
 Run your own independent installation in your own Cloudflare account. No always-on home server,
 application password database or separate AI account to manage. A normal family deployment is

@@ -29,9 +29,7 @@ export function withSecurityHeaders(
         ? isMemberAvatar
           ? 'private, max-age=300'
           : 'private, max-age=86400'
-        : name === 'Referrer-Policy' && options.publicShare
-          ? 'no-referrer'
-          : value
+        : value
     );
   }
 

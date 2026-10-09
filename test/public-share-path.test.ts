@@ -39,7 +39,7 @@ describe('public share request boundary', () => {
     expect(isPublicSharePath(path)).toBe(false);
   });
 
-  it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])('does not allow %s', (method) => {
+  it.each(['PUT', 'PATCH', 'DELETE', 'OPTIONS'])('does not allow %s', (method) => {
     expect(
       isPublicShareRequest(new Request(`https://wishlist.example/shared/${token}`, { method }))
     ).toBe(false);
@@ -52,4 +52,17 @@ describe('public share request boundary', () => {
     );
     expect(redactedRequestPath(`/shared/${token}/unexpected`)).toBe('/shared/:redacted');
   });
+});
+
+it('allows POST only to the shared list, never its image route', () => {
+  expect(
+    isPublicShareRequest(
+      new Request(`https://wishlist.example/shared/${token}`, { method: 'POST' })
+    )
+  ).toBe(true);
+  expect(
+    isPublicShareRequest(
+      new Request(`https://wishlist.example/shared/${token}/image/${itemId}`, { method: 'POST' })
+    )
+  ).toBe(false);
 });

@@ -87,7 +87,8 @@ export function FamilySharing({
         <h2 id="family-sharing-title">Sharing links</h2>
         <p>
           Choose one or more lists to include in a link. Anyone with the link can see their current
-          wishes without signing in.
+          wishes and reserve gifts without signing in. Reserved gifts are visible to anyone with the
+          link, including the wishlist owner.
         </p>
       </div>
 

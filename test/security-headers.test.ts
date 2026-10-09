@@ -29,7 +29,7 @@ describe('security headers', () => {
     expect(response.headers.has('X-Product-Image-Proxy')).toBe(false);
   });
 
-  it('does not cache shared pictures or send their bearer URL as a referrer', () => {
+  it('keeps shared responses private and permits same-origin forms without external referrers', () => {
     const response = withSecurityHeaders(
       new Response('image', { headers: { 'X-Product-Image-Proxy': '1' } }),
       'test-nonce',
@@ -37,7 +37,7 @@ describe('security headers', () => {
     );
 
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
-    expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(response.headers.get('Referrer-Policy')).toBe('same-origin');
   });
 
   it('gives avatars a short private cache without widening the image policy', () => {

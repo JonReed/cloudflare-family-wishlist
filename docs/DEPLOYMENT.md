@@ -338,8 +338,8 @@ On that test wish, choose **Mark as bought** while signed in as yourself.
 On the test list, choose **Share this list**. In **Manage**, check that the test list is selected,
 name the link `Setup test`, choose **Create sharing link**, then copy it.
 
-**Done when:** that copied link opens in a signed-out private browser without login and has no
-editing or gift-claim controls.
+**Done when:** the copied link opens in a signed-out private browser without login. The test gift
+shows **Reserved**. Available gifts offer **I’ll get this**, and there are no wish-editing controls.
 
 ### 29. Stop sharing the test link
 

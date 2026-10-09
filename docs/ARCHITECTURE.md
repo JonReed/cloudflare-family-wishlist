@@ -45,8 +45,8 @@ signature, issuer, application audience, expiry and required identity claims bef
 email, giving every production request two complementary identity checks.
 
 Revocable viewing links use a deliberately configured, path-specific Access Bypass. The Worker
-independently recognises only read-only `/shared/<secret>` list and image paths;
-all neighbouring paths and every mutation still require a valid Access identity. More-specific Access
+independently recognises GET/HEAD on exact `/shared/<secret>` list and image paths, plus POST on
+the exact list path for guest reservations. Neighbouring paths and all other mutations require Access. More-specific Access
 paths also expose only the compiled stylesheet under `/shared-assets/*` and the favicon needed to
 render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
 behind Access.
@@ -87,9 +87,9 @@ enforcement cannot disagree.
    link** performs the lookup through the ordinary form action. Saving inserts one independent item
    per selected list with a guarded D1 statement.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
-8. A read-only shared-list request skips identity validation only when its method and path exactly
-   match the public route boundary. It hashes the URL secret and runs a separate D1 query that does
-   not reference `claims`. Shared pictures require the same secret plus an item belonging to that
+8. A shared-list request skips identity validation only when its method and path exactly
+   match the public route boundary. It hashes the URL secret and runs a separate D1 query that
+   returns availability and only the current guest’s own reservation state. Shared pictures require the same secret plus an item belonging to that
    selected list, pass through the bounded raster proxy and consume both a capability-holder budget and a
    higher list-wide emergency budget. A HEAD request verifies membership but does not fetch or count
    the upstream picture.
@@ -311,8 +311,9 @@ the organiser check before any database or Access mutation.
 
 The public query selects the list owner and ordinary item fields directly from `wishlists`, `members`
 and `items`. A token-hash lookup unions the selected IDs from either kind of link before reading
-ordinary wish details; it returns one claim-free result per selected wishlist, including empty lists.
-It neither joins nor selects `claims`. Its TypeScript result has no claim field. Shared
+ordinary wish details; it returns one result per selected wishlist, including empty lists.
+A left join on `claims` returns a reservation enum: available, reserved, yours or bought. Public
+responses never include claimant identifiers, names, hashes or another claimant’s purchase state. Shared
 image routes look up the stored image only when both the hashed secret and item membership match,
 then reuse the public-network, redirect, type and size checks of the signed-in image proxy. A D1-backed
 20-per-minute and 100-per-day capability-holder budget prevents one recipient from consuming the
@@ -563,8 +564,8 @@ the existing helper without becoming persistence or availability dependencies.
 - mutations validate type, length, UUID, ownership and allowed state at the server boundary;
 - errors shown to users do not reveal internals;
 - logs omit tokens, private claim surprises and query strings;
-- public viewing secrets are hashed at rest, redacted from application logs and can read only one
-  claim-free wishlist;
+- public sharing secrets are hashed at rest, redacted from application logs and limited to their
+  selected lists; guests can see availability and manage only their own reservations;
 - public sharing Access applications are hostname-specific, idempotently created from the same
   bounded implementation used by setup, and rejected if their destinations or policy drift; and
 - format, lint, type, Workers-runtime tests, build and dependency audit gate every push.
@@ -598,3 +599,30 @@ retaining applied SQL when the subsequent Worker deployment fails.
 
 Public fork setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md). The maintainer checkout may also
 contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context; it must remain private.
+
+## Guest reservations
+
+Every existing and new sharing link allows guest claims through ordinary server-rendered forms.
+Only POST to the exact shared-list path bypasses Access; the Worker and action both enforce same-origin
+forms and bounded bodies. Public pages use `Referrer-Policy: same-origin` so native forms send a valid
+Origin, while external links retain `noreferrer`. They remain private/no-store and omit client scripts.
+
+A cryptographically random 256-bit guest secret is kept in a Secure, HttpOnly, SameSite=Lax host-only
+cookie (Secure and the __Host prefix are omitted only for HTTP local development). D1 stores only
+its SHA-256 hash on claims. The recovery disclosure deliberately shows the current browser's private
+code; restoring it is a same-origin POST, never a URL parameter, and requires a matching reservation
+on an enabled list covered by the active link. Recovery replaces the browser's previous credential.
+
+Migration 0014 preserves existing member claims while allowing exactly one member ID or guest hash
+per row. The item primary key prevents member/guest double booking with one conditional insert.
+Every guest write checks active link membership, an enabled list owner and (for edits/deletes) the
+matching guest hash inside its SQL statement. The public page shows availability even to an owner
+visiting anonymously; this is an accepted product trade-off. The signed-in owner query still excludes
+all claims at its SQL join and its result type. Other family members see “A guest”, never the hash.
+
+Mutation budgets are atomic D1 counters: 40 attempts per guest and 200 per sharing link per UTC hour,
+including recovery and unsuccessful reservations. Old counter rows are pruned after 24 hours.
+A link-wide limit prevents cookie rotation from evading the total allowance. This bounds casual abuse,
+not malicious use of a deliberately forwarded capability. Revocation removes access, not reservations.
+An enabled family member other than the owner can explicitly clear guest reservations; member claims
+retain their existing ownership rules. No extra Cloudflare binding, token or dashboard setup is needed.

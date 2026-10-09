@@ -208,6 +208,7 @@ describe('shared wishlists', () => {
     expect(shared?.items[0]).toEqual({
       id: itemId,
       title: 'Surprise',
+      reservation: 'reserved',
       notes: 'The green one',
       productUrl: 'https://example.com/gift',
       hasImage: true,

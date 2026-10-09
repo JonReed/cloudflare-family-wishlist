@@ -15,6 +15,8 @@ type SharedWishlistRow = {
   item_price_amount_minor: number | null;
   item_price_currency: string | null;
   item_priority: ItemPriority | null;
+  reserved: number;
+  own_claim_state: string | null;
 };
 
 export type SharedWishlistItem = {
@@ -26,6 +28,7 @@ export type SharedWishlistItem = {
   priceAmountMinor: number | null;
   priceCurrency: string | null;
   priority: ItemPriority;
+  reservation: 'available' | 'reserved' | 'yours' | 'bought';
 };
 
 export type SharedWishlist = {
@@ -113,7 +116,7 @@ async function hashShareToken(token: string): Promise<string> {
   return sha256Hex(token);
 }
 
-async function tokenHash(value: unknown): Promise<string> {
+export async function tokenHash(value: unknown): Promise<string> {
   return hashShareToken(requireToken(value));
 }
 
@@ -453,8 +456,8 @@ export async function revokeShareLink(
     throw new SharedWishlistInputError('We couldn’t stop sharing this link. Try again.');
 }
 
-// Existing single-list capabilities and new selections share the claim-free public boundary.
-const SHARED_WISHLIST_IDS = `
+// Both link types grant the same item-scoped guest permissions.
+export const SHARED_WISHLIST_IDS = `
   SELECT wishlist_id FROM wishlist_share_links WHERE token_hash = ?1
   UNION
   SELECT selected.wishlist_id FROM family_share_links AS links
@@ -472,7 +475,8 @@ export async function getSharedWishlist(
 
 export async function getSharedWishlists(
   db: D1Database,
-  token: unknown
+  token: unknown,
+  guestHash: string | null = null
 ): Promise<SharedWishlist[]> {
   const hash = await tokenHash(token);
   const { results } = await db
@@ -488,11 +492,14 @@ export async function getSharedWishlists(
          items.image_url AS item_image_url,
          items.price_amount_minor AS item_price_amount_minor,
          items.price_currency AS item_price_currency,
-         items.priority AS item_priority
+         items.priority AS item_priority,
+         claims.item_id IS NOT NULL AS reserved,
+         CASE WHEN claims.guest_token_hash = ?2 THEN claims.state ELSE NULL END AS own_claim_state
        FROM shared_wishlist_ids
        INNER JOIN wishlists ON wishlists.id = shared_wishlist_ids.wishlist_id
        INNER JOIN members ON members.id = wishlists.owner_member_id
        LEFT JOIN items ON items.wishlist_id = wishlists.id
+       LEFT JOIN claims ON claims.item_id = items.id
        WHERE members.disabled_at IS NULL
        ORDER BY
          members.display_name COLLATE NOCASE,
@@ -505,7 +512,7 @@ export async function getSharedWishlists(
          items.created_at DESC,
          items.id DESC`
     )
-    .bind(hash)
+    .bind(hash, guestHash)
     .all<SharedWishlistRow>();
 
   const wishlists = new Map<string, SharedWishlist>();
@@ -524,6 +531,14 @@ export async function getSharedWishlists(
         hasImage: Boolean(row.item_image_url),
         priceAmountMinor: row.item_price_amount_minor,
         priceCurrency: row.item_price_currency,
+        reservation:
+          row.own_claim_state === 'purchased'
+            ? 'bought'
+            : row.own_claim_state === 'claimed'
+              ? 'yours'
+              : row.reserved
+                ? 'reserved'
+                : 'available',
         priority: row.item_priority
       });
     }

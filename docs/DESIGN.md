@@ -159,7 +159,7 @@ When a picture leaves too little room, let the footer span the item content's
 full width; use the available content width rather than only the viewport to choose this layout.
 Give the “See where to find it” shop link a filled evergreen treatment and retain its external-link
 arrow, making the buying route more prominent than list maintenance. Keep it a semantic link, including
-on the read-only shared list. Without JavaScript, the action dropdown and its nested edit/remove disclosures open
+on the shared list. Without JavaScript, the action dropdown and its nested edit/remove disclosures open
 ordinary inline forms. Opening the enhanced editor must
 not change the position or width of the image, metadata or claim controls above it. With JavaScript,
 saving closes the editor and dropdown, updates the wish in place, shows “Changes saved.” in the footer,
@@ -209,15 +209,18 @@ local pending state and an error beside the affected wish. The same controls mus
 server forms without JavaScript; optimistic presentation must never override the server's answer to
 a competing claim.
 
-On the recipient's own list, claim data must not merely be hidden with CSS: it must be absent from
+On the recipient's signed-in list, claim data must not merely be hidden with CSS: it must be absent from
 the server response. Do not spend permanent page space explaining this invariant. Keep the warm,
 plain-language reassurance in project guidance instead: “If someone decides to get you something
 from this list, we’ll keep it secret so the surprise isn’t spoiled.”
 
 ### Sharing ideas with wider family
 
-The link-shared view is a calm, read-only paper list with the Family Wishlist mark, the person's name,
-wish count and ordinary wish details. It has no signed-in navigation, editing, add or claim controls.
+The link-shared view is a calm paper list with the Family Wishlist mark, the person's name,
+wish count and ordinary wish details. It has no signed-in navigation, wish editing or add controls. Every link offers guest reservation
+controls with explicit text status: Available to give, Reserved, You’re getting this, or You’ve bought
+this. Only the current guest can change their reservation. Keep recovery behind a native disclosure
+and explain that anyone with the link, including the owner, can see reservation availability.
 The absence of those controls is sufficient; do not add software-oriented explanations about what a
 public visitor cannot do.
 

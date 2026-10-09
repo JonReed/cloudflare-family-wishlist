@@ -42,7 +42,7 @@ members use separate identities and remain signed in.
 
 “Wishlist owner” and “gift-giver” describe the viewer's relationship to a particular list:
 
-- the owner can view and edit their own wishes but cannot see their claim state;
+- the owner can view and edit their own wishes but cannot see claim state in the signed-in family view;
 - any other admitted member can view and edit those wishes and coordinate claims;
 - the organiser manages family admission from **Manage**; all members can manage sharing links there;
   it does not give different access to wishlist editing or gift coordination.
@@ -110,7 +110,7 @@ On somebody else's list, a member can claim an unclaimed item, release their own
 claim as purchased. They can mark it as not bought again without releasing their claim.
 Other gift-givers can see who has claimed it and its state.
 
-On the owner's list, claim information is absent—not blurred, redacted or hidden with CSS. This rule
+In the signed-in owner's list, claim information is absent—not blurred, redacted or hidden with CSS. This rule
 applies to rendered HTML, loader data, future APIs, logs and error details.
 
 Marking a gift purchased never removes the wish. It can remain useful for repeat gifts or several
@@ -126,9 +126,14 @@ surface for all links, including existing single-list links.
 
 The public page opens without Cloudflare login and shows the selected people's current wishes,
 notes, prices, product links and pictures, including empty lists. It never includes unselected lists,
-claim or purchase information, sign-in emails, photos or the link's private name. Adding a new family
+claimant identities, other people's purchase state, sign-in emails, photos or the link's private name. Adding a new family
 member does not add their list to an existing link. Changes to selected wishes appear automatically.
-Public queries never join claims.
+Every shared link allows guest reservations. Public visitors see only availability or “Reserved”
+for someone else's claim, and can manage their own reservations through a private browser credential.
+The owner can also visit anonymously and learn availability; that trade-off is explicitly accepted.
+Guest credentials are not family identities. Revoking a link blocks further access without deleting
+reservations. Another enabled family member, excluding the list owner, can clear an abandoned guest
+reservation after confirmation. Guests can save a recovery code to use another browser.
 
 The household can have up to five active sharing links in total. Each has a private, recognisable
 name such as “Uncle David”. **Manage** shows every link's name, currently visible lists, creator
@@ -150,12 +155,12 @@ family admission controls on the same page remain organiser-only.
 3. One member owns exactly one wishlist.
 4. Every admitted member can view and edit every enabled family member's wishlist. Disabled owners'
    retained lists cannot be viewed, edited or newly shared, including through existing viewing links.
-5. A list owner never receives claim or purchase information for their own items.
+5. The signed-in family view never sends an owner claim or purchase information for their own items. Anonymous shared views intentionally reveal reservation availability to anyone with the link.
 6. An item can have at most one active claim.
 7. Core wishlist and claim actions work without browser JavaScript.
 8. A normal family deployment should fit within Cloudflare's free tier.
 9. The configured initial organiser is an admin; invited members default to the member role.
-10. A link-shared list is read-only and never receives claim or purchase data.
+10. All sharing links allow guest reservations, but never wish editing or disclosure of another claimant's identity or purchase state.
 11. Creating a viewing link first verifies the exact hostname's narrow public Access application; an
     unusable login-gated link must never be created.
 
@@ -180,7 +185,7 @@ agreement rather than an ordinary implementation detail.
 - safe product links, notes, prices and priorities;
 - claiming, releasing and marking gifts purchased;
 - server-enforced claim secrecy for the recipient; and
-- removable, read-only sharing links for sharing one or several people's gift ideas outside the family, with
+- removable sharing links with guest reservations for sharing one or several people's gift ideas outside the family, with
   their narrow Cloudflare Access exception configured automatically.
 
 See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest)
@@ -191,7 +196,7 @@ scheduled updater delivery remain follow-up verification; see [release readiness
 
 The reference project stays delightfully small and family-centred:
 
-- private, invitation-only family spaces with optional read-only sharing links;
+- private, invitation-only family spaces with optional sharing links with guest reservations;
 - one useful year-round wishlist per person;
 - Cloudflare-managed one-time PIN sign-in;
 - shared family editing with a single organiser role for admission;

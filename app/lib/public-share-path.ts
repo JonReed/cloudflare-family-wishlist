@@ -11,8 +11,9 @@ export function isPublicSharePath(pathname: string): boolean {
 
 export function isPublicShareRequest(request: Request): boolean {
   return (
-    (request.method === 'GET' || request.method === 'HEAD') &&
-    isPublicSharePath(new URL(request.url).pathname)
+    ((request.method === 'GET' || request.method === 'HEAD') &&
+      isPublicSharePath(new URL(request.url).pathname)) ||
+    (request.method === 'POST' && SHARED_WISHLIST_PATH.test(new URL(request.url).pathname))
   );
 }
 

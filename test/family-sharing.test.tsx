@@ -94,7 +94,7 @@ describe('family sharing', () => {
     ]);
   });
 
-  it('never publishes claims and limits image access to the selected lists', async () => {
+  it('publishes availability without private claim details and scopes images to selected lists', async () => {
     const { admin, bob, carol } = await fixture();
     for (const member of [admin, bob, carol]) {
       await createWishlistItem(env.DB, admin.id, member.wishlistId, {
@@ -131,7 +131,7 @@ describe('family sharing', () => {
       });
     }
     await expect(getSharedWishlistImageUrl(env.DB, token, carolItem.id)).resolves.toBeNull();
-    const loaderData = { wishlists: shared, token };
+    const loaderData = { wishlists: shared, token, recoveryCode: 'a'.repeat(43) };
     const html = renderToStaticMarkup(
       <SharedWishlistPage
         loaderData={loaderData}
@@ -156,7 +156,7 @@ describe('family sharing', () => {
     );
     for (const privateValue of [
       'purchased',
-      'claim',
+      'claimed_by_member_id',
       bob.id,
       'Private reminder',
       'Gift for carol'
@@ -166,7 +166,10 @@ describe('family sharing', () => {
     }
     expect(html).toContain('alice’s wishlist');
     expect(html).toContain('bob’s wishlist');
-    expect(html).not.toContain('<form');
+    expect(shared[0]?.items[0]?.reservation).toBe('reserved');
+    expect(shared[1]?.items[0]?.reservation).toBe('available');
+    expect(html).toContain('I’ll get this');
+    expect(html).toContain('method="post"');
   });
 
   it('rejects invalid or stale selections without persisting a partial link', async () => {

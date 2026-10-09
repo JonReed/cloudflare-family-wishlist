@@ -137,7 +137,7 @@ development data are safe within this repository.
 
 ## Security and privacy
 
-- The owner of a wishlist must never receive claim or purchase data for their own items. Enforce this in server queries/services, not only in the UI.
+- The signed-in family view must never send an owner claim or purchase data for their own items. Shared links intentionally reveal reservation availability to anonymous visitors, including an owner using that link. Enforce this in server queries/services, not only in the UI.
 - Validate the Cloudflare Access JWT signature, issuer and application audience. Fail closed if Access is missing or misconfigured.
 - Use D1 prepared statements with `.bind()` for every user-controlled value. Never interpolate input into SQL.
 - Use random UUIDs for externally visible identifiers.

@@ -9,6 +9,7 @@ import {
   updateWishlistItem,
   deleteWishlistItem,
   claimWishlistItem,
+  releaseGuestClaim,
   setOwnClaimState,
   unclaimWishlistItem
 } from '../lib/db/wishlists';
@@ -150,6 +151,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       case 'mark-not-purchased':
         await setOwnClaimState(env.DB, member.id, formString(formData, 'itemId'), 'claimed');
         return { wishlistId, updated: 'purchase' as const };
+      case 'release-guest':
+        await releaseGuestClaim(env.DB, member.id, formString(formData, 'itemId'));
+        return { wishlistId, updated: 'unclaim' as const };
       case 'unclaim-item':
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         return { wishlistId, updated: 'unclaim' as const };

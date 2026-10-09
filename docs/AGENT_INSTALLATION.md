@@ -290,7 +290,7 @@ cannot access that browser session.
 4. Have that member sign in. **Done when:** the same list and wish appear and **Manage** says **Joined**.
 5. As the organiser, choose **I’ll get this** on the test wish. **Done when:** the organiser sees the claim but its owner does not after refreshing.
 6. Choose **Mark as bought** on that wish. **Done when:** only the gift-giver sees its purchase state.
-7. In **Manage → Sharing**, create a link for the test list. **Done when:** it opens signed out without editing or claim controls.
+7. In **Manage → Sharing**, create a link for the test list. **Done when:** it opens signed out without wish-editing controls and allows guest reservations.
 8. Stop sharing that link in **Manage**. **Done when:** the old link no longer opens the list.
 9. Try an uninvited email controlled by a tester. **Done when:** it cannot reach family lists.
 

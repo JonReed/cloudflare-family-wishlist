@@ -76,7 +76,7 @@ describe('public share Worker boundary', () => {
     return { owner, giver, itemId, token };
   }
 
-  it('bypasses Access only for exact GET and HEAD share paths', async () => {
+  it('bypasses Access only for exact shared reads and list posts', async () => {
     const { itemId, token } = await sharedFixture();
 
     expect((await fetchWorker(`/shared/${token}`)).status).toBe(200);
@@ -97,7 +97,7 @@ describe('public share Worker boundary', () => {
           body: 'intent=create-share-link&shareLinkName=Friend'
         })
       ).status
-    ).toBe(503);
+    ).toBe(200);
   });
 
   it('keeps claims out of public responses and revokes only the selected link', async () => {

@@ -2790,3 +2790,48 @@ button:disabled {
     animation-iteration-count: 1 !important;
   }
 }
+
+.guest-sharing-intro {
+  max-width: 48rem;
+  margin: 0 auto 1.5rem;
+}
+.guest-sharing-intro > p + p {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.guest-recovery {
+  margin-top: 1rem;
+}
+.guest-recovery summary {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.guest-recovery p {
+  margin: 0.75rem 0;
+}
+.guest-recovery label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+.guest-recovery input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.7rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  background: transparent;
+}
+.guest-claim-controls {
+  margin-top: 1rem;
+}
+.guest-claim-status {
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+.guest-claim-controls form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}

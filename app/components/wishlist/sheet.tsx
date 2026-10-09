@@ -83,8 +83,8 @@ export function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
 
       {!wishlist.isOwn ? (
         <p className="giver-note">
-          Thinking of buying something? Let the family know on the list.{' '}
-          {wishlist.owner.displayName} won’t see a thing.
+          Thinking of buying something? Let the family know on the list. These buying plans stay
+          hidden on {wishlist.owner.displayName}’s signed-in wishlist.
         </p>
       ) : null}
 
