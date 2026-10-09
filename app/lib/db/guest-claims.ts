@@ -20,26 +20,26 @@ export async function consumeGuestClaimBudget(
 ) {
   const linkHash = await tokenHash(token);
   const hour = Math.floor(now / 3600000);
+  // Check the link first: rejected requests must not allocate rows for rotated guest codes.
+  for (const [scope, limit] of [
+    ['link:' + linkHash, 200],
+    ['guest:' + guestHash, 40]
+  ] as const) {
+    const result = await db
+      .prepare(
+        `INSERT INTO guest_claim_limits (scope, hour, attempts)
+    VALUES (?1, ?2, 1) ON CONFLICT(scope) DO UPDATE SET hour = excluded.hour,
+    attempts = CASE WHEN guest_claim_limits.hour = excluded.hour THEN guest_claim_limits.attempts + 1 ELSE 1 END
+    WHERE guest_claim_limits.hour <> excluded.hour OR guest_claim_limits.attempts < ?3`
+      )
+      .bind(scope, hour, limit)
+      .run();
+    if (result.meta.changes !== 1) throw new GuestClaimLimitError();
+  }
   await db
     .prepare('DELETE FROM guest_claim_limits WHERE hour < ?1')
     .bind(hour - 24)
     .run();
-  const results = await db.batch(
-    [
-      ['link:' + linkHash, 200],
-      ['guest:' + guestHash, 40]
-    ].map(([scope, limit]) =>
-      db
-        .prepare(
-          `INSERT INTO guest_claim_limits (scope, hour, attempts)
-    VALUES (?1, ?2, 1) ON CONFLICT(scope) DO UPDATE SET hour = excluded.hour,
-    attempts = CASE WHEN guest_claim_limits.hour = excluded.hour THEN guest_claim_limits.attempts + 1 ELSE 1 END
-    WHERE guest_claim_limits.hour <> excluded.hour OR guest_claim_limits.attempts < ?3`
-        )
-        .bind(scope, hour, limit)
-    )
-  );
-  if (results.some((result) => result.meta.changes !== 1)) throw new GuestClaimLimitError();
 }
 
 export async function hasGuestClaims(

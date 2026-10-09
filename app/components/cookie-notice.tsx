@@ -2,21 +2,21 @@ export function CookieNotice() {
   return (
     <aside className="cookie-notice" aria-label="Cookies">
       <details>
-        <summary id="cookie-information">
+        <summary>
           Required cookies only <span>— how we use them</span>
         </summary>
-        <div className="cookie-information">
+        <div id="cookie-information" className="cookie-information" tabIndex={-1}>
           <p>
             We use cookies to keep family sign-in secure and let guests manage their reserved gifts.
             Family Wishlist does not use advertising or analytics cookies.
           </p>
           <h2>Guest reservations</h2>
           <p>
-            When you reserve a gift or recover your reservations, this site saves a private code in
-            a cookie called <code>__Host-wishlist-guest</code>. It identifies your reservations
-            without asking for your name or email. It lasts for up to one year from your last
-            reservation action or recovery, so you can return for birthdays and other occasions.
-            Simply viewing a shared list does not create or renew this cookie.
+            When you start reserving a gift or recover your reservations, this site saves a private
+            code in a cookie called <code>__Host-wishlist-guest</code>. It identifies your
+            reservations without asking for your name or email. It lasts for up to one year from
+            your last reservation action or recovery, so you can return for birthdays and other
+            occasions. Simply viewing a shared list does not create or renew this cookie.
           </p>
           <h2>Family sign-in and security</h2>
           <p>

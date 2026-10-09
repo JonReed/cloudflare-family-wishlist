@@ -18,8 +18,13 @@ export async function hashGuestSecret(secret: string): Promise<string> {
   return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+export function isLocalHttpRequest(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+}
+
 function cookieName(request: Request): string {
-  return new URL(request.url).protocol === 'https:' ? '__Host-wishlist-guest' : 'wishlist-guest';
+  return isLocalHttpRequest(request) ? 'wishlist-guest' : '__Host-wishlist-guest';
 }
 
 export function readGuestSecret(request: Request): string | null {
@@ -34,5 +39,5 @@ export function readGuestSecret(request: Request): string | null {
 
 export function guestCookie(request: Request, secret: string): string {
   if (!validGuestSecret(secret)) throw new Error('Invalid guest credential.');
-  return `${cookieName(request)}=${secret}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${new URL(request.url).protocol === 'https:' ? '; Secure' : ''}`;
+  return `${cookieName(request)}=${secret}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${isLocalHttpRequest(request) ? '' : '; Secure'}`;
 }

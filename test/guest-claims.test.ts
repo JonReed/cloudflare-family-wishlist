@@ -224,6 +224,36 @@ describe('guest reservations', () => {
     await expect(
       consumeGuestClaimBudget(env.DB, f.token, await hashGuestSecret(createGuestSecret()), 7200000)
     ).rejects.toThrow('Too many');
+    expect(
+      await env.DB.prepare(
+        "SELECT COUNT(*) AS n FROM guest_claim_limits WHERE scope LIKE 'guest:%'"
+      ).first()
+    ).toEqual({ n: 1 });
+  });
+  it('admits only one concurrent request for the final link slot without allocating rejected guests', async () => {
+    const f = await fixture();
+    await consumeGuestClaimBudget(env.DB, f.token, f.hash, 3600000);
+    await env.DB.prepare(
+      "UPDATE guest_claim_limits SET attempts = 199 WHERE scope LIKE 'link:%'"
+    ).run();
+    const hashes = await Promise.all([
+      hashGuestSecret(createGuestSecret()),
+      hashGuestSecret(createGuestSecret())
+    ]);
+    const results = await Promise.allSettled(
+      hashes.map((hash) => consumeGuestClaimBudget(env.DB, f.token, hash, 3600000))
+    );
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(
+      await env.DB.prepare(
+        "SELECT attempts FROM guest_claim_limits WHERE scope LIKE 'link:%'"
+      ).first()
+    ).toEqual({ attempts: 200 });
+    expect(
+      await env.DB.prepare(
+        "SELECT COUNT(*) AS n FROM guest_claim_limits WHERE scope LIKE 'guest:%'"
+      ).first()
+    ).toEqual({ n: 2 });
   });
   it('reads without setting cookies and handles private form cookies, recovery and missing cookies', async () => {
     const f = await fixture();
@@ -280,7 +310,7 @@ describe('guest reservations', () => {
       })
     ).toMatchObject({ init: { status: 409 } });
   });
-  it('creates the guest cookie only after a successful first reservation or recovery', async () => {
+  it('verifies cookie storage before the first reservation and does not orphan a claim when cookies are blocked', async () => {
     const f = await fixture();
     const args = {
       params: { token: f.token },
@@ -290,13 +320,27 @@ describe('guest reservations', () => {
     };
     const firstRequest = request(f.token, f.secret, 'claim', f.item.id);
     firstRequest.headers.delete('Cookie');
-    const claimed = await action({ ...args, request: firstRequest });
-    expect(claimed).toBeInstanceOf(Response);
-    if (!(claimed instanceof Response)) throw new Error('Expected reservation redirect');
-    const cookie = claimed.headers.get('Set-Cookie')!;
+    const started = await action({ ...args, request: firstRequest });
+    expect(started).toMatchObject({ data: { confirmation: { itemId: f.item.id } } });
+    if (started instanceof Response) throw new Error('Expected first-use confirmation');
+    const cookie = new Headers(started.init?.headers).get('Set-Cookie')!;
     const secret = readGuestSecret(
       new Request(origin, { headers: { Cookie: cookie.split(';')[0] } })
     )!;
+    expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(false);
+    const blocked = request(f.token, secret, 'confirm-claim', f.item.id);
+    blocked.headers.delete('Cookie');
+    const blockedResult = await action({ ...args, request: blocked });
+    expect(blockedResult).toMatchObject({ init: { status: 409 } });
+    if (!(blockedResult instanceof Response))
+      expect(blockedResult.data.error).toContain('did not save');
+    expect((await getSharedWishlists(env.DB, f.token))[0].items[0].reservation).toBe('available');
+    const claimed = await action({
+      ...args,
+      request: request(f.token, secret, 'confirm-claim', f.item.id)
+    });
+    expect(claimed).toBeInstanceOf(Response);
+    if (claimed instanceof Response) expect(claimed.status).toBe(303);
     expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(true);
     const recovery = request(f.token, f.secret, 'recover', '', { recoveryCode: secret });
     recovery.headers.delete('Cookie');
@@ -310,6 +354,55 @@ describe('guest reservations', () => {
     expect(rejected).toMatchObject({ init: { status: 409 } });
     if (!(rejected instanceof Response))
       expect(new Headers(rejected.init?.headers).has('Set-Cookie')).toBe(false);
+  });
+  it('handles simultaneous first-use forms using the browser cookie at confirmation time', async () => {
+    const f = await fixture();
+    const args = {
+      params: { token: f.token },
+      context: context(),
+      pattern: '/shared/:token',
+      url: new URL(`${origin}/shared/${f.token}`)
+    };
+    const starts = await Promise.all(
+      [0, 1].map(() => {
+        const first = request(f.token, f.secret, 'claim', f.item.id);
+        first.headers.delete('Cookie');
+        return action({ ...args, request: first });
+      })
+    );
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 0 });
+    const last = starts[1];
+    if (last instanceof Response) throw new Error('Expected first-use confirmation');
+    const cookie = new Headers(last.init?.headers).get('Set-Cookie')!;
+    const secret = readGuestSecret(
+      new Request(origin, { headers: { Cookie: cookie.split(';')[0] } })
+    )!;
+    await action({ ...args, request: request(f.token, secret, 'confirm-claim', f.item.id) });
+    expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(true);
+  });
+  it.each(['http://localhost:5173', 'http://127.0.0.1:5173', 'http://[::1]:5173'])(
+    'permits a development cookie only on the HTTP loopback origin %s',
+    (url) => {
+      const secret = createGuestSecret();
+      const cookie = guestCookie(new Request(url), secret);
+      expect(cookie).toMatch(/^wishlist-guest=/);
+      expect(cookie).not.toContain('Secure');
+      expect(readGuestSecret(new Request(url, { headers: { Cookie: cookie.split(';')[0] } }))).toBe(
+        secret
+      );
+    }
+  );
+  it.each([
+    origin,
+    'http://wishlist.example',
+    'http://localhost.example',
+    'http://127.0.0.1.attacker.example'
+  ])('requires a secure host-only cookie on %s', (url) => {
+    const secret = createGuestSecret();
+    expect(guestCookie(new Request(url), secret)).toMatch(/^__Host-wishlist-guest=.*; Secure$/);
+    expect(
+      readGuestSecret(new Request(url, { headers: { Cookie: `wishlist-guest=${secret}` } }))
+    ).toBeNull();
   });
   it('does not accept injected, malformed or duplicate guest cookies', () => {
     const secret = createGuestSecret();

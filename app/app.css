@@ -2823,6 +2823,24 @@ button:disabled {
   border-radius: 0.35rem;
   background: transparent;
 }
+.guest-confirmation {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+}
+.guest-confirmation h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.guest-confirmation p {
+  margin: 0.75rem 0;
+}
+.guest-confirmation form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
 .guest-claim-controls {
   margin-top: 1rem;
 }

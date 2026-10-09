@@ -1,5 +1,5 @@
 import { createExecutionContext, env } from 'cloudflare:test';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cloudflareContext } from '../app/lib/context';
 import { ensureMemberForEmail } from '../app/lib/db/members';
@@ -122,5 +122,32 @@ describe('public share Worker boundary', () => {
     const newStatus = (await fetchWorker(`/shared/${newToken}`)).status;
     const statuses = [oldStatus, newStatus];
     expect(statuses.sort()).toEqual([200, 404]);
+  });
+
+  it('redirects public HTTP requests to HTTPS before routing or reserving gifts', async () => {
+    const handler = vi.fn(() => Promise.resolve(new Response('Shared page')));
+    const fetch = createAppWorker(handler).fetch!;
+    const path = '/shared/abcdefghijklmnopqrstuv';
+    for (const method of ['GET', 'HEAD', 'POST']) {
+      const request = new Request(`http://wishlist.example${path}`, { method }) as Parameters<
+        typeof fetch
+      >[0];
+      const response = await fetch(request, env, createExecutionContext());
+      expect(response.status).toBe(308);
+      expect(response.headers.get('Location')).toBe(`${origin}${path}`);
+      expect(response.headers.has('Set-Cookie')).toBe(false);
+      expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    }
+    expect(handler).not.toHaveBeenCalled();
+    expect(
+      (
+        await fetch(
+          new Request(`${origin}${path}`) as Parameters<typeof fetch>[0],
+          env,
+          createExecutionContext()
+        )
+      ).status
+    ).toBe(200);
+    expect(handler).toHaveBeenCalledOnce();
   });
 });

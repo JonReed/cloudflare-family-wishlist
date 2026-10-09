@@ -2,6 +2,7 @@ import { RouterContextProvider, createRequestHandler } from 'react-router';
 
 import { AuthenticationError, authenticateAccessRequest } from '../app/lib/auth/access';
 import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/context';
+import { isLocalHttpRequest } from '../app/lib/guest-identity';
 import { RequestSecurityError, secureMutationRequest } from '../app/lib/request-security';
 import { isPublicShareRequest, redactedRequestPath } from '../app/lib/public-share-path';
 import { withSecurityHeaders } from '../app/lib/security-headers';
@@ -38,6 +39,19 @@ export function createAppWorker(
       const cspNonce = createCspNonce();
 
       try {
+        const url = new URL(request.url);
+        if (
+          url.protocol === 'http:' &&
+          isPublicShareRequest(request) &&
+          !(import.meta.env.DEV && isLocalHttpRequest(request))
+        ) {
+          url.protocol = 'https:';
+          return withSecurityHeaders(
+            new Response(null, { status: 308, headers: { Location: url.toString() } }),
+            cspNonce,
+            { publicShare: true }
+          );
+        }
         const runtimeEnv = env as RuntimeEnv;
         const securedRequest = await secureMutationRequest(request, {
           allowDevelopmentOrigin: import.meta.env.DEV

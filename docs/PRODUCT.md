@@ -134,6 +134,9 @@ The owner can also visit anonymously and learn availability; that trade-off is e
 Guest credentials are not family identities. Revoking a link blocks further access without deleting
 reservations. Another enabled family member, excluding the list owner, can clear an abandoned guest
 reservation after confirmation. Guests can save a recovery code to use another browser.
+The first guest reservation asks for confirmation to verify that the browser saved the required
+cookie before reserving the gift. If cookies are blocked, the gift stays available. Returning guests
+reserve in one click.
 
 The household can have up to five active sharing links in total. Each has a private, recognisable
 name such as “Uncle David”. **Manage** shows every link's name, currently visible lists, creator

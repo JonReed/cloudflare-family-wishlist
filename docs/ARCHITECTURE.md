@@ -608,10 +608,14 @@ forms and bounded bodies. Public pages use `Referrer-Policy: same-origin` so nat
 Origin, while external links retain `noreferrer`. They remain private/no-store and omit client scripts.
 
 A cryptographically random 256-bit guest secret is kept in a Secure, HttpOnly, SameSite=Lax host-only
-cookie (Secure and the __Host prefix are omitted only for HTTP local development). D1 stores only
-its SHA-256 hash on claims. The cookie is created only after a successful claim or recovery and renewed
-on successful reservation actions, for up to one year. GET/HEAD never create or renew it. Before a
-first claim, the public page has no guest credential or recovery code. The recovery disclosure shows the current browser's private
+cookie (Secure and the __Host prefix are omitted only for HTTP loopback development). Public shared
+HTTP requests redirect to HTTPS before routing. D1 stores only its SHA-256 hash on claims.
+The first reservation POST sets the cookie and displays a confirmation without writing a claim;
+the confirmation POST must return that cookie before reserving. This prevents inaccessible claims
+when cookies are blocked and uses the browser's current credential across simultaneous first-use forms.
+Returning guests reserve in one POST. Successful recovery also sets the cookie; successful reservation
+actions renew it, for up to one year. GET/HEAD never create or renew it. Before starting a
+first reservation, the public page has no guest credential or recovery code. The recovery disclosure shows the current browser's private
 code; restoring it is a same-origin POST, never a URL parameter, and requires a matching reservation
 on an enabled list covered by the active link. Recovery replaces the browser's previous credential.
 
@@ -623,8 +627,10 @@ visiting anonymously; this is an accepted product trade-off. The signed-in owner
 all claims at its SQL join and its result type. Other family members see “A guest”, never the hash.
 
 Mutation budgets are atomic D1 counters: 40 attempts per guest and 200 per sharing link per UTC hour,
-including recovery and unsuccessful reservations. Old counter rows are pruned after 24 hours.
-A link-wide limit prevents cookie rotation from evading the total allowance. This bounds casual abuse,
+including first-use confirmation, recovery and unsuccessful reservations. Check the link counter
+before allocating a guest counter; exhausted links must not create rows for rotated guest codes.
+Admitted requests prune counter rows older than 24 hours. A link-wide limit prevents cookie rotation
+from evading the total allowance. This bounds casual abuse,
 not malicious use of a deliberately forwarded capability. Revocation removes access, not reservations.
 An enabled family member other than the owner can explicitly clear guest reservations; member claims
 retain their existing ownership rules. No extra Cloudflare binding, token or dashboard setup is needed.
@@ -633,7 +639,8 @@ retain their existing ownership rules. No extra Cloudflare binding, token or das
 
 The root document layout includes the static `CookieNotice` on all application pages, including
 shared views and route error pages. Its native disclosure works without JavaScript or consent-state
-storage. Footer links jump back to it. The notice lists guest and Cloudflare Access cookies, purposes,
+storage. Footer links target its disclosure content, opening the explanation before scrolling to it.
+The notice lists guest and Cloudflare Access cookies, purposes,
 lifetimes and the effects of deleting or blocking them. Shared pages also explain the persistent
 reservation cookie before any reservation action. There are no app analytics, advertising scripts,
 localStorage or sessionStorage identifiers. See [Cookie operation](COOKIES.md) for the UK assessment

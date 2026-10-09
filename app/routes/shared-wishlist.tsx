@@ -72,11 +72,17 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   });
   const { env } = context.get(cloudflareContext);
   const token = params.token;
-  if (!token || !(await getSharedWishlists(env.DB, token)).length) notFound();
+  if (!token) notFound();
+  const wishlists = await getSharedWishlists(env.DB, token);
+  if (!wishlists.length) notFound();
   try {
     const form = await secured.formData();
     const intent = form.get('intent');
     const existingSecret = readGuestSecret(secured);
+    if (!existingSecret && intent === 'confirm-claim')
+      throw new SharedWishlistInputError(
+        'Your browser did not save the required reservation cookie. Allow cookies for this site, then choose the gift again. The gift has not been reserved.'
+      );
     if (!existingSecret && intent !== 'claim' && intent !== 'recover')
       throw new SharedWishlistInputError(
         'This browser has no reservation code. Allow required cookies and recover your reservations using your saved code.'
@@ -101,7 +107,27 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     const itemId = form.get('itemId');
     if (typeof itemId !== 'string')
       throw new SharedWishlistInputError('Choose a gift from the list.');
-    await changeGuestClaim(env.DB, token, guestHash, itemId, intent);
+    if (!existingSecret && intent === 'claim') {
+      const item = wishlists
+        .flatMap((wishlist) => wishlist.items)
+        .find((item) => item.id === itemId);
+      if (!item || item.reservation !== 'available')
+        throw new SharedWishlistInputError(
+          'This gift is no longer available. Refresh the list to check.'
+        );
+      // Verify cookie storage on the next POST before creating a reservation that needs it.
+      return data(
+        { error: null, confirmation: { itemId, title: item.title } },
+        { headers: { 'Set-Cookie': guestCookie(request, secret) } }
+      );
+    }
+    await changeGuestClaim(
+      env.DB,
+      token,
+      guestHash,
+      itemId,
+      intent === 'confirm-claim' ? 'claim' : intent
+    );
     return redirect(`/shared/${token}#wish-${itemId}`, {
       status: 303,
       headers: { 'Set-Cookie': guestCookie(request, secret) }
@@ -210,6 +236,7 @@ function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }
 
 export default function SharedWishlistPage({ loaderData, actionData }: Route.ComponentProps) {
   const { wishlists, token, recoveryCode } = loaderData;
+  const confirmation = actionData && 'confirmation' in actionData ? actionData.confirmation : null;
   const Heading = wishlists.length > 1 ? 'h2' : 'h1';
   return (
     <div className="site-shell public-share-shell">
@@ -232,6 +259,24 @@ export default function SharedWishlistPage({ loaderData, actionData }: Route.Com
             <p role="alert" className="form-error">
               {actionData.error}
             </p>
+          ) : null}
+          {confirmation ? (
+            <section className="guest-confirmation" aria-label="Confirm your first reservation">
+              <h2>Reserve {confirmation.title}?</h2>
+              <p>
+                One more step for your first reservation. This checks that your browser can remember
+                your reservations. The gift stays available until you confirm.
+              </p>
+              <form method="post" action={`/shared/${token}`}>
+                <input type="hidden" name="itemId" value={confirmation.itemId} />
+                <button className="button-primary" name="intent" value="confirm-claim">
+                  Confirm: I’ll get this
+                </button>
+                <a className="button-quiet" href={`/shared/${token}#wish-${confirmation.itemId}`}>
+                  Cancel
+                </a>
+              </form>
+            </section>
           ) : null}
           <details className="guest-recovery">
             <summary>Keep or recover your reservations</summary>

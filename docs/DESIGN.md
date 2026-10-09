@@ -226,6 +226,9 @@ wish count and ordinary wish details. It has no signed-in navigation, wish editi
 controls with explicit text status: Available to give, Reserved, You’re getting this, or You’ve bought
 this. Only the current guest can change their reservation. Keep recovery behind a native disclosure
 and explain that anyone with the link, including the owner, can see reservation availability.
+For a guest's first reservation, show the gift title and **Confirm: I’ll get this** beside **Cancel**.
+Explain that the gift stays available until confirmed and that this checks the browser can remember
+reservations. Once the browser returns its required cookie, keep reservation actions to one click.
 The absence of those controls is sufficient; do not add software-oriented explanations about what a
 public visitor cannot do.
 
