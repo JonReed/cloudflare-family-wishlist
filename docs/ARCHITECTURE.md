@@ -45,10 +45,10 @@ signature, issuer, application audience, expiry and required identity claims bef
 email, giving every production request two complementary identity checks.
 
 Revocable viewing links use a deliberately configured, path-specific Access Bypass. The Worker
-independently recognises GET/HEAD on exact `/shared/<secret>` list and image paths, plus POST on
+independently recognises GET/HEAD on exact `/shared/<secret>` list paths, plus POST on
 the exact list path for guest reservations. Neighbouring paths and all other mutations require Access. More-specific Access
-paths also expose only the compiled stylesheet under `/shared-assets/*` and the favicon needed to
-render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
+paths also expose the compiled stylesheet and a small picture-failure helper under `/shared-assets/*`,
+plus the favicon needed to render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
 behind Access.
 
 Before creating a viewing token, the authenticated action calls
@@ -89,10 +89,9 @@ enforcement cannot disagree.
 7. The Worker adds private caching, CSP and other defensive response headers to every response.
 8. A shared-list request skips identity validation only when its method and path exactly
    match the public route boundary. It hashes the URL secret and runs a separate D1 query that
-   returns availability and only the current guest’s own reservation state. Shared pictures require the same secret plus an item belonging to that
-   selected list, pass through the bounded raster proxy and consume both a capability-holder budget and a
-   higher list-wide emergency budget only when fetching an uncached picture. A HEAD request verifies membership but does not fetch or count
-   the upstream picture.
+   returns availability and only the current guest’s own reservation state. It includes validated
+   public HTTPS picture addresses for the selected lists; browsers load these directly without
+   further Worker or D1 requests.
 
 The organiser-only admission intents in `/family` are the flows that change the Access admission boundary. The action
 validates the organiser role and proposed name/email and writes a non-admitting `pending` invitation
@@ -140,7 +139,9 @@ The project uses React Router v8 in full-stack framework mode with Cloudflare's 
 Authenticated pages hydrate React Router's client runtime through nonce-bearing scripts. The shared
 `InPlaceActionForm` component uses fetchers for small mutations that should update in place, while
 still rendering a native form for browsers without JavaScript. Public sharing pages deliberately
-omit the client runtime and all authenticated JavaScript bundles. The per-response nonce is also
+omit the React client runtime and all authenticated JavaScript bundles. A nonce-bearing static
+helper hides failed shop pictures; reading and reservation forms still work without JavaScript.
+The per-response nonce is also
 published through Vite's `csp-nonce` meta contract so development-injected styles remain covered by
 the same strict CSP; dependency-free form helpers load only after React has hydrated the document.
 
@@ -175,7 +176,7 @@ SvelteKit was evaluated and is a sound option, but offered no material advantage
 | `app/lib/db/members.ts`                                    | Identity normalisation and member/list provisioning                                              |
 | `app/lib/db/family-members.ts`                             | Admin checks, waiting invitations and family roster reads                                        |
 | `app/lib/db/wishlists.ts`                                  | Domain validation, reads, mutations, claim ownership and privacy                                 |
-| `app/lib/db/shared-wishlists.ts`                           | Hashed viewing links, active-link inventory, public reads and image budgets                      |
+| `app/lib/db/shared-wishlists.ts`                           | Hashed viewing links, active-link inventory and public reads                                     |
 | `migrations/`                                              | Append-only persistent schema history                                                            |
 | `app/root.tsx`, `app/entry.server.tsx`                     | Document shell, authenticated hydration and CSP nonce propagation                                |
 | `app/components/add-wish-form.tsx`                         | Progressive frequent-add submission, local state and native form fallback                        |
@@ -305,7 +306,7 @@ creation while each wishlist's contents stay current.
 The authenticated `/family` route is the single sharing surface for every enabled member. Its
 inventory combines both tables, showing only currently enabled owners in each visible-list summary.
 A universal revocation service deletes the selected UUID from either table in a guarded D1 batch;
-selection rows cascade for new links. The public page and its images stop working immediately.
+selection rows cascade for new links. The public page stops working immediately. Public shop picture addresses remain public.
 The loader omits admission and invitation data for ordinary members, and all admission actions retain
 the organiser check before any database or Access mutation.
 
@@ -313,39 +314,22 @@ The public query selects the list owner and ordinary item fields directly from `
 and `items`. A token-hash lookup unions the selected IDs from either kind of link before reading
 ordinary wish details; it returns one result per selected wishlist, including empty lists.
 A left join on `claims` returns a reservation enum: available, reserved, yours or bought. Public
-responses never include claimant identifiers, names, hashes or another claimant’s purchase state. Shared
-image routes look up the stored image only when both the hashed secret and item membership match,
-then reuse the public-network, redirect, type and size checks of the signed-in image proxy.
-Validated bytes use a named Workers Cache API cache for up to one day. Keys contain only a hash of
-the checked picture URL and the UTC day, on the existing public bypass path; they contain no sharing
-code, shop address or browser headers. The internal cache path is not a public Worker route.
-Only raster bytes and safe proxy headers enter this cache, never pages, claims, errors or shop cookies.
-Access configurations can make the Cache API unavailable, so delivery must also work without it.
+responses never include claimant identifiers, names, hashes or another claimant’s purchase state.
+Picture URLs are normalised before returning data, including existing database rows. Both signed-in
+and shared pages use direct HTTPS image sources with `referrerpolicy="no-referrer"`. No product-image
+resource route, proxy, edge cache, per-image access query or fetch counter remains. The page query
+still checks the active link, selected lists and enabled owners before disclosing any wish details.
+Legacy shared-image counter tables remain inert so deployments and rollback to earlier releases
+stay compatible; historical migrations are not edited and no deletion of family data is needed.
 
-Shared pictures use `Cache-Control: private, no-cache`: browsers can store bytes, but must revalidate
-before reuse. After checking the active link, enabled owner and item scope, a matching `If-None-Match`
-returns 304 without an upstream request or budget consumption. The weak validator changes when the
-stored picture URL changes and each UTC day, bounding staleness even when a shop reuses its URL.
-Edge cache hits also skip fetch budgets. Revoked links and disabled owners return 404 before either
-cache is used; public HTML and errors retain `private, no-store`.
+Public list queries require the wishlist owner to have `disabled_at IS NULL`. A removed owner's
+single-list link returns the same 404 as an unknown link; a group link omits that owner's list and
+returns 404 if no enabled lists remain. Sharing choices and guarded creation reject disabled owners
+too, including mixed selections. Existing tokens and selections remain stored for management and
+become usable again if their owner is re-added. Revocation stops future list access but cannot
+withdraw already viewed details or public retailer pictures.
 
-For `N` pictures on a list, atomic D1 guards allow `max(20, 2N)` fetch attempts per recipient per
-minute and `max(100, 5N)` per UTC day. The higher list-wide emergency ceilings are `max(60, 6N)`
-per minute and `max(500, 20N)` per day. These allow whole cold-cache lists instead of breaking the
-twenty-first picture on first viewing. Failed upstream attempts count; cached reuse does not.
-Migration 0015 preserves existing counters and widens their positive-count constraints so the
-application can size these limits. The previous Worker's lower guards remain compatible.
-The requester key is a SHA-256 derivation salted by the bearer capability; raw network
-addresses and reusable cross-link identifiers are never stored.
-
-Public list and image queries require the wishlist owner to have `disabled_at IS NULL`. A removed
-owner's single-list link returns the same 404 as an unknown link; a group link omits that owner's
-list and returns 404 if no enabled lists remain. Image GET and HEAD requests return 404 before
-fetching or consuming a budget. Sharing choices and guarded creation reject disabled owners too,
-including a mixed selection that would otherwise create a partial link. Existing sharing tokens and
-selections remain stored for management and become usable again if their owner is re-added.
-
-Public responses remain `private, no-store`, use `Referrer-Policy: no-referrer`, carry a site-wide
+Public responses remain `private, no-store`, use `Referrer-Policy: same-origin`, carry a site-wide
 `X-Robots-Tag` no-indexing directive and load no third-party scripts or fonts. Application logs redact
 capability-bearing paths. Cloudflare's edge can necessarily see the requested URL, so families should
 treat each link like an invitation and stop sharing it if it travels beyond the intended people.
@@ -363,7 +347,8 @@ and their hashes never enter avatar URLs in HTML or loader data. Gravatar receiv
 email hash from the Worker; it receives no browser cookies, Access assertions, family request headers
 or client referrer. Public sharing routes do not use this endpoint or include photos.
 
-Avatar GETs share the existing per-viewer image fetch budget and bounded raster proxy checks.
+Avatar GETs use the per-viewer budget in `app/lib/db/avatar-limits.ts` and the bounded fetcher in
+`app/lib/raster-image.ts`. The legacy `product_image_fetch_limits` table now counts only avatars.
 Missing, unsupported or unavailable images and an exhausted budget return a locally generated
 initials SVG. Only letters and numbers enter its text; remote SVGs remain rejected. HEAD requests
 verify the member and viewer without an upstream fetch or budget consumption. Successful photos
@@ -472,19 +457,17 @@ or raw exception messages enter this summary. Browser-service failures and shop 
 The form keeps these details collapsed, with an optional clipboard control and selectable text.
 
 Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the
-first choice; AI image selection happens only as part of an already-needed enrichment pass and only
-from the page's bounded candidate list. Browser markup uses the same-origin `/product-image` route,
-not the remote address. That route requires a completed family membership, validates every redirect,
-relies on Workers public-network fetch enforcement, accepts only five raster formats, buffers at most
-4 MiB and caches the safe response for one day in the member's private browser cache. SVG and
-ambiguous response types are rejected. This
-prevents family browsers from exposing
-their address or cookies to an arbitrary picture host and keeps CSP `img-src` same-origin. No R2
-bucket or image-processing service is required.
-
-Before any outbound image request, the route consumes a member-scoped D1 budget of 60 fetches per
-minute and 500 per UTC day. One atomic upsert checks both limits, so parallel requests cannot step
-past either cap.
+first choice; AI picture selection happens only during an already-needed enrichment pass and only
+from validated page candidates. Lists and previews hotlink these pictures directly. The shared
+validator in `public/product-urls.js` rejects non-HTTPS, credential-bearing and obvious private/local
+addresses on write, read and live preview. CSP allows `https:` only for images; scripts, connections
+and other resource types retain their existing restrictions. Image elements suppress referrers.
+Retailers therefore receive the visitor's network request but no wishlist address, sharing token or
+Access assertion. They may receive their own cookies where the browser allows them; the site-wide
+privacy disclosure explains this. Browser/retailer caching governs reuse. Unavailable or blocked
+pictures leave the wish text and controls usable. No Worker picture requests, D1 counters, R2 bucket
+or image-processing service is required. Private Gravatar photos retain their separate bounded
+server fetch so email hashes are not exposed in the browser.
 
 No Access assertion, cookie, family data or requesting-user identity is sent to the model. The model
 cannot fetch another URL, invoke a tool or persist anything. Only the ordinary add-wish action can
@@ -562,8 +545,8 @@ the existing helper without becoming persistence or availability dependencies.
   `Origin` header for ordinary HTML form posts; opaque, missing and cross-origin mutations are rejected
   before authentication, and mutation bodies are capped at 32 KiB;
 - external product links accept only HTTP(S), reject embedded credentials and render safely;
-- automatically loaded product images pass through the bounded same-origin raster proxy and never
-  cause a family browser to contact the remote image host directly;
+- product pictures hotlink validated HTTPS URLs with no referrer; remote hosts receive browser
+  requests, as disclosed in the site-wide cookie and picture privacy notice;
 - product metadata fetches accept only public HTTP(S) pages, validate each redirect and use the same
   restrained desktop-browser navigation profile for initial requests and retries. They never forward
   user headers, credentials, cookies or referrers, stop after 8 seconds, inspect at most 512 KiB of
@@ -622,7 +605,8 @@ contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context;
 Every existing and new sharing link allows guest claims through ordinary server-rendered forms.
 Only POST to the exact shared-list path bypasses Access; the Worker and action both enforce same-origin
 forms and bounded bodies. Public pages use `Referrer-Policy: same-origin` so native forms send a valid
-Origin, while external links retain `noreferrer`. Shared HTML remains private/no-store and omits client scripts.
+Origin, while external links retain `noreferrer`. Shared HTML remains private/no-store and omits
+the authenticated client runtime. Its only script is the optional picture-failure helper.
 
 A cryptographically random 256-bit guest secret is kept in a Secure, HttpOnly, SameSite=Lax host-only
 cookie (Secure and the __Host prefix are omitted only for HTTP loopback development). Public shared

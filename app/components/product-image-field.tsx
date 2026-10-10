@@ -1,4 +1,3 @@
-import { productImagePath } from '../lib/product-image';
 import { normaliseProductImageUrl } from '../lib/product-url';
 
 export function ProductImageField({
@@ -16,7 +15,7 @@ export function ProductImageField({
       <div className="product-image-overview">
         <div className="product-image-preview" data-product-image-preview="" hidden={!hasPreview}>
           <img
-            src={previewUrl ? productImagePath(previewUrl) : undefined}
+            src={previewUrl || undefined}
             alt="Product picture preview"
             width="160"
             height="160"

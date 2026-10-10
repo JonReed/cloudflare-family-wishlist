@@ -18,10 +18,11 @@ novelty.
 
 ## Information architecture
 
-Every application page starts with a compact “Required cookies only” native disclosure. Keep the
+Every application page starts with a compact “Cookies and picture privacy” native disclosure. Keep the
 explanation in normal document flow, available without JavaScript, and reachable through the footer's
 Cookies link. It is an information notice, not an accept/reject dialog. Do not store dismissal state
-or introduce a cookie just to remember that the notice was read.
+or introduce a cookie just to remember that the notice was read. Explain that Family Wishlist uses
+required cookies, while directly loaded product pictures have separate hosts and cookie policies.
 
 The signed-in home has four stable regions:
 

@@ -10,7 +10,7 @@ import {
   prepareFamilyMemberRemoval
 } from '../app/lib/db/family-members';
 import { ensureMemberForEmail } from '../app/lib/db/members';
-import { getSharedWishlist, getSharedWishlistImageUrl } from '../app/lib/db/shared-wishlists';
+import { getSharedWishlist } from '../app/lib/db/shared-wishlists';
 import { listFamilyWishlists } from '../app/lib/db/wishlists';
 
 async function snapshot(db: D1Database) {
@@ -210,7 +210,6 @@ describe('existing household upgrades', () => {
     }
     for (const owner of [removed, removing]) {
       expect(await getSharedWishlist(db, owner.token)).toBeNull();
-      expect(await getSharedWishlistImageUrl(db, owner.token, owner.itemId)).toBeNull();
       expect((await listFamilyWishlists(db, admin.id)).map((list) => list.id)).not.toContain(
         owner.wishlistId
       );

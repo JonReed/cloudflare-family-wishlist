@@ -1,6 +1,5 @@
 import type { FamilyWishlist, WishlistItem } from '../../lib/db/wishlists';
 import { useCallback } from 'react';
-import { productImagePath } from '../../lib/product-image';
 import { ClaimControls, ClaimStatus } from './claim-controls';
 import { WishMoreActions } from './more-actions';
 import { EditWishForm } from '../edit-wish-form';
@@ -60,7 +59,7 @@ export function WishlistItemRow({
       <div className={item.imageUrl ? 'wish-content wish-content-with-image' : 'wish-content'}>
         {item.imageUrl ? (
           <img
-            src={productImagePath(item.imageUrl)}
+            src={item.imageUrl}
             alt=""
             width="160"
             height="160"

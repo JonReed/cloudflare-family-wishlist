@@ -4,7 +4,7 @@ import {
   findMemberAvatarIdentity,
   MemberAdmissionError
 } from '../lib/db/members';
-import { consumeProductImageBudget, ProductImageRateLimitError } from '../lib/db/product-images';
+import { consumeAvatarBudget, AvatarRateLimitError } from '../lib/db/avatar-limits';
 import { fetchGravatar, initialsAvatar } from '../lib/gravatar';
 
 import type { Route } from './+types/avatar';
@@ -26,9 +26,9 @@ export async function loader({ context, request, params }: Route.LoaderArgs) {
     }
 
     try {
-      await consumeProductImageBudget(env.DB, viewer.id);
+      await consumeAvatarBudget(env.DB, viewer.id);
     } catch (error) {
-      if (error instanceof ProductImageRateLimitError) return initialsAvatar(member.displayName);
+      if (error instanceof AvatarRateLimitError) return initialsAvatar(member.displayName);
       throw error;
     }
     return await fetchGravatar(member);

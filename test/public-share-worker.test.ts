@@ -82,7 +82,7 @@ describe('public share Worker boundary', () => {
     expect((await fetchWorker(`/shared/${token}`)).status).toBe(200);
     expect((await fetchWorker(`/shared/${token}`, { method: 'HEAD' })).status).toBe(200);
     expect((await fetchWorker(`/shared/${token}/image/${itemId}`, { method: 'HEAD' })).status).toBe(
-      200
+      503
     );
     expect((await fetchWorker(`/shared/${token}/edit`)).status).toBe(503);
     expect((await fetchWorker('/shared/not-a-capability')).status).toBe(503);

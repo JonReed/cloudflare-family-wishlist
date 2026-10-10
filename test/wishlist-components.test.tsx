@@ -49,6 +49,12 @@ function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
 }
 
 describe('extracted wishlist components', () => {
+  it('hotlinks product pictures without sending the wishlist referrer', () => {
+    const html = rowHtml({ ...ownItem, imageUrl: 'https://cdn.example.com/book.webp' });
+    expect(html).toContain('src="https://cdn.example.com/book.webp"');
+    expect(html).toContain('referrerPolicy="no-referrer"');
+    expect(html).not.toContain('/product-image?');
+  });
   it('keeps price with details and puts buying and edit dropdown controls in one footer', () => {
     const html = rowHtml({
       ...ownItem,

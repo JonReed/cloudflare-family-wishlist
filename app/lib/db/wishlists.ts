@@ -229,7 +229,7 @@ export async function listFamilyWishlists(
       title: row.item_title,
       notes: row.item_notes,
       productUrl: row.item_product_url,
-      imageUrl: row.item_image_url,
+      imageUrl: normaliseProductImageUrl(row.item_image_url),
       priceAmountMinor: row.item_price_amount_minor,
       priceCurrency: row.item_price_currency,
       priority: row.item_priority,

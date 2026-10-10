@@ -205,6 +205,10 @@ present in the current removal instructions.
 
 **Severity:** Medium  
 **Rule:** User-driven server fetchers must constrain aggregate use as well as each individual response  
+**Historical implementation:** The product-image proxy was removed on 2026-10-10. Product pictures
+now hotlink validated HTTPS URLs with no referrer; private avatar fetching retains its bounded reader.
+The following finding describes the earlier proxy.
+
 **Location:** `app/routes/product-image.ts:7-24`; `app/lib/product-image.ts:3-5,60-123`;
 `app/lib/db/product-lookups.ts:1-42`
 

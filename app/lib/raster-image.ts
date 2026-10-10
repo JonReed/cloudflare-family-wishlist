@@ -11,13 +11,7 @@ const ALLOWED_IMAGE_TYPES = new Set([
   'image/webp'
 ]);
 
-export class ProductImageError extends Error {}
-
-export function productImagePath(imageUrl: string): string {
-  const path = new URL('/product-image', 'https://wishlist.invalid');
-  path.searchParams.set('url', imageUrl);
-  return `${path.pathname}${path.search}`;
-}
+export class RasterImageError extends Error {}
 
 async function readBoundedImage(response: Response): Promise<ArrayBuffer> {
   const declaredLength = response.headers.get('Content-Length');
@@ -25,11 +19,11 @@ async function readBoundedImage(response: Response): Promise<ArrayBuffer> {
     const bytes = Number(declaredLength);
     if (!Number.isSafeInteger(bytes) || bytes < 0 || bytes > MAX_IMAGE_BYTES) {
       await response.body?.cancel();
-      throw new ProductImageError('That picture is too large to display safely.');
+      throw new RasterImageError('That picture is too large to display safely.');
     }
   }
 
-  if (!response.body) throw new ProductImageError('That picture did not contain any image data.');
+  if (!response.body) throw new RasterImageError('That picture did not contain any image data.');
 
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -43,7 +37,7 @@ async function readBoundedImage(response: Response): Promise<ArrayBuffer> {
     totalBytes += value.byteLength;
     if (totalBytes > MAX_IMAGE_BYTES) {
       await reader.cancel();
-      throw new ProductImageError('That picture is too large to display safely.');
+      throw new RasterImageError('That picture is too large to display safely.');
     }
     chunks.push(value);
   }
@@ -57,12 +51,12 @@ async function readBoundedImage(response: Response): Promise<ArrayBuffer> {
   return body.buffer;
 }
 
-export async function fetchProductImage(
+export async function fetchRasterImage(
   input: unknown,
   fetcher: typeof fetch = fetch
 ): Promise<Response> {
   const initialImageUrl = normaliseProductImageUrl(input);
-  if (!initialImageUrl) throw new ProductImageError('That picture address is not safe to load.');
+  if (!initialImageUrl) throw new RasterImageError('That picture address is not safe to load.');
   let imageUrl: string = initialImageUrl;
 
   const controller = new AbortController();
@@ -77,12 +71,12 @@ export async function fetchProductImage(
           redirect: 'manual',
           headers: {
             Accept: 'image/avif,image/webp,image/png,image/jpeg,image/gif;q=0.8',
-            'User-Agent': 'Cloudflare Family Wishlist image proxy'
+            'User-Agent': 'Cloudflare Family Wishlist avatar fetch'
           },
           signal: controller.signal
         });
       } catch {
-        throw new ProductImageError('That picture could not be loaded safely.');
+        throw new RasterImageError('That picture could not be loaded safely.');
       }
 
       if (response.status >= 300 && response.status < 400) {
@@ -92,7 +86,7 @@ export async function fetchProductImage(
           ? normaliseProductImageUrl(location, imageUrl)
           : null;
         if (!redirectedUrl || redirectCount === MAX_REDIRECTS) {
-          throw new ProductImageError('That picture redirected somewhere unsafe.');
+          throw new RasterImageError('That picture redirected somewhere unsafe.');
         }
         imageUrl = redirectedUrl;
         continue;
@@ -105,16 +99,15 @@ export async function fetchProductImage(
         .toLowerCase();
       if (!response.ok || !contentType || !ALLOWED_IMAGE_TYPES.has(contentType)) {
         await response.body?.cancel();
-        throw new ProductImageError('That address did not return a supported picture.');
+        throw new RasterImageError('That address did not return a supported picture.');
       }
 
       const body = await readBoundedImage(response);
       return new Response(body, {
         headers: {
-          'Cache-Control': 'private, max-age=86400',
+          'Cache-Control': 'private, no-store',
           'Content-Length': String(body.byteLength),
-          'Content-Type': contentType,
-          'X-Product-Image-Proxy': '1'
+          'Content-Type': contentType
         }
       });
     }
@@ -122,5 +115,5 @@ export async function fetchProductImage(
     clearTimeout(timeout);
   }
 
-  throw new ProductImageError('That picture could not be loaded safely.');
+  throw new RasterImageError('That picture could not be loaded safely.');
 }

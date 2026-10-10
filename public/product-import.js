@@ -1,4 +1,6 @@
-/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, MutationObserver, URL, document, fetch, setTimeout, navigator */
+/* global AbortController, DOMException, FormData, HTMLButtonElement, HTMLElement, HTMLFormElement, HTMLImageElement, HTMLInputElement, MutationObserver, document, fetch, setTimeout, navigator */
+
+import { normaliseProductImageUrl } from './product-urls.js';
 
 const imagePreviewUpdates = new WeakMap();
 const enhancedImages = new WeakSet();
@@ -31,21 +33,18 @@ function enhanceProductForms() {
     };
 
     const updateImagePreview = () => {
-      const imageUrl = imageInput.value.trim();
-      removeButton.hidden = !imageUrl;
+      const imageUrl = normaliseProductImageUrl(imageInput.value);
+      removeButton.hidden = !imageInput.value.trim();
 
-      if (!/^https:\/\//i.test(imageUrl)) {
+      if (!imageUrl) {
         imagePreviewImage.removeAttribute('src');
         showPreview(false);
         return;
       }
 
-      const proxyUrl = new URL('/product-image', document.baseURI);
-      proxyUrl.searchParams.set('url', imageUrl);
-
-      if (imagePreviewImage.src !== proxyUrl.href) {
+      if (imagePreviewImage.src !== imageUrl) {
         showPreview(true);
-        imagePreviewImage.src = proxyUrl.href;
+        imagePreviewImage.src = imageUrl;
       } else if (imagePreviewImage.complete && imagePreviewImage.naturalWidth > 0) {
         showPreview(true);
       }

@@ -32,7 +32,7 @@ to share through email, WhatsApp or any preferred private channel. The message c
 wishlist homepage and the email to use; access is already ready, with nothing to accept. Cloudflare handles sign-in, so
 the family gets one-time PIN access without an application password or reset flow. Removing access
 preserves the person's wishlist and history in D1, but hides their list from the family and from
-every viewing link as soon as they are disabled. Their shared pictures also become unavailable.
+every viewing link as soon as they are disabled. Previously seen public shop picture addresses remain public.
 After removal finishes, the organiser can add the same email again to restore access and visibility
 to that existing wishlist. A failed re-invitation leaves their access and list disabled until it
 succeeds or is repaired.
@@ -128,9 +128,11 @@ The public page opens without Cloudflare login and shows the selected people's c
 notes, prices, product links and pictures, including empty lists. It never includes unselected lists,
 claimant identities, other people's purchase state, sign-in emails, photos or the link's private name. Adding a new family
 member does not add their list to an existing link. Changes to selected wishes appear automatically.
-Pictures load through the household's privacy proxy. Reusing an unchanged picture must not use up
-its fetch allowance when a guest refreshes or reserves a gift. A normal complete list must fit the
-allowance, and stopping a link must block further picture access even when pictures were cached.
+Product pictures load directly from their public HTTPS addresses on both private and shared lists,
+including add/edit previews. Picture requests consume no Worker requests or D1 reads/writes. The
+browser sends no wishlist referrer, but picture hosts receive the visitor's request and may use their
+own cookies if the browser allows them. A failed picture must leave the written wish usable.
+Stopping a link blocks future wishlist access; it does not revoke public shop picture addresses.
 Every shared link allows guest reservations. Public visitors see only availability or “Reserved”
 for someone else's claim, and can manage their own reservations through a private browser credential.
 The owner can also visit anonymously and learn availability; that trade-off is explicitly accepted.
@@ -144,7 +146,7 @@ reserve in one click.
 The household can have up to five active sharing links in total. Each has a private, recognisable
 name such as “Uncle David”. **Manage** shows every link's name, currently visible lists, creator
 and creation date, with a confirmed **Stop sharing this link** control. Stopping one immediately
-invalidates its public page and pictures while preserving other links and saved wishes. Disabled
+invalidates its public page while preserving other links and saved wishes. Disabled
 owners' lists are omitted from both public viewing and the inventory's visible-list summary.
 
 The unguessable address is the permission and is shown only when created; only its hash is stored.
@@ -156,7 +158,8 @@ family admission controls on the same page remain organiser-only.
 
 ## Product invariants
 
-Cookies support family sign-in/security and guest reservation ownership only. Explain them site-wide
+Family Wishlist’s own cookies support family sign-in/security and guest reservation ownership only.
+Explain them and the separate privacy/cookie behavior of external picture hosts site-wide
 and before guest reservation actions. Viewing a shared link must not create or renew a guest cookie.
 Do not add advertising or analytics tracking without revisiting the notice and applicable consent rules.
 

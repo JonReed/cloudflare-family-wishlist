@@ -1,6 +1,6 @@
 # Cookie operation
 
-Family Wishlist ships with a site-wide **Required cookies only** notice and expandable information.
+Family Wishlist ships with a site-wide **Cookies and picture privacy** notice and expandable information.
 It appears on signed-in pages, shared lists and application error pages. The footer's **Cookies** link
 opens its explanation directly. Cloudflare's own login/challenge pages are served by Cloudflare, outside the app layout.
 
@@ -30,7 +30,8 @@ management, used only for those purposes, with clear information about persisten
 not ask users to “accept” required cookies or treat continued browsing as consent. Setting a guest
 credential for a visitor who only wants to read a list is deliberately avoided.
 
-This is a cookie-specific assessment of the shipped application, not certification of every deployment
+This assessment covers Family Wishlist’s own authentication and reservation cookies. It does not
+assess the cookies of external product-picture hosts. It is not certification of every deployment
 or every privacy obligation. Operators are responsible for their Cloudflare settings, any modifications,
 applicable jurisdictions and any required privacy information about their processing of personal data.
 UK GDPR duties, where applicable, are separate from the cookie consent exception.
@@ -51,8 +52,18 @@ UK GDPR duties, where applicable, are separate from the cookie consent exception
    [Access cookies](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/)
    or [Cloudflare security cookies](https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/).
 7. Review any scripts or integrations added outside this repository, including Cloudflare dashboard
-   features. **Done when:** the required-only statement remains accurate. If it does not, stop adding
+   features and external picture hosts. **Done when:** the notice accurately describes the first-party
+   required cookies and external picture requests. If it does not, stop adding
    the non-essential storage or implement the applicable information/consent controls before enabling it.
 
 Changes to tracking, cookie purposes or lifetimes require a fresh review. Do not assume a generic
 banner makes an installation compliant.
+
+## Direct product pictures
+
+Product pictures on private and shared lists, including previews, load directly from public HTTPS
+image hosts. Family Wishlist sends no wishlist referrer, sharing code or Access credentials to them.
+The image host receives the visitor's request and IP address, and may receive or set its own cookies
+where the browser permits them. The host's privacy and cookie policies apply. The site-wide notice
+explains this separately from Family Wishlist's required first-party cookies; do not describe all
+third-party picture requests as cookie-free.

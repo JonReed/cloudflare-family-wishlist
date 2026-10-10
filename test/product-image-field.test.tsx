@@ -17,9 +17,9 @@ describe('product image field', () => {
     expect(html).not.toContain('If you have another picture online');
     expect(html).toContain('Change picture');
     expect(html).toContain('Remove picture');
-    expect(html).toContain(
-      'src="/product-image?url=https%3A%2F%2Fcdn.example.com%2Fproducts%2Fscarf.webp"'
-    );
+    expect(html).toContain('src="https://cdn.example.com/products/scarf.webp"');
+    expect(html).toContain('referrerPolicy="no-referrer"');
+    expect(html).not.toContain('/product-image?');
     expect(html).toContain('name="imageUrl"');
   });
 

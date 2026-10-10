@@ -1,13 +1,10 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  consumeProductImageBudget,
-  type ProductImageRateLimitError
-} from '../app/lib/db/product-images';
+import { consumeAvatarBudget, type AvatarRateLimitError } from '../app/lib/db/avatar-limits';
 import { ensureMemberForEmail } from '../app/lib/db/members';
 
-describe('product image fetch budget', () => {
+describe('avatar fetch budget', () => {
   beforeEach(async () => {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM product_image_fetch_limits'),
@@ -24,13 +21,13 @@ describe('product image fetch budget', () => {
     const member = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
     const now = 1_800_000_000;
     for (let index = 0; index < 60; index += 1) {
-      await consumeProductImageBudget(env.DB, member.id, now);
+      await consumeAvatarBudget(env.DB, member.id, now);
     }
 
-    await expect(consumeProductImageBudget(env.DB, member.id, now)).rejects.toMatchObject({
+    await expect(consumeAvatarBudget(env.DB, member.id, now)).rejects.toMatchObject({
       retryAfterSeconds: 60
-    } satisfies Partial<ProductImageRateLimitError>);
-    await expect(consumeProductImageBudget(env.DB, member.id, now + 60)).resolves.toBeUndefined();
+    } satisfies Partial<AvatarRateLimitError>);
+    await expect(consumeAvatarBudget(env.DB, member.id, now + 60)).resolves.toBeUndefined();
   });
 
   it('enforces the daily budget across minute windows', async () => {
@@ -51,16 +48,16 @@ describe('product image fetch budget', () => {
       .run();
 
     await expect(
-      consumeProductImageBudget(env.DB, member.id, dayStart + 499 * 60)
+      consumeAvatarBudget(env.DB, member.id, dayStart + 499 * 60)
     ).resolves.toBeUndefined();
 
+    await expect(consumeAvatarBudget(env.DB, member.id, dayStart + 500 * 60)).rejects.toMatchObject(
+      {
+        retryAfterSeconds: 56_400
+      } satisfies Partial<AvatarRateLimitError>
+    );
     await expect(
-      consumeProductImageBudget(env.DB, member.id, dayStart + 500 * 60)
-    ).rejects.toMatchObject({
-      retryAfterSeconds: 56_400
-    } satisfies Partial<ProductImageRateLimitError>);
-    await expect(
-      consumeProductImageBudget(env.DB, member.id, dayStart + 86_400)
+      consumeAvatarBudget(env.DB, member.id, dayStart + 86_400)
     ).resolves.toBeUndefined();
   });
 });

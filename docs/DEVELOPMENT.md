@@ -83,7 +83,7 @@ the formatting gate does not fail immediately after a fresh clone.
    `app/routes/home.tsx` with reusable brand/footer pieces in `app/components/`.
 
 Shared links are the narrow exception to the authenticated request flow. `workers/app.ts` admits
-GET/HEAD on exact shared-list and shared-image paths, and POST on exact shared-list paths.
+GET/HEAD on exact shared-list paths, and POST on exact shared-list paths.
 `app/lib/db/shared-wishlists.ts` hashes capability tokens and returns public availability without
 claimant identities or other people's purchase status. `app/lib/db/guest-claims.ts` checks the active
 link and guest credential inside each reservation write. Shared routes must never call the
@@ -130,14 +130,14 @@ remain a single bounded Quick Action attempted only after the ordinary fetch pat
 receive cookies, credentials, family headers or private targets, and rendered redirects and HTML must
 pass the same validation and byte limits before extraction. `ProductImageField` keeps its picture
 address in the submitted form while presenting a
-thumbnail-first interface; every preview and saved picture must use the same-origin `/product-image`
-proxy. Preserve its redirect validation, public-network enforcement, raster allowlist and 4 MiB cap.
-`public/product-import.js` owns the optional live preview, change and remove conveniences across both
-ordinary and multi-list forms.
-
-The image proxy also consumes the member's atomic minute and UTC-day D1 budget before fetching. Keep
-the limits in `app/lib/db/product-images.ts`, cover both reset boundaries and do not replace the
-database guard with an in-memory counter.
+thumbnail-first interface. Lists and previews load validated HTTPS pictures directly with
+`referrerpolicy="no-referrer"`. `public/product-import.js` is a module so its live preview can reuse
+`public/product-urls.js`, the same validator re-exported by `app/lib/product-url.ts` for server
+reads, writes and metadata. Reject credentials and obvious private/local targets before loading.
+Keep failed pictures harmless to the written wish and preserve the preview's change/remove controls.
+There is no product-image proxy route, database fetch budget or Worker image cache.
+Gravatar alone retains bounded fetching in `app/lib/raster-image.ts` and the atomic avatar budget in
+`app/lib/db/avatar-limits.ts`; its existing database table is reused without a migration.
 
 The **Add from anywhere** page is presented by `app/routes/bookmarklet.tsx` at the existing
 `/bookmarklet` URL. `app/lib/bookmarklet.ts` derives both the add-page address used by Apple Shortcuts
@@ -209,7 +209,7 @@ after reading the account-specific private handoff and verifying the active Wran
   `INITIAL_ORGANISER_EMAIL`; local development may use its fixed loopback-only identity.
 - Disable a removed member in D1 before deleting their Access policy, revoke application sessions,
   and preserve their wishlist and history. Keep interrupted invitations and removals repairable.
-- Filter disabled owners from family/public reads and shared-image queries, and reject stale wish,
+- Filter disabled owners from family/public reads, and reject stale wish,
   claim and sharing mutations. Keep the retained data hidden until re-invitation succeeds.
 - Treat `ACCESS_MANAGEMENT_API_TOKEN` as a secret. Keep the account and application identifiers in
   deployment configuration, not family-facing output.
@@ -224,11 +224,11 @@ after reading the account-specific private handoff and verifying the active Wran
 - Preserve the bounded response reader, timeout and compensating policy deletion around Access API
   calls. Inject `fetch` in tests; never call the live API from the test suite.
 - Cloudflare Access policy/DNS changes are external mutations and require explicit maintainer authority.
-- Keep the unauthenticated Worker exception limited to GET/HEAD on exact shared-list and shared-image
+- Keep the unauthenticated Worker exception limited to GET/HEAD on exact shared-list
   paths, plus POST on exact shared-list paths. A neighbouring route must not inherit public access.
 - Never store, log or put raw sharing or guest secrets in a query string. Public D1 reads may return
   availability and the current guest's own purchase state, but no claimant identifiers or other
-  people's purchase state. Shared images must prove token and item-to-list scope before fetching.
+  people's purchase state. Return picture URLs only within the selected, enabled lists.
 - Guest writes must check active link scope, enabled owners and credential ownership in SQL, share
   the member claim uniqueness constraint, and enforce origin/body checks and database-backed budgets.
   Revocation must retain reservations. Clearing a guest claim requires an enabled family member
@@ -238,15 +238,13 @@ after reading the account-specific private handoff and verifying the active Wran
   guarded inserts to enforce five active household links. Preserve existing tokens and show their
   currently visible lists in the same inventory. Test mixed concurrent creation, legacy revocation,
   invalid selections and disabled actors/owners.
-- Keep generated CSS under `/shared-assets/*`; do not move JavaScript bundles into that public Access
-  bypass. Shared-image HEAD requests must remain upstream-free, and GET budgets must retain both the
-  capability-scoped requester ceiling and the higher list-wide emergency ceiling, sized for whole
-  cold-cache lists. Check active link scope and enabled owners before browser revalidation or edge
-  cache lookup. Consume budgets only on an upstream fetch attempt; never on a cache hit or 304.
-  Cache only validated raster responses with hashed URL/day keys and no credentials. Preserve
-  private browser revalidation so revocation cannot be bypassed by a fresh browser cache entry.
-  Verify live edge-cache hits on the deployment's bypass paths; local Cache API tests do not prove
-  that a particular Access configuration permits caching.
+- Keep generated CSS and the display-only `product-pictures.js` helper under `/shared-assets/*`;
+  do not move authenticated JavaScript bundles into that public Access bypass. Shared pages omit
+  the React client runtime; their HTTPS picture requests go directly to the image host. Their
+  optional helper hides failed pictures, while reading and reservations work without JavaScript.
+  Retired `/shared/<token>/image/<item>` routes must not retain the Worker authentication
+  exception. Keep legacy migration tables compatible with previously deployed releases.
+
 - Preserve the `X-Robots-Tag` header on every response. Do not make `/robots.txt` public merely for
   link-shared lists; keeping the Access bypass as narrow as possible is the stronger boundary.
 
@@ -286,45 +284,43 @@ after reading the account-specific private handoff and verifying the active Wran
 
 ## Testing map
 
-| Test                                    | Protects                                                                            |
-| --------------------------------------- | ----------------------------------------------------------------------------------- |
-| `test/access-auth.test.ts`              | JWT signature/issuer/audience/expiry and local identity boundaries                  |
-| `test/access-membership.test.ts`        | exact-email policy shape, bounded API handling and cleanup                          |
-| `test/access-public-sharing.test.ts`    | narrow, idempotent public-path setup and drift detection                            |
-| `test/configure-access-session.test.ts` | idempotent 30-day session setup without Access configuration drift                  |
-| `test/check-upstream-update.test.ts`    | updater inputs, channel ancestry and version file writes                            |
-| `test/promote-release.test.ts`          | stable release eligibility, ancestry and concurrent promotion                       |
-| `test/installation-delivery.test.ts`    | build receipts, deploy tags and desired/live version comparison                     |
-| `test/household-upgrade.test.ts`        | populated older-schema upgrades, retained data/links and removal repair             |
-| `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks                     |
-| `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts                    |
-| `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback                   |
-| `test/add-family-member-form.test.tsx`  | family adds retain a native server-submittable form fallback                        |
-| `test/add-wish-form.test.tsx`           | frequent adds retain a native server-submittable form fallback                      |
-| `test/edit-wish-form.test.tsx`          | item edits retain a native server-submittable form fallback                         |
-| `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures                  |
-| `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction                     |
-| `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion                    |
-| `test/disabled-wishlists.test.ts`       | disabled-owner reads, stale mutations, public 404s and restored list privacy        |
-| `test/family-route.test.ts`             | enhanced add results and native redirect fallback                                   |
-| `test/family-members-script.test.ts`    | immediate copying for new rows, current sign-in details and clipboard failures      |
-| `test/member-provisioning.test.ts`      | email validation, idempotent first login and one-list constraint                    |
-| `test/product-image.test.ts`            | same-origin proxy types, redirects and response-byte boundary                       |
-| `test/product-images.test.ts`           | member-scoped image burst/day budgets and reset boundaries                          |
-| `test/product-lookups.test.ts`          | member lookup budget, reset and concurrent enforcement                              |
-| `test/product-metadata.test.ts`         | bounded public fetches, metadata extraction and optional AI safety                  |
-| `test/product-url.test.ts`              | safe HTTP(S) links, credential rejection and size limits                            |
-| `test/request-security.test.ts`         | mutation origins, content types and request-body boundary                           |
-| `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                                 |
-| `test/shared-wishlists.test.ts`         | five-link inventory, revocation, public availability and image limits               |
-| `test/family-sharing.test.tsx`          | selected lists, private claim details, group revocation and image scope             |
-| `test/guest-claims.test.ts`             | guest ownership, recovery, budgets, concurrent claims and signed-in owner privacy   |
-| `test/family-sharing-route.test.ts`     | member sharing, organiser admission boundary, Access preflight and server forms     |
-| `test/public-share-path.test.ts`        | exact public read/POST authentication exceptions and log redaction                  |
-| `test/public-share-worker.test.ts`      | Worker auth boundary, public privacy and token invalidation                         |
-| `test/shared-image-request.test.ts`     | upstream-free, budget-free shared-image HEAD requests                               |
-| `test/shared-image-route.test.ts`       | image reuse, whole-list loading, cache failure, revocation and credential isolation |
-| `test/wishlist-service.test.ts`         | CRUD validation, ordering, claims, concurrency and owner privacy                    |
+| Test                                    | Protects                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------------ |
+| `test/access-auth.test.ts`              | JWT signature/issuer/audience/expiry and local identity boundaries                   |
+| `test/access-membership.test.ts`        | exact-email policy shape, bounded API handling and cleanup                           |
+| `test/access-public-sharing.test.ts`    | narrow, idempotent public-path setup and drift detection                             |
+| `test/configure-access-session.test.ts` | idempotent 30-day session setup without Access configuration drift                   |
+| `test/check-upstream-update.test.ts`    | updater inputs, channel ancestry and version file writes                             |
+| `test/promote-release.test.ts`          | stable release eligibility, ancestry and concurrent promotion                        |
+| `test/installation-delivery.test.ts`    | build receipts, deploy tags and desired/live version comparison                      |
+| `test/household-upgrade.test.ts`        | populated older-schema upgrades, retained data/links and removal repair              |
+| `test/check-setup.test.ts`              | read-only account, D1, binding and optional Access setup checks                      |
+| `test/client-runtime.test.tsx`          | public sharing pages remain free of authenticated client scripts                     |
+| `test/in-place-action-form.test.tsx`    | enhanced actions retain a native server-submittable form fallback                    |
+| `test/add-family-member-form.test.tsx`  | family adds retain a native server-submittable form fallback                         |
+| `test/add-wish-form.test.tsx`           | frequent adds retain a native server-submittable form fallback                       |
+| `test/edit-wish-form.test.tsx`          | item edits retain a native server-submittable form fallback                          |
+| `test/add-route.test.ts`                | multi-list product drafts preserve edits and fill missing pictures                   |
+| `test/bookmarklet.test.ts`              | safe, deployment-specific add-page and bookmarklet construction                      |
+| `test/family-members.test.ts`           | roles, admin checks, invitation state and first-login conversion                     |
+| `test/disabled-wishlists.test.ts`       | disabled-owner reads, stale mutations, public 404s and restored list privacy         |
+| `test/family-route.test.ts`             | enhanced add results and native redirect fallback                                    |
+| `test/family-members-script.test.ts`    | immediate copying for new rows, current sign-in details and clipboard failures       |
+| `test/member-provisioning.test.ts`      | email validation, idempotent first login and one-list constraint                     |
+| `test/raster-image.test.ts`             | private avatar fetch types, redirects and response-byte boundary                     |
+| `test/avatar-limits.test.ts`            | member-scoped avatar burst/day budgets and reset boundaries                          |
+| `test/product-lookups.test.ts`          | member lookup budget, reset and concurrent enforcement                               |
+| `test/product-metadata.test.ts`         | bounded public fetches, metadata extraction and optional AI safety                   |
+| `test/product-url.test.ts`              | safe HTTP(S) links, credential rejection and size limits                             |
+| `test/request-security.test.ts`         | mutation origins, content types and request-body boundary                            |
+| `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                                  |
+| `test/shared-wishlists.test.ts`         | five-link inventory, revocation, public availability and safe hotlinked pictures     |
+| `test/family-sharing.test.tsx`          | selected lists, private claim details, group revocation and picture disclosure scope |
+| `test/guest-claims.test.ts`             | guest ownership, recovery, budgets, concurrent claims and signed-in owner privacy    |
+| `test/family-sharing-route.test.ts`     | member sharing, organiser admission boundary, Access preflight and server forms      |
+| `test/public-share-path.test.ts`        | exact public read/POST authentication exceptions and log redaction                   |
+| `test/public-share-worker.test.ts`      | Worker auth boundary, public privacy and token invalidation                          |
+| `test/wishlist-service.test.ts`         | CRUD validation, ordering, claims, concurrency and owner privacy                     |
 
 `vitest.config.ts` runs tests through the Cloudflare pool. `test/apply-migrations.ts` applies every SQL
 migration to the isolated test database, so migration and application code are tested together.

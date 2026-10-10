@@ -16,7 +16,6 @@ import {
   createWishlistShareLink,
   getSharedWishlist,
   getSharedWishlists,
-  getSharedWishlistImageUrl,
   listShareableWishlists
 } from '../app/lib/db/shared-wishlists';
 import {
@@ -30,7 +29,6 @@ import {
   updateWishlistItem
 } from '../app/lib/db/wishlists';
 import { loader as sharedLoader } from '../app/routes/shared-wishlist';
-import { loader as sharedImageLoader } from '../app/routes/shared-wishlist-image';
 import { inviteAndProvisionMember } from './family-fixtures';
 
 const input = {
@@ -99,8 +97,7 @@ describe('disabled wishlist visibility', () => {
   it.each(['removing', 'removed', 'reinviting'])(
     'excludes disabled owners from family lists, sharing choices, public lists and pictures (%s)',
     async (state) => {
-      const { admin, owner, other, ownerItem, otherItem, singleToken, groupToken } =
-        await fixture();
+      const { admin, owner, other, singleToken, groupToken } = await fixture();
       await prepareFamilyMemberRemoval(env.DB, admin.id, owner.id);
       if (state !== 'removing') await completeFamilyMemberRemoval(env.DB, owner.id);
       if (state === 'reinviting')
@@ -121,9 +118,6 @@ describe('disabled wishlist visibility', () => {
       expect((await getSharedWishlists(env.DB, groupToken)).map((list) => list.id)).toEqual([
         other.wishlistId
       ]);
-      for (const token of [singleToken, groupToken])
-        expect(await getSharedWishlistImageUrl(env.DB, token, ownerItem.id)).toBeNull();
-      expect(await getSharedWishlistImageUrl(env.DB, groupToken, otherItem.id)).not.toBeNull();
     }
   );
 
@@ -178,8 +172,10 @@ describe('disabled wishlist visibility', () => {
     expect((await env.DB.prepare('SELECT * FROM claims').all()).results).toEqual(claimsBefore);
   });
 
-  it('returns 404 for old public URLs and pictures, including HEAD, without fetching images', async () => {
-    const { admin, owner, other, ownerItem, singleToken, groupToken } = await fixture();
+  it('returns 404 for disabled public lists, including HEAD, without fetching images', async () => {
+    const fetcher = vi.fn(() => Promise.resolve(new Response('unexpected image')));
+    vi.stubGlobal('fetch', fetcher);
+    const { admin, owner, other, singleToken, groupToken } = await fixture();
     await prepareFamilyMemberRemoval(env.DB, admin.id, owner.id);
     for (const method of ['GET', 'HEAD'])
       await expect(loadShared(singleToken, method)).rejects.toMatchObject({
@@ -195,24 +191,6 @@ describe('disabled wishlist visibility', () => {
         data: 'Not found',
         init: { status: 404 }
       });
-    const fetcher = vi.fn(() => Promise.resolve(new Response('unexpected image')));
-    vi.stubGlobal('fetch', fetcher);
-    for (const token of [singleToken, groupToken]) {
-      for (const method of ['GET', 'HEAD']) {
-        const request = new Request(
-          `https://wishlist.example/shared/${token}/image/${ownerItem.id}`,
-          { method }
-        );
-        const response = await sharedImageLoader({
-          request,
-          params: { token, itemId: ownerItem.id },
-          context: publicContext(),
-          pattern: '/shared/:token/image/:itemId',
-          url: new URL(request.url)
-        });
-        expect(response.status).toBe(404);
-      }
-    }
     expect(fetcher).not.toHaveBeenCalled();
     expect(
       await env.DB.prepare('SELECT count(*) AS total FROM shared_image_fetch_limits').first()

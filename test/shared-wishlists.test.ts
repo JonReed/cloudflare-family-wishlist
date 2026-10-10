@@ -3,12 +3,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ensureMemberForEmail, type MemberWithWishlist } from '../app/lib/db/members';
 import {
-  consumeSharedImageBudget,
   getSharedWishlist,
-  getSharedWishlistImageUrl,
   hasWishlistShareLink,
   listActiveWishlistShareLinks,
-  makeSharedImageRequesterKey,
   createWishlistShareLink,
   revokeWishlistShareLink
 } from '../app/lib/db/shared-wishlists';
@@ -211,7 +208,7 @@ describe('shared wishlists', () => {
       reservation: 'reserved',
       notes: 'The green one',
       productUrl: 'https://example.com/gift',
-      hasImage: true,
+      imageUrl: 'https://cdn.example.com/gift.webp',
       priceAmountMinor: 2450,
       priceCurrency: 'GBP',
       priority: 'high'
@@ -241,120 +238,27 @@ describe('shared wishlists', () => {
     const secondItem = family.find((wishlist) => wishlist.id === second.wishlistId)?.items[0]?.id;
     const token = await createWishlistShareLink(env.DB, first.id, first.wishlistId, 'Neighbour');
 
-    await expect(getSharedWishlistImageUrl(env.DB, token, firstItem)).resolves.toMatchObject({
-      imageUrl: 'https://cdn.example.com/first.webp'
-    });
-    await expect(getSharedWishlistImageUrl(env.DB, token, secondItem)).resolves.toBeNull();
+    const shared = await getSharedWishlist(env.DB, token);
+    expect(shared?.items).toMatchObject([
+      { id: firstItem, imageUrl: 'https://cdn.example.com/first.webp' }
+    ]);
+    expect(shared?.items.map((item) => item.id)).not.toContain(secondItem);
   });
 
-  it('derives requester keys without storing reusable network identifiers', async () => {
-    const firstToken = 'a'.repeat(22);
-    const secondToken = 'b'.repeat(22);
-    const first = await makeSharedImageRequesterKey(firstToken, '203.0.113.8');
-
-    expect(first).toMatch(/^[0-9a-f]{64}$/);
-    await expect(makeSharedImageRequesterKey(firstToken, '203.0.113.8')).resolves.toBe(first);
-    await expect(makeSharedImageRequesterKey(firstToken, '203.0.113.9')).resolves.not.toBe(first);
-    await expect(makeSharedImageRequesterKey(secondToken, '203.0.113.8')).resolves.not.toBe(first);
-    expect(first).not.toContain('203.0.113.8');
-  });
-
-  it('atomically bounds concurrent public image fetching per requester', async () => {
+  it.each([
+    'http://cdn.example.com/gift.jpg',
+    'https://127.0.0.1/gift.jpg',
+    'https://user:secret@cdn.example.com/gift.jpg',
+    'data:image/png;base64,AAAA'
+  ])('omits unsafe stored pictures from both family and shared reads: %s', async (imageUrl) => {
     const member = await createMember('owner@example.com');
-    const now = Date.UTC(2026, 8, 1, 12, 34, 20);
-    const requesterHash = 'a'.repeat(64);
-    const attempts = await Promise.allSettled(
-      Array.from({ length: 21 }, () =>
-        consumeSharedImageBudget(env.DB, member.wishlistId, requesterHash, now)
-      )
-    );
-
-    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(20);
-    expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(1);
-    await expect(
-      consumeSharedImageBudget(env.DB, member.wishlistId, requesterHash, now + 60_000)
-    ).resolves.toBeUndefined();
-  });
-
-  it('atomically retains the higher list-wide emergency ceiling', async () => {
-    const member = await createMember('owner@example.com');
-    const now = Date.UTC(2026, 8, 1, 12, 34, 20);
-    const attempts = await Promise.allSettled(
-      Array.from({ length: 61 }, (_, index) =>
-        consumeSharedImageBudget(
-          env.DB,
-          member.wishlistId,
-          index.toString(16).padStart(64, '0'),
-          now
-        )
-      )
-    );
-
-    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(60);
-    expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(1);
-  });
-
-  it('sizes cold-fetch budgets to complete lists while still rejecting concurrent excess', async () => {
-    const member = await createMember('owner@example.com');
-    await env.DB.batch(
-      Array.from({ length: 30 }, () =>
-        env.DB.prepare(
-          'INSERT INTO items (id, wishlist_id, title, image_url, created_by_member_id) VALUES (?1, ?2, ?3, ?4, ?5)'
-        ).bind(
-          crypto.randomUUID(),
-          member.wishlistId,
-          'Picture gift',
-          'https://cdn.example/gift.png',
-          member.id
-        )
-      )
-    );
-    const now = Date.UTC(2026, 8, 1, 12, 34, 20);
-    const attempts = await Promise.allSettled(
-      Array.from({ length: 61 }, () =>
-        consumeSharedImageBudget(env.DB, member.wishlistId, 'a'.repeat(64), now)
-      )
-    );
-    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(60);
-    expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(1);
-    await expect(
-      consumeSharedImageBudget(env.DB, member.wishlistId, 'a'.repeat(64), now + 60_000)
-    ).resolves.toBeUndefined();
-  });
-
-  it('enforces the list-wide daily ceiling and reports its rollover', async () => {
-    const member = await createMember('owner@example.com');
-    const now = Date.UTC(2026, 8, 1, 23, 59, 20);
-    const nowSeconds = Math.floor(now / 1000);
-    const minuteStartedAt = nowSeconds - (nowSeconds % 60);
-    const dayStartedAt = nowSeconds - (nowSeconds % 86_400);
-    await env.DB.prepare(
-      `INSERT INTO shared_image_requester_limits (
-         wishlist_id, requester_hash, minute_started_at, minute_request_count,
-         day_started_at, day_request_count
-       ) VALUES (?1, ?2, ?3, 1, ?4, 1)`
-    )
-      .bind(member.wishlistId, 'f'.repeat(64), minuteStartedAt - 86_400, dayStartedAt - 86_400)
+    await createWishlistItem(env.DB, member.id, member.wishlistId, itemInput());
+    await env.DB.prepare('UPDATE items SET image_url = ?1 WHERE wishlist_id = ?2')
+      .bind(imageUrl, member.wishlistId)
       .run();
-    await env.DB.prepare(
-      `INSERT INTO shared_image_fetch_limits (
-         wishlist_id, minute_started_at, minute_request_count, day_started_at, day_request_count
-       ) VALUES (?1, ?2, 1, ?3, 499)`
-    )
-      .bind(member.wishlistId, minuteStartedAt, dayStartedAt)
-      .run();
-
-    await expect(
-      consumeSharedImageBudget(env.DB, member.wishlistId, 'a'.repeat(64), now)
-    ).resolves.toBeUndefined();
-    await expect(
-      consumeSharedImageBudget(env.DB, member.wishlistId, 'b'.repeat(64), now)
-    ).rejects.toMatchObject({ retryAfterSeconds: 40 });
-    await expect(
-      env.DB.prepare('SELECT 1 FROM shared_image_requester_limits WHERE requester_hash = ?1')
-        .bind('f'.repeat(64))
-        .first()
-    ).resolves.toBeNull();
+    const token = await createWishlistShareLink(env.DB, member.id, member.wishlistId, 'Friends');
+    expect((await listFamilyWishlists(env.DB, member.id))[0].items[0].imageUrl).toBeNull();
+    expect((await getSharedWishlist(env.DB, token))?.items[0].imageUrl).toBeNull();
   });
 
   it('rejects malformed tokens and identifiers before database access', async () => {

@@ -3,12 +3,19 @@ export function CookieNotice() {
     <aside className="cookie-notice" aria-label="Cookies">
       <details>
         <summary>
-          Required cookies only <span>— how we use them</span>
+          Cookies and picture privacy <span>— how we use them</span>
         </summary>
         <div id="cookie-information" className="cookie-information" tabIndex={-1}>
           <p>
-            We use cookies to keep family sign-in secure and let guests manage their reserved gifts.
-            Family Wishlist does not use advertising or analytics cookies.
+            We use only required cookies to keep family sign-in secure and let guests manage their
+            reserved gifts. Family Wishlist does not use advertising or analytics cookies.
+          </p>
+          <h2>Product pictures</h2>
+          <p>
+            Product pictures load directly from shops or other picture hosts. Those hosts receive
+            your picture request, including your IP address, and may use their own cookies if your
+            browser allows them. We do not send them this wishlist’s address, sharing code or
+            sign-in details. Their own privacy and cookie policies apply.
           </p>
           <h2>Guest reservations</h2>
           <p>

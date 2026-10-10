@@ -187,17 +187,13 @@ function formatPrice(amountMinor: number, currency: string): string {
 
 const priorityLabels = { low: 'Nice to have', high: 'Top wish' } as const;
 
-function sharedImagePath(token: string, itemId: string): string {
-  return `/shared/${encodeURIComponent(token)}/image/${encodeURIComponent(itemId)}`;
-}
-
 function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }) {
   return (
     <li id={`wish-${item.id}`} className={`wish-row shared-wish-row wish-row-${item.priority}`}>
-      <div className={item.hasImage ? 'wish-content wish-content-with-image' : 'wish-content'}>
-        {item.hasImage ? (
+      <div className={item.imageUrl ? 'wish-content wish-content-with-image' : 'wish-content'}>
+        {item.imageUrl ? (
           <img
-            src={sharedImagePath(token, item.id)}
+            src={item.imageUrl}
             alt=""
             width="160"
             height="160"

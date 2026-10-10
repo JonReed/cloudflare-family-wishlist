@@ -1,5 +1,5 @@
 import { avatarInitials } from './avatar-initials';
-import { fetchProductImage, ProductImageError } from './product-image';
+import { fetchRasterImage, RasterImageError } from './raster-image';
 
 /** Gravatar's identifier stays server-side, rather than appearing in family pages. */
 export async function gravatarUrl(email: string): Promise<string> {
@@ -26,13 +26,12 @@ export async function fetchGravatar(
   fetcher: typeof fetch = fetch
 ): Promise<Response> {
   try {
-    const response = await fetchProductImage(await gravatarUrl(member.email), fetcher);
-    response.headers.delete('X-Product-Image-Proxy');
+    const response = await fetchRasterImage(await gravatarUrl(member.email), fetcher);
     response.headers.set('X-Member-Avatar', '1');
     response.headers.set('Cache-Control', 'private, max-age=300');
     return response;
   } catch (error) {
-    if (error instanceof ProductImageError) return initialsAvatar(member.displayName);
+    if (error instanceof RasterImageError) return initialsAvatar(member.displayName);
     throw error;
   }
 }

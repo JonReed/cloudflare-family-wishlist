@@ -3,15 +3,16 @@ const DAY_LIMIT = 500;
 const MINUTE_SECONDS = 60;
 const DAY_SECONDS = 86_400;
 
-export class ProductImageRateLimitError extends Error {
+export class AvatarRateLimitError extends Error {
   constructor(readonly retryAfterSeconds: number) {
     super('That’s a lot of pictures at once. Wait a moment, then refresh the page.');
-    this.name = 'ProductImageRateLimitError';
+    this.name = 'AvatarRateLimitError';
   }
 }
 
-/** Consumes one member-scoped image fetch from atomic minute and UTC-day budgets. */
-export async function consumeProductImageBudget(
+/** Consumes one member-scoped avatar fetch from atomic minute and UTC-day budgets. */
+// Reuse the existing table so household upgrades need no schema changes.
+export async function consumeAvatarBudget(
   db: D1Database,
   memberId: string,
   nowSeconds = Math.floor(Date.now() / 1000)
@@ -78,6 +79,6 @@ export async function consumeProductImageBudget(
     const retryAfterSeconds = dailyLimited
       ? Math.max(1, dayStartedAt + DAY_SECONDS - nowSeconds)
       : Math.max(1, minuteStartedAt + MINUTE_SECONDS - nowSeconds);
-    throw new ProductImageRateLimitError(retryAfterSeconds);
+    throw new AvatarRateLimitError(retryAfterSeconds);
   }
 }
