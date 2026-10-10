@@ -579,6 +579,16 @@ export async function consumeSharedImageBudget(
   if (!/^[0-9a-f]{64}$/.test(requesterHash)) {
     throw new SharedWishlistInputError('The picture request is invalid.');
   }
+  const pictures = await db
+    .prepare('SELECT COUNT(*) AS count FROM items WHERE wishlist_id = ?1 AND image_url IS NOT NULL')
+    .bind(targetWishlistId)
+    .first<{ count: number }>();
+  // Allow complete cold-cache list loads, including lists with more than 20 pictures.
+  const imageCount = pictures?.count ?? 0;
+  const requesterMinuteLimit = Math.max(20, imageCount * 2);
+  const requesterDayLimit = Math.max(100, imageCount * 5);
+  const listMinuteLimit = Math.max(60, imageCount * 6);
+  const listDayLimit = Math.max(500, imageCount * 20);
   const nowSeconds = Math.floor(now / 1000);
   const minuteStartedAt = nowSeconds - (nowSeconds % 60);
   const dayStartedAt = nowSeconds - (nowSeconds % 86_400);
@@ -621,12 +631,19 @@ export async function consumeSharedImageBudget(
          END
        WHERE
          (shared_image_requester_limits.minute_started_at <> excluded.minute_started_at
-           OR shared_image_requester_limits.minute_request_count < 20)
+           OR shared_image_requester_limits.minute_request_count < ?5)
          AND
          (shared_image_requester_limits.day_started_at <> excluded.day_started_at
-           OR shared_image_requester_limits.day_request_count < 100)`
+           OR shared_image_requester_limits.day_request_count < ?6)`
     )
-    .bind(targetWishlistId, requesterHash, minuteStartedAt, dayStartedAt)
+    .bind(
+      targetWishlistId,
+      requesterHash,
+      minuteStartedAt,
+      dayStartedAt,
+      requesterMinuteLimit,
+      requesterDayLimit
+    )
     .run();
 
   if (!requesterResult.success) {
@@ -647,7 +664,8 @@ export async function consumeSharedImageBudget(
         day_request_count: number;
       }>();
     const dayLimited =
-      limit?.day_started_at === dayStartedAt && (limit?.day_request_count ?? 0) >= 100;
+      limit?.day_started_at === dayStartedAt &&
+      (limit?.day_request_count ?? 0) >= requesterDayLimit;
     const retryAt = dayLimited ? dayStartedAt + 86_400 : minuteStartedAt + 60;
     throw new SharedImageRateLimitError(Math.max(1, retryAt - nowSeconds));
   }
@@ -681,12 +699,12 @@ export async function consumeSharedImageBudget(
          END
        WHERE
          (shared_image_fetch_limits.minute_started_at <> excluded.minute_started_at
-           OR shared_image_fetch_limits.minute_request_count < 60)
+           OR shared_image_fetch_limits.minute_request_count < ?4)
          AND
          (shared_image_fetch_limits.day_started_at <> excluded.day_started_at
-           OR shared_image_fetch_limits.day_request_count < 500)`
+           OR shared_image_fetch_limits.day_request_count < ?5)`
     )
-    .bind(targetWishlistId, minuteStartedAt, dayStartedAt)
+    .bind(targetWishlistId, minuteStartedAt, dayStartedAt, listMinuteLimit, listDayLimit)
     .run();
 
   if (!result.success) throw new SharedWishlistInputError('That picture could not be loaded.');
@@ -705,7 +723,7 @@ export async function consumeSharedImageBudget(
         day_request_count: number;
       }>();
     const dayLimited =
-      limit?.day_started_at === dayStartedAt && (limit?.day_request_count ?? 0) >= 500;
+      limit?.day_started_at === dayStartedAt && (limit?.day_request_count ?? 0) >= listDayLimit;
     const retryAt = dayLimited ? dayStartedAt + 86_400 : minuteStartedAt + 60;
     const retryAfterSeconds = Math.max(1, retryAt - nowSeconds);
     throw new SharedImageRateLimitError(retryAfterSeconds);

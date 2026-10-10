@@ -49,4 +49,26 @@ describe('security headers', () => {
     expect(response.headers.has('X-Member-Avatar')).toBe(false);
     expect(response.headers.get('Content-Security-Policy')).toContain("img-src 'self' data:");
   });
+
+  it('requires revalidation for marked shared pictures while keeping public pages uncached', () => {
+    for (const status of [200, 304]) {
+      const response = withSecurityHeaders(
+        new Response(null, {
+          status,
+          headers: { 'X-Shared-Image-Proxy': '1', ETag: 'W/"picture"' }
+        }),
+        'test-nonce',
+        { publicShare: true }
+      );
+      expect(response.headers.get('Cache-Control')).toBe('private, no-cache');
+      expect(response.headers.get('ETag')).toBe('W/"picture"');
+      expect(response.headers.has('X-Shared-Image-Proxy')).toBe(false);
+      expect(response.headers.get('Content-Security-Policy')).toContain("img-src 'self' data:");
+    }
+    expect(
+      withSecurityHeaders(new Response('page'), 'test-nonce', { publicShare: true }).headers.get(
+        'Cache-Control'
+      )
+    ).toBe('private, no-store');
+  });
 });

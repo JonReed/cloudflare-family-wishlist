@@ -19,17 +19,21 @@ export function withSecurityHeaders(
   const headers = new Headers(response.headers);
   const isProductImage = headers.get('X-Product-Image-Proxy') === '1';
   const isMemberAvatar = headers.get('X-Member-Avatar') === '1';
+  const isSharedImage = options.publicShare && headers.get('X-Shared-Image-Proxy') === '1';
   headers.delete('X-Product-Image-Proxy');
   headers.delete('X-Member-Avatar');
+  headers.delete('X-Shared-Image-Proxy');
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(
       name,
-      name === 'Cache-Control' && (isProductImage || isMemberAvatar) && !options.publicShare
-        ? isMemberAvatar
-          ? 'private, max-age=300'
-          : 'private, max-age=86400'
-        : value
+      name === 'Cache-Control' && isSharedImage
+        ? 'private, no-cache'
+        : name === 'Cache-Control' && (isProductImage || isMemberAvatar) && !options.publicShare
+          ? isMemberAvatar
+            ? 'private, max-age=300'
+            : 'private, max-age=86400'
+          : value
     );
   }
 

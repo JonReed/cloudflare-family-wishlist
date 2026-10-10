@@ -91,7 +91,7 @@ enforcement cannot disagree.
    match the public route boundary. It hashes the URL secret and runs a separate D1 query that
    returns availability and only the current guest’s own reservation state. Shared pictures require the same secret plus an item belonging to that
    selected list, pass through the bounded raster proxy and consume both a capability-holder budget and a
-   higher list-wide emergency budget. A HEAD request verifies membership but does not fetch or count
+   higher list-wide emergency budget only when fetching an uncached picture. A HEAD request verifies membership but does not fetch or count
    the upstream picture.
 
 The organiser-only admission intents in `/family` are the flows that change the Access admission boundary. The action
@@ -315,10 +315,27 @@ ordinary wish details; it returns one result per selected wishlist, including em
 A left join on `claims` returns a reservation enum: available, reserved, yours or bought. Public
 responses never include claimant identifiers, names, hashes or another claimant’s purchase state. Shared
 image routes look up the stored image only when both the hashed secret and item membership match,
-then reuse the public-network, redirect, type and size checks of the signed-in image proxy. A D1-backed
-20-per-minute and 100-per-day capability-holder budget prevents one recipient from consuming the
-whole allowance. A higher 60-per-minute and 500-per-day list-wide ceiling remains as an emergency
-cost bound. The requester key is a SHA-256 derivation salted by the bearer capability; raw network
+then reuse the public-network, redirect, type and size checks of the signed-in image proxy.
+Validated bytes use a named Workers Cache API cache for up to one day. Keys contain only a hash of
+the checked picture URL and the UTC day, on the existing public bypass path; they contain no sharing
+code, shop address or browser headers. The internal cache path is not a public Worker route.
+Only raster bytes and safe proxy headers enter this cache, never pages, claims, errors or shop cookies.
+Access configurations can make the Cache API unavailable, so delivery must also work without it.
+
+Shared pictures use `Cache-Control: private, no-cache`: browsers can store bytes, but must revalidate
+before reuse. After checking the active link, enabled owner and item scope, a matching `If-None-Match`
+returns 304 without an upstream request or budget consumption. The weak validator changes when the
+stored picture URL changes and each UTC day, bounding staleness even when a shop reuses its URL.
+Edge cache hits also skip fetch budgets. Revoked links and disabled owners return 404 before either
+cache is used; public HTML and errors retain `private, no-store`.
+
+For `N` pictures on a list, atomic D1 guards allow `max(20, 2N)` fetch attempts per recipient per
+minute and `max(100, 5N)` per UTC day. The higher list-wide emergency ceilings are `max(60, 6N)`
+per minute and `max(500, 20N)` per day. These allow whole cold-cache lists instead of breaking the
+twenty-first picture on first viewing. Failed upstream attempts count; cached reuse does not.
+Migration 0015 preserves existing counters and widens their positive-count constraints so the
+application can size these limits. The previous Worker's lower guards remain compatible.
+The requester key is a SHA-256 derivation salted by the bearer capability; raw network
 addresses and reusable cross-link identifiers are never stored.
 
 Public list and image queries require the wishlist owner to have `disabled_at IS NULL`. A removed
@@ -605,7 +622,7 @@ contain an ignored `.private/WRANGLER_PROFILE.md` with account-specific context;
 Every existing and new sharing link allows guest claims through ordinary server-rendered forms.
 Only POST to the exact shared-list path bypasses Access; the Worker and action both enforce same-origin
 forms and bounded bodies. Public pages use `Referrer-Policy: same-origin` so native forms send a valid
-Origin, while external links retain `noreferrer`. They remain private/no-store and omit client scripts.
+Origin, while external links retain `noreferrer`. Shared HTML remains private/no-store and omits client scripts.
 
 A cryptographically random 256-bit guest secret is kept in a Secure, HttpOnly, SameSite=Lax host-only
 cookie (Secure and the __Host prefix are omitted only for HTTP loopback development). Public shared

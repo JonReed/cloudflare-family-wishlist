@@ -294,6 +294,34 @@ describe('shared wishlists', () => {
     expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(1);
   });
 
+  it('sizes cold-fetch budgets to complete lists while still rejecting concurrent excess', async () => {
+    const member = await createMember('owner@example.com');
+    await env.DB.batch(
+      Array.from({ length: 30 }, () =>
+        env.DB.prepare(
+          'INSERT INTO items (id, wishlist_id, title, image_url, created_by_member_id) VALUES (?1, ?2, ?3, ?4, ?5)'
+        ).bind(
+          crypto.randomUUID(),
+          member.wishlistId,
+          'Picture gift',
+          'https://cdn.example/gift.png',
+          member.id
+        )
+      )
+    );
+    const now = Date.UTC(2026, 8, 1, 12, 34, 20);
+    const attempts = await Promise.allSettled(
+      Array.from({ length: 61 }, () =>
+        consumeSharedImageBudget(env.DB, member.wishlistId, 'a'.repeat(64), now)
+      )
+    );
+    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(60);
+    expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(1);
+    await expect(
+      consumeSharedImageBudget(env.DB, member.wishlistId, 'a'.repeat(64), now + 60_000)
+    ).resolves.toBeUndefined();
+  });
+
   it('enforces the list-wide daily ceiling and reports its rollover', async () => {
     const member = await createMember('owner@example.com');
     const now = Date.UTC(2026, 8, 1, 23, 59, 20);

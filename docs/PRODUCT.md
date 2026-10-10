@@ -128,6 +128,9 @@ The public page opens without Cloudflare login and shows the selected people's c
 notes, prices, product links and pictures, including empty lists. It never includes unselected lists,
 claimant identities, other people's purchase state, sign-in emails, photos or the link's private name. Adding a new family
 member does not add their list to an existing link. Changes to selected wishes appear automatically.
+Pictures load through the household's privacy proxy. Reusing an unchanged picture must not use up
+its fetch allowance when a guest refreshes or reserves a gift. A normal complete list must fit the
+allowance, and stopping a link must block further picture access even when pictures were cached.
 Every shared link allows guest reservations. Public visitors see only availability or “Reserved”
 for someone else's claim, and can manage their own reservations through a private browser credential.
 The owner can also visit anonymously and learn availability; that trade-off is explicitly accepted.
