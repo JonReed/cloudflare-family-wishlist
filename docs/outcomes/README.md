@@ -21,6 +21,21 @@ Use `target: { kind: unscheduled }` where no target is agreed. Supported targets
 also include date, week, month, financial quarter and financial year. Targets are
 planning intent, not inferred from release dates.
 
+For an accepted outcome, record known actual delivery separately as `delivery`:
+
+```yaml
+delivery:
+  date: '2026-09-07'
+  evidence:
+    - title: v1.0.0 published delivery
+      url: https://github.com/JonReed/cloudflare-family-wishlist/releases/tag/v1.0.0
+```
+
+This explicitly associates the outcome with its delivery evidence; the platform
+does not match releases automatically. The roadmap places Done outcomes on this
+date. Keep the original target and retrospective acceptance date unchanged. Omit
+`delivery` if its date is unknown; do not substitute the acceptance date.
+
 Evidence is linked, not copied into a second ticket system. Prefer immutable
 source links for files. A commit can explicitly associate itself with an outcome
 using a trailer such as `Outcome: FW-001`; it does not establish acceptance.
