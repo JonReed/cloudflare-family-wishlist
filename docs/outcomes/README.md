@@ -24,3 +24,13 @@ planning intent, not inferred from release dates.
 Evidence is linked, not copied into a second ticket system. Prefer immutable
 source links for files. A commit can explicitly associate itself with an outcome
 using a trailer such as `Outcome: FW-001`; it does not establish acceptance.
+
+## Current outcomes
+
+- [FW-001](FW-001.md): anonymous guests can coordinate gift buying; awaiting Jon's QA.
+- [FW-002](FW-002.md): private family gift coordination; delivered in v1.0.0 and retrospectively accepted.
+- [FW-003](FW-003.md): optional automatic household updates; delivered in v1.1.1 and retrospectively accepted.
+
+Jon confirmed FW-002 and FW-003 on 11 October 2026. The
+[acceptance record](acceptance/2026-10-11-retrospective.md) keeps that confirmation
+separate from the earlier delivery dates.
