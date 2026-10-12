@@ -72,3 +72,11 @@ unclassified pending review. No historical accounting treatment is asserted.
 Optional `assessment` records a dated outlook with `status` (`on_track`, `at_risk`
 or `off_track`), `summary`, `asOf`, `by` and `basis` (`human` or `agent`). This is
 separate from acceptance. Missing assessments mean Not assessed, not on track.
+
+## Contribution effort
+
+[Contribution records](../contributions/README.md) associate existing changes with
+outcomes, estimated human effort and proposed activity-level Capex/Opex treatment.
+The first sample is explicitly retrospective and illustrative; original commits
+and outcome acceptance are unchanged. These records are separate from outcome
+front matter and do not turn planning labels into financial allocations.
