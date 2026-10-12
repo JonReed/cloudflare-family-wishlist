@@ -49,3 +49,26 @@ using a trailer such as `Outcome: FW-001`; it does not establish acceptance.
 Jon confirmed FW-002 and FW-003 on 11 October 2026. The
 [acceptance record](acceptance/2026-10-11-retrospective.md) keeps that confirmation
 separate from the earlier delivery dates.
+
+## Executive priorities and investment
+
+- [FWO-001](../objectives/FWO-001.md): new objective for combined family and guest
+  coordination, supported by FW-001 and FW-002. Its own acceptance is still needed.
+- [FW-004](FW-004.md): proposed maintenance of existing household journeys; planned,
+  with a provisional FY2027 Q1 window and no completed work claimed.
+
+Set `executivePriority: true` to highlight a key outcome or objective. Objectives
+live in `docs/objectives`, use their own stable ID and criteria, and list the
+contributing `outcomeIds`. Membership is optional, can span several outcomes and
+does not create implementation tickets. Completing contributions does not
+implicitly accept the objective.
+
+Optional `investment` metadata contains a `category` (`capex`, `opex`, `mixed` or
+`unclassified`) and a `rationale`. These are proposed planning labels, not finance
+approval, expenditure or an accounting determination. Missing labels remain
+unclassified. FW-001 and FW-002 propose Capex; FW-004 proposes Opex; FW-003 remains
+unclassified pending review. No historical accounting treatment is asserted.
+
+Optional `assessment` records a dated outlook with `status` (`on_track`, `at_risk`
+or `off_track`), `summary`, `asOf`, `by` and `basis` (`human` or `agent`). This is
+separate from acceptance. Missing assessments mean Not assessed, not on track.
