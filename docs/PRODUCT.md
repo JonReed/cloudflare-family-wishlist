@@ -202,8 +202,9 @@ agreement rather than an ordinary implementation detail.
   their narrow Cloudflare Access exception configured automatically.
 
 See the [latest release](https://github.com/JonReed/cloudflare-family-wishlist/releases/latest)
-and [family user guide](USER_GUIDE.md). The stricter fresh-account acceptance walkthrough and genuine
-scheduled updater delivery remain follow-up verification; see [release readiness](RELEASE_READINESS.md).
+and [family user guide](USER_GUIDE.md). The stricter fresh-account acceptance walkthrough remains
+follow-up verification; genuine scheduled updater delivery was verified on 3 October 2026.
+See [release readiness](RELEASE_READINESS.md).
 
 ## Focused product scope
 

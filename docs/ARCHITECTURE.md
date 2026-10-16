@@ -606,7 +606,7 @@ Every existing and new sharing link allows guest claims through ordinary server-
 Only POST to the exact shared-list path bypasses Access; the Worker and action both enforce same-origin
 forms and bounded bodies. Public pages use `Referrer-Policy: same-origin` so native forms send a valid
 Origin, while external links retain `noreferrer`. Shared HTML remains private/no-store and omits
-the authenticated client runtime. Its only script is the optional picture-failure helper.
+the authenticated client runtime. Its optional scripts handle picture failures and expandable titles.
 
 A cryptographically random 256-bit guest secret is kept in a Secure, HttpOnly, SameSite=Lax host-only
 cookie (Secure and the __Host prefix are omitted only for HTTP loopback development). Public shared

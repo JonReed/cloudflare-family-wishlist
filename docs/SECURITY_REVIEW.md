@@ -375,3 +375,55 @@ again for the final release candidate.
 This is a release verification note, not a new independent security scan. The earlier external/AI
 review results above apply only to their stated ranges. Live scheduled update delivery and failure
 recovery remain publication blockers until separately recorded in `RELEASE_READINESS.md`.
+
+## v1.1.2 release preparation
+
+- **Application range:** `v1.1.1` (`c6c539a68b60f6ec2f88025ecf0c0b5c720f03bf`) through
+  `b8aca1e8e9e1db88aed33f5ce181e91f06d740c0` on `main`. The subsequent release-preparation changes
+  update version metadata, release notes and documentation; they add no runtime code or dependencies.
+- **Review date:** 16 October 2026.
+- **Method:** source inspection and regression-test review of the guest-reservation boundary, shared
+  availability queries, product-picture loading, browser title helpers and setup input safeguards.
+  This is release verification, not a new independent or exhaustive security scan. Earlier review
+  verdicts above remain limited to their stated commits.
+- **Automated verification:** `npm run quality` and `npm run audit` passed during release preparation:
+  585 Workers-runtime tests in 54 files, four setup-script tests, eight updater integration tests,
+  formatting, lint, binding and route type checks, and a production build. The audit reported zero
+  known vulnerabilities at the configured moderate threshold. The release workflow repeats the gates
+  against the final tagged commit before promotion.
+
+The reviewed services retain the signed-in owner's claim-free SQL join and returned union. Shared
+links intentionally expose reservation availability to all visitors, including an owner visiting
+anonymously, while returning purchase state only for the current guest's own credential. Member IDs,
+other guests' credentials and other people's purchase state stay outside shared results. Guest writes
+recheck active link membership, enabled owners and credential ownership inside SQL. Tests cover
+member/guest concurrency, revoked links, disabled owners, cross-list attempts, recovery, missing and
+duplicate cookies, first-use cookie confirmation, and atomic per-link and per-guest request limits.
+
+Product pictures now load directly from validated HTTPS addresses with `no-referrer`; the old product
+image proxy routes are removed. Picture hosts receive browser requests and may receive their own
+cookies, as disclosed in the application and [cookie documentation](COOKIES.md). Authenticated avatar
+fetching remains bounded. CSP permits HTTPS images but retains nonce-based script protection.
+Optional public helpers handle broken pictures and title expansion without exposing the signed-in
+client runtime. The guest cookie remains Secure, HttpOnly, host-only and SameSite=Lax in production;
+view-only requests do not create or renew it.
+
+Chrome browser QA covered desktop and narrow mobile layouts (1280, 390 and 320 pixels), long and
+unbroken titles, keyboard expansion, resizing, navigation and editing an expanded title down to a
+short one. Local Workers development and an HTTPS production preview exercised native guest
+reservation, confirmation, recovery, purchase, undo and release forms with and without JavaScript.
+Separate browser contexts checked shared purchase visibility and the signed-in recipient boundary.
+The migration regression preserves older household data and applies the ordered migrations again.
+
+These checks do not verify Safari or Firefox, a new household installation, live Access policies,
+production D1 data, every retailer's picture behaviour, or delivery to every connected household.
+GitHub CI and the reference Cloudflare build passed for the application tip above; the final release
+still requires its own successful promotion and deployment checks. Scheduled update delivery was
+verified separately on 3 October 2026 in [release readiness](RELEASE_READINESS.md).
+
+Brochure source was also reviewed at `9e69404b892d5bd4f3018a16f5c2fd67abd7bed1` in the separate
+`family-wishlist-website` repository. Its feature and privacy copy still needs to describe guest
+reservations, distinguish signed-in recipient privacy from anonymous shared-link availability, and
+disclose directly loaded product pictures. This release's notes and user guide state those changes;
+the brochure update is a separate follow-up. Live brochure requests returned HTTP 403 in this
+environment, so this was a source review rather than verification of deployed pages.

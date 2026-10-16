@@ -46,6 +46,9 @@ On someone else's list:
 - Made a mistake? **Mark as not bought** keeps your reservation but undoes the purchase status.
 - Changed your mind? **Cancel claim** releases it for someone else.
 
+Bought wishes have a pale green background and a **✓ Bought** label beside the name, so their
+status is visible across the whole row.
+
 Other family members can see these buying plans. The person whose wishlist it is cannot: their
 signed-in page does not receive that information. Shared links do show whether gifts are reserved, even if the owner opens the link anonymously. You cannot reserve a gift on your own list.
 
@@ -115,13 +118,17 @@ For hosting or update problems, the organiser can use the
 ## Reserve a gift as a guest
 
 1. Open the sharing link you were sent. **Done when:** the shared lists appear without sign-in.
-2. Choose **I’ll get this** on an available wish. **Done when:** it says **You’re getting this**.
-3. Open **Keep or recover your reservations** and save **Your recovery code** privately.
+2. Choose **I’ll get this** on an available wish. **Done when:** it says **You’re getting this**, or
+   a confirmation appears for this browser's first reservation.
+3. If the confirmation appears, choose **Confirm: I’ll get this**.
+   **Done when:** it says **You’re getting this**. If a cookie error appears, allow required cookies
+   for this site and choose the gift again; the failed attempt has not reserved it.
+4. Open **Keep or recover your reservations** and save **Your recovery code** privately.
    **Done when:** you have saved the code; anyone with it can manage your reservations. This browser
    also remembers them using a cookie. Clearing cookies without saving the code loses that access.
-4. After buying the gift, choose **Mark as bought**. **Done when:** it says **You’ve bought this**.
+5. After buying the gift, choose **Mark as bought**. **Done when:** it says **You’ve bought this**.
    Other guests still see only **Reserved**.
-5. If you change your mind, choose **Leave for someone else**. **Done when:** the wish is available again.
+6. If you change your mind, choose **Leave for someone else**. **Done when:** the wish is available again.
 
 To switch browsers:
 
