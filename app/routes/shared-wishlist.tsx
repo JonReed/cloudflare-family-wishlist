@@ -2,6 +2,8 @@ import { data, redirect } from 'react-router';
 
 import { Brand } from '../components/brand';
 import { SiteFooter } from '../components/site-footer';
+import { WishGiftLabel } from '../components/wishlist/gift-label';
+import { WishTitle } from '../components/wishlist/wish-title';
 import { cloudflareContext } from '../lib/context';
 import {
   createGuestSecret,
@@ -188,8 +190,20 @@ function formatPrice(amountMinor: number, currency: string): string {
 const priorityLabels = { low: 'Nice to have', high: 'Top wish' } as const;
 
 function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }) {
+  const isBought = item.reservation === 'bought';
+  const isReserved = item.reservation === 'reserved' || item.reservation === 'yours';
   return (
-    <li id={`wish-${item.id}`} className={`wish-row shared-wish-row wish-row-${item.priority}`}>
+    <li
+      id={`wish-${item.id}`}
+      className={[
+        'wish-row',
+        'shared-wish-row',
+        `wish-row-${item.priority}`,
+        isBought ? 'wish-row-bought' : isReserved ? 'wish-row-reserved' : null
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className={item.imageUrl ? 'wish-content wish-content-with-image' : 'wish-content'}>
         {item.imageUrl ? (
           <img
@@ -205,7 +219,10 @@ function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }
         ) : null}
         <div className="wish-copy">
           <div className="wish-heading">
-            <h3>{item.title}</h3>
+            <WishTitle itemId={item.id} title={item.title} />
+            {isBought || isReserved ? (
+              <WishGiftLabel state={isBought ? 'bought' : 'reserved'} />
+            ) : null}
             {item.priority === 'normal' ? null : (
               <span className={`priority priority-${item.priority}`}>
                 {priorityLabels[item.priority]}

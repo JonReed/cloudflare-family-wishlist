@@ -20,6 +20,10 @@ Add a wish on the list you want it to appear on. A name is enough: a shop link, 
 approximate price in pounds and priority are optional. High-priority wishes appear first.
 Experiences and homemade gifts belong here just as much as products.
 
+Long wish names show two lines to keep the list compact. Choose **Show full title** to read the rest,
+then **Show less** to fold it away. This works on shared lists too. Without JavaScript, names appear
+in full.
+
 Have a product link? Use **Fill from link**, then check the suggested name, picture and price before
 saving. You can change any suggestion. Lookup does not buy anything or save a wish automatically.
 
@@ -68,6 +72,9 @@ Anyone in the family can create and manage sharing links.
 
 Anyone with the address can view those selected people's current wishes without signing in, but
 cannot edit them or see who is buying anything. They can reserve gifts, and everyone with the link can see which gifts are reserved. New family members are not added automatically.
+Reserved wishes have a pale green background and a **✓ Reserved** label beside the name. This stays
+the same whether someone else is planning to buy the gift or has bought it. Your own purchases show
+**✓ Bought** in the browser that remembers your reservations.
 The private name helps your family recognise the link; it does not restrict who can open or forward
 it. Share it only where you are comfortable sharing the selected lists' contents.
 

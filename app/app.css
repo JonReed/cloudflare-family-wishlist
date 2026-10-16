@@ -24,6 +24,7 @@
   --leaf: #28503e;
   --leaf-dark: #1d3d2f;
   --mint: #87a88f;
+  --sage-paper: #e7eddf;
   --kraft: #bb9165;
   --kraft-dark: #8b6848;
   --rust: #9d4936;
@@ -827,6 +828,20 @@
   background: var(--rust);
 }
 
+.wish-row-bought,
+.wish-row-reserved {
+  background: var(--sage-paper);
+}
+
+.wish-gift-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--leaf);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .wish-content {
   display: grid;
   min-width: 0;
@@ -897,6 +912,50 @@
   line-height: 1.15;
   font-weight: 600;
   letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+
+.wish-title {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wish-title-enhanced:not(:has(.wish-title-toggle[open])) h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.wish-title-toggle summary {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.wish-title-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.wish-title-toggle summary:hover {
+  color: var(--leaf);
+}
+
+.wish-title-less,
+.wish-title-toggle[open] .wish-title-show {
+  display: none;
+}
+
+.wish-title-toggle[open] .wish-title-less {
+  display: inline;
 }
 
 .priority {
@@ -970,6 +1029,19 @@
 .wish-meta a:hover {
   border-color: var(--leaf-dark);
   background: var(--leaf-dark);
+}
+
+.wish-row-bought .wish-meta a,
+.wish-row-reserved .wish-meta a {
+  background: transparent;
+  box-shadow: none;
+  color: var(--leaf);
+}
+
+.wish-row-bought .wish-meta a:hover,
+.wish-row-reserved .wish-meta a:hover {
+  background: var(--leaf);
+  color: var(--paper);
 }
 
 .wish-gift-status {

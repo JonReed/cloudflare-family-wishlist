@@ -47,7 +47,7 @@ email, giving every production request two complementary identity checks.
 Revocable viewing links use a deliberately configured, path-specific Access Bypass. The Worker
 independently recognises GET/HEAD on exact `/shared/<secret>` list paths, plus POST on
 the exact list path for guest reservations. Neighbouring paths and all other mutations require Access. More-specific Access
-paths also expose the compiled stylesheet and a small picture-failure helper under `/shared-assets/*`,
+paths also expose the compiled stylesheet and small picture-failure and expandable-title helpers under `/shared-assets/*`,
 plus the favicon needed to render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
 behind Access.
 

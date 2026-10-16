@@ -3,6 +3,7 @@ import { Scripts } from 'react-router';
 
 const enhancementScripts = [
   '/shared-assets/product-pictures.js',
+  '/shared-assets/wish-titles.js',
   '/product-import.js',
   '/bookmarklet.js',
   '/family-members.js',
@@ -36,7 +37,12 @@ export function ClientRuntime({
   }, [cspNonce, isPublicShare]);
 
   if (isPublicShare) {
-    return <script src="/shared-assets/product-pictures.js" nonce={cspNonce} defer />;
+    return (
+      <>
+        <script src="/shared-assets/product-pictures.js" nonce={cspNonce} defer />
+        <script src="/shared-assets/wish-titles.js" nonce={cspNonce} defer />
+      </>
+    );
   }
 
   return <Scripts nonce={cspNonce} />;

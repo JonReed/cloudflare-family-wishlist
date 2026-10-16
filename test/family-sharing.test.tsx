@@ -169,6 +169,12 @@ describe('family sharing', () => {
     expect(html).toContain('bob’s wishlist');
     expect(shared[0]?.items[0]?.reservation).toBe('reserved');
     expect(shared[1]?.items[0]?.reservation).toBe('available');
+    expect(html).toContain('wish-row-reserved');
+    expect(html).toContain(
+      '<span class="wish-gift-label"><span aria-hidden="true">✓</span> Reserved</span>'
+    );
+    expect(html).not.toContain('wish-row-bought');
+    expect(html).not.toContain('You’ve bought this');
     expect(html).toContain('I’ll get this');
     expect(html).toContain('method="post"');
   });

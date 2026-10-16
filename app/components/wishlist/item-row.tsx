@@ -7,6 +7,8 @@ import { wishlistFormAction, ActionFields } from './form-fields';
 import { ItemFields } from './item-fields';
 import { RemoveWishForm } from '../remove-wish-form';
 import { ActionDialog } from '../action-dialog';
+import { WishGiftLabel } from './gift-label';
+import { WishTitle } from './wish-title';
 
 function formatPrice(amountMinor: number, currency: string): string {
   return new Intl.NumberFormat('en-GB', {
@@ -40,6 +42,8 @@ export function WishlistItemRow({
   const formId = `edit-${item.id}`;
   const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
   const hasClaimControls = !wishlist.isOwn && item.claimVisibility === 'visible';
+  const isBought =
+    !wishlist.isOwn && item.claimVisibility === 'visible' && item.claim?.state === 'purchased';
   const handleEditSuccess = useCallback(
     (form: HTMLFormElement) => onItemEdited(item.id, form),
     [item.id, onItemEdited]
@@ -51,7 +55,8 @@ export function WishlistItemRow({
       className={[
         'wish-row',
         `wish-row-${item.priority}`,
-        hasClaimControls ? 'wish-row-with-claim' : null
+        hasClaimControls ? 'wish-row-with-claim' : null,
+        isBought ? 'wish-row-bought' : null
       ]
         .filter(Boolean)
         .join(' ')}
@@ -73,7 +78,8 @@ export function WishlistItemRow({
         <div className="wish-overview">
           <div className="wish-copy">
             <div className="wish-heading">
-              <h3>{item.title}</h3>
+              <WishTitle itemId={item.id} title={item.title} />
+              {isBought ? <WishGiftLabel state="bought" /> : null}
               {item.priority === 'normal' ? null : (
                 <span className={`priority priority-${item.priority}`}>
                   {priorityLabels[item.priority]}

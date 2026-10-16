@@ -49,6 +49,20 @@ function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
 }
 
 describe('extracted wishlist components', () => {
+  it('retains the full saved title and a labelled disclosure for progressive truncation', () => {
+    const title = 'A very detailed product name with size, colour and edition information '.repeat(
+      2
+    );
+    const html = rowHtml({ ...ownItem, title });
+
+    expect(html).toContain(`<h3 id="wish-title-wish-1">${title}</h3>`);
+    expect(html).toContain('<details class="wish-title-toggle" hidden="">');
+    expect(html).toContain('<summary aria-controls="wish-title-wish-1">');
+    expect(html).toContain('Show full title');
+    expect(html).toContain('Show less');
+    expect(html).not.toContain('wish-title-enhanced');
+  });
+
   it('hotlinks product pictures without sending the wishlist referrer', () => {
     const html = rowHtml({ ...ownItem, imageUrl: 'https://cdn.example.com/book.webp' });
     expect(html).toContain('src="https://cdn.example.com/book.webp"');
@@ -83,6 +97,8 @@ describe('extracted wishlist components', () => {
     const html = rowHtml(ownItem);
     expect(html).not.toContain('claim-item');
     expect(html).not.toContain('wish-claim');
+    expect(html).not.toContain('wish-row-bought');
+    expect(html).not.toContain('wish-gift-label');
     expect(html).not.toContain('class="priority');
     expect(html).toContain('value="edit-item"');
     expect(html).toContain('Yes, remove this wish');
@@ -121,15 +137,71 @@ describe('extracted wishlist components', () => {
         html.indexOf('class="wish-footer"')
       );
       if (state === 'claimed') {
+        expect(html).not.toContain('wish-row-bought');
+        expect(html).not.toContain('wish-gift-label');
         expect(html).toContain('Mark as bought');
         expect(html).toContain('Cancel claim');
       } else {
+        expect(html).toContain('wish-row-bought');
+        expect(html).toContain(
+          '<span class="wish-gift-label"><span aria-hidden="true">✓</span> Bought</span>'
+        );
+        expect(html).toContain('You’ve bought this');
         expect(html).toContain('Mark as not bought');
         expect(html).toContain('value="mark-not-purchased"');
         expect(html).not.toContain('value="unclaim-item"');
       }
     }
   );
+
+  it.each([
+    ['another member', 'giver', 'Alex'],
+    ['a guest', null, 'A guest']
+  ] as const)(
+    'marks a purchase by %s across the row without offering their purchase controls',
+    (_giver, memberId, displayName) => {
+      const html = rowHtml(
+        {
+          ...ownItem,
+          priority: 'high',
+          claimVisibility: 'visible',
+          claim: {
+            state: 'purchased',
+            claimedByMemberId: memberId,
+            claimedByDisplayName: displayName,
+            isClaimedByViewer: false
+          }
+        },
+        false
+      );
+      expect(html).toContain('wish-row-bought');
+      expect(html).toContain('wish-gift-label');
+      expect(html).toContain(`${displayName} has bought this`);
+      expect(html).toContain('priority-high');
+      expect(html).toContain('Top wish');
+      expect(html).not.toContain('value="mark-purchased"');
+      expect(html).not.toContain('value="mark-not-purchased"');
+    }
+  );
+
+  it('omits bought styling and labels when the viewer owns the list or claim visibility is hidden', () => {
+    const purchase: WishlistItem = {
+      ...ownItem,
+      claimVisibility: 'visible',
+      claim: {
+        state: 'purchased',
+        claimedByMemberId: 'giver',
+        claimedByDisplayName: 'Alex',
+        isClaimedByViewer: false
+      }
+    };
+    for (const html of [rowHtml(purchase, true), rowHtml(ownItem, false)]) {
+      expect(html).not.toContain('wish-row-bought');
+      expect(html).not.toContain('wish-gift-label');
+      expect(html).not.toContain('has bought this');
+      expect(html).not.toContain('Mark as not bought');
+    }
+  });
 
   it('shows another giver’s status without any gift mutation controls', () => {
     const html = rowHtml(

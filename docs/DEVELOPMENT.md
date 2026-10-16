@@ -238,10 +238,11 @@ after reading the account-specific private handoff and verifying the active Wran
   guarded inserts to enforce five active household links. Preserve existing tokens and show their
   currently visible lists in the same inventory. Test mixed concurrent creation, legacy revocation,
   invalid selections and disabled actors/owners.
-- Keep generated CSS and the display-only `product-pictures.js` helper under `/shared-assets/*`;
+- Keep generated CSS and the display-only `product-pictures.js` and `wish-titles.js` helpers under `/shared-assets/*`;
   do not move authenticated JavaScript bundles into that public Access bypass. Shared pages omit
   the React client runtime; their HTTPS picture requests go directly to the image host. Their
-  optional helper hides failed pictures, while reading and reservations work without JavaScript.
+  optional helpers hide failed pictures and collapse long titles with an accessible full-title
+  disclosure. Without JavaScript, titles stay complete and reading and reservations still work.
   Retired `/shared/<token>/image/<item>` routes must not retain the Worker authentication
   exception. Keep legacy migration tables compatible with previously deployed releases.
 
