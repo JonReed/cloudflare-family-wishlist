@@ -47,7 +47,7 @@ email, giving every production request two complementary identity checks.
 Revocable viewing links use a deliberately configured, path-specific Access Bypass. The Worker
 independently recognises GET/HEAD on exact `/shared/<secret>` list paths, plus POST on
 the exact list path for guest reservations. Neighbouring paths and all other mutations require Access. More-specific Access
-paths also expose the compiled stylesheet and small picture-failure and expandable-title helpers under `/shared-assets/*`,
+paths also expose the compiled stylesheet and small cookie-notice, picture-failure and expandable-title helpers under `/shared-assets/*`,
 plus the favicon needed to render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
 behind Access.
 
@@ -606,7 +606,8 @@ Every existing and new sharing link allows guest claims through ordinary server-
 Only POST to the exact shared-list path bypasses Access; the Worker and action both enforce same-origin
 forms and bounded bodies. Public pages use `Referrer-Policy: same-origin` so native forms send a valid
 Origin, while external links retain `noreferrer`. Shared HTML remains private/no-store and omits
-the authenticated client runtime. Its optional scripts handle picture failures and expandable titles.
+the authenticated client runtime. Its optional scripts handle the one-time footer notice, picture
+failures and expandable titles.
 
 A cryptographically random 256-bit guest secret is kept in a Secure, HttpOnly, SameSite=Lax host-only
 cookie (Secure and the __Host prefix are omitted only for HTTP loopback development). Public shared
@@ -638,11 +639,17 @@ retain their existing ownership rules. No extra Cloudflare binding, token or das
 
 ## Cookie transparency
 
-The root document layout includes the static `CookieNotice` on all application pages, including
-shared views and route error pages. Its native disclosure works without JavaScript or consent-state
-storage. Footer links target its disclosure content, opening the explanation before scrolling to it.
+`SiteFooter` includes `CookieNotice` on family pages, shared views and route error pages. Its permanent
+**Cookies & privacy** native disclosure works without JavaScript. Links target its disclosure content,
+opening the explanation before scrolling to it. The small nonce-protected `cookie-notice.js` helper
+shows an introduction once per browser, automatically setting the fixed local preference
+`wishlist-cookie-notice-seen=1` when shown. It is display state, not acceptance, an identifier or a
+server-side record. Later visits and newly rendered footers skip the introduction. An optional Close
+button hides it immediately. If storage is unavailable, only the permanent disclosure appears.
+Without JavaScript, the introduction stays hidden and the full explanation remains accessible.
 The notice lists guest and Cloudflare Access cookies, purposes,
 lifetimes and the effects of deleting or blocking them. Shared pages also explain the persistent
 reservation cookie before any reservation action. There are no app analytics, advertising scripts,
-localStorage or sessionStorage identifiers. See [Cookie operation](COOKIES.md) for the UK assessment
+localStorage or sessionStorage identifiers. The local notice preference contains only the fixed value
+`1` and is never sent to the server. See [Cookie operation](COOKIES.md) for the UK assessment
 and the installation operator's responsibilities.

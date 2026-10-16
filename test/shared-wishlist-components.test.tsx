@@ -90,14 +90,14 @@ describe('shared wishlist reservation presentation', () => {
         }
       }
       if (reservation === 'reserved') {
-        expect(html).not.toContain('Mark as bought');
-        expect(html).not.toContain('Mark as not bought');
-        expect(html).not.toContain('Leave for someone else');
+        expect(html).not.toContain('value="bought"');
+        expect(html).not.toContain('value="unbought"');
+        expect(html).not.toContain('value="release"');
       }
       if (reservation === 'yours') {
         expect(html).toContain('You’re getting this');
-        expect(html).toContain('Mark as bought');
-        expect(html).toContain('Leave for someone else');
+        expect(html).toContain('value="bought"');
+        expect(html).toContain('value="release"');
       }
     }
   );

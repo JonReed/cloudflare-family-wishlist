@@ -1,10 +1,17 @@
 export function CookieNotice() {
   return (
-    <aside className="cookie-notice" aria-label="Cookies">
-      <details>
-        <summary>
-          Cookies and picture privacy <span>— how we use them</span>
-        </summary>
+    <div className="footer-privacy">
+      <aside className="cookie-notice" aria-label="Cookie information" data-cookie-notice hidden>
+        <p>
+          We use required cookies for sign-in and guest reservations. Product pictures load from
+          other websites. <a href="#cookie-information">Read about cookies and privacy</a>.
+        </p>
+        <button type="button" data-dismiss-cookie-notice aria-label="Close cookie information">
+          Close
+        </button>
+      </aside>
+      <details className="cookie-details">
+        <summary>Cookies &amp; privacy</summary>
         <div id="cookie-information" className="cookie-information" tabIndex={-1}>
           <p>
             We use only required cookies to keep family sign-in secure and let guests manage their
@@ -56,6 +63,12 @@ export function CookieNotice() {
           </p>
           <h2>Your browser controls</h2>
           <p>
+            We remember that this browser has been shown the footer notice using a local preference
+            called <code>wishlist-cookie-notice-seen</code>. It contains only the value 1, stays in
+            this browser and is not sent to the server. Clearing site data lets the notice appear
+            again. You can reopen these details at any time.
+          </p>
+          <p>
             You can block or delete cookies in your browser settings. Blocking required cookies
             prevents sign-in or managing guest reservations. Before clearing them, save your code
             under “Keep or recover your reservations” on a shared list. Deleting a cookie does not
@@ -67,6 +80,6 @@ export function CookieNotice() {
           </p>
         </div>
       </details>
-    </aside>
+    </div>
   );
 }

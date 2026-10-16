@@ -1,7 +1,7 @@
 import { isRouteErrorResponse, Link, Links, Meta, Outlet, useRouteLoaderData } from 'react-router';
 
 import { ClientRuntime } from './components/client-runtime';
-import { CookieNotice } from './components/cookie-notice';
+import { SiteFooter } from './components/site-footer';
 import { cloudflareContext } from './lib/context';
 import { isPublicSharePath } from './lib/public-share-path';
 import type { Route } from './+types/root';
@@ -33,10 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             during hydration. */}
         <Links nonce="" />
       </head>
-      <body>
-        <CookieNotice />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
@@ -58,15 +55,18 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     : 'Please try again. If it keeps happening, the family tech support person may need a biscuit.';
 
   return (
-    <main className="error-page">
-      <section className="error-sheet">
-        <p className="section-kicker">{isNotFound ? '404' : 'Unexpected error'}</p>
-        <h1>{title}</h1>
-        <p>{detail}</p>
-        <Link to="/" className="error-home-link">
-          Back to the family lists
-        </Link>
-      </section>
-    </main>
+    <div className="site-shell">
+      <main className="error-page">
+        <section className="error-sheet">
+          <p className="section-kicker">{isNotFound ? '404' : 'Unexpected error'}</p>
+          <h1>{title}</h1>
+          <p>{detail}</p>
+          <Link to="/" className="error-home-link">
+            Back to the family lists
+          </Link>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

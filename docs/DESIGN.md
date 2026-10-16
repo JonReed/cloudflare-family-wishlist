@@ -18,11 +18,14 @@ novelty.
 
 ## Information architecture
 
-Every application page starts with a compact “Cookies and picture privacy” native disclosure. Keep the
-explanation in normal document flow, available without JavaScript, and reachable through the footer's
-Cookies link. It is an information notice, not an accept/reject dialog. Do not store dismissal state
-or introduce a cookie just to remember that the notice was read. Explain that Family Wishlist uses
-required cookies, while directly loaded product pictures have separate hosts and cookie policies.
+Keep cookie information in the footer. A compact introduction appears once per browser and records
+that it was shown automatically; never ask people to accept required cookies or click to acknowledge
+the notice. A Close button can hide that first introduction immediately. Keep a permanent **Cookies
+& privacy** native disclosure, available without JavaScript. Use only the fixed local preference
+`wishlist-cookie-notice-seen=1` to remember showing the introduction; no new cookie or visitor identifier
+is needed. If storage is unavailable, keep the permanent disclosure without a repeating introduction.
+Explain that Family Wishlist uses required cookies, while directly loaded product pictures have
+separate hosts and cookie policies. Do not put a cookie strip above the page header.
 
 The signed-in home has four stable regions:
 

@@ -1,8 +1,10 @@
 # Cookie operation
 
-Family Wishlist ships with a site-wide **Cookies and picture privacy** notice and expandable information.
-It appears on signed-in pages, shared lists and application error pages. The footer's **Cookies** link
-opens its explanation directly. Cloudflare's own login/challenge pages are served by Cloudflare, outside the app layout.
+Family Wishlist keeps cookie information in the footer on signed-in pages, shared lists and
+application error pages. **Cookies & privacy** always opens its explanation. An introduction appears
+once per browser, with an optional Close button and no acceptance step. It records that it was shown
+automatically, so you do not need to click anything to prevent it appearing on later visits.
+Cloudflare's own login/challenge pages are served by Cloudflare, outside the app layout.
 
 The application sets `__Host-wishlist-guest` when a guest starts reserving an available gift or
 successfully recovers reservations. The first reservation asks for confirmation: the second POST
@@ -18,8 +20,11 @@ the recovery code allows access to be restored. Clearing cookies does not releas
 Cloudflare Access supplies sign-in and security cookies. The app notice identifies the standard Access
 cookies and their lifetimes, and links to Cloudflare's current documentation. Application sign-in is
 configured to 30 days by setup; team-domain sessions and additional Cloudflare protections can differ.
-The repository has no advertising/analytics scripts or local/session storage identifiers. The notice
-itself uses no cookie, local storage or JavaScript.
+The repository has no advertising/analytics scripts or local/session storage identifiers. A small
+nonce-protected helper stores only the fixed local preference `wishlist-cookie-notice-seen=1` after
+showing the introduction. This is not consent or a visitor identifier, is never sent to the server,
+and lasts until site data is cleared. If storage is unavailable, the introduction stays hidden rather
+than repeating. Without JavaScript, the permanent native footer disclosure still opens normally.
 
 ## UK basis and limits
 
@@ -38,20 +43,22 @@ UK GDPR duties, where applicable, are separate from the cookie consent exception
 
 ## Check a deployment
 
-1. Open a shared link in a new private browser window. **Done when:** the cookie notice appears above
-   the page and its details expand without signing in.
-2. Inspect cookies in the browser's developer tools: **Application → Storage → Cookies** in Chrome/Edge,
+1. Open a shared link in a new private browser window with JavaScript enabled.
+   **Done when:** the introduction appears inside the footer and no cookie strip appears above the page.
+2. Reload without clicking Close. **Done when:** the introduction is absent and **Cookies & privacy**
+   still opens the full explanation without signing in or accepting anything.
+3. Inspect cookies in the browser's developer tools: **Application → Storage → Cookies** in Chrome/Edge,
    **Storage → Cookies** in Firefox, or **Storage → Cookies** in Safari's Web Inspector.
    **Done when:** there is no `__Host-wishlist-guest` before reserving or recovering.
-3. Click **I’ll get this** on a disposable test gift. **Done when:** the cookie appears and a first-reservation
+4. Click **I’ll get this** on a disposable test gift. **Done when:** the cookie appears and a first-reservation
    confirmation appears; the gift is still available.
-4. Click **Confirm: I’ll get this**. **Done when:** the gift says **You’re getting this**.
-5. Release the test gift using **Leave for someone else**. **Done when:** it becomes available again.
-6. Review cookies after family sign-in and any Cloudflare security challenge.
+5. Click **Confirm: I’ll get this**. **Done when:** the gift says **You’re getting this**.
+6. Release the test gift using **Leave for someone else**. **Done when:** it becomes available again.
+7. Review cookies after family sign-in and any Cloudflare security challenge.
    **Done when:** each observed cookie's purpose and duration agree with the notice and the configured
    [Access cookies](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/)
    or [Cloudflare security cookies](https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/).
-7. Review any scripts or integrations added outside this repository, including Cloudflare dashboard
+8. Review any scripts or integrations added outside this repository, including Cloudflare dashboard
    features and external picture hosts. **Done when:** the notice accurately describes the first-party
    required cookies and external picture requests. If it does not, stop adding
    the non-essential storage or implement the applicable information/consent controls before enabling it.

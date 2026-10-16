@@ -6,6 +6,16 @@ import { version } from '../package.json';
 import { SiteFooter } from '../app/components/site-footer';
 
 describe('site footer', () => {
+  it('keeps cookie information in a native footer disclosure with an initially hidden introduction', () => {
+    const html = renderToStaticMarkup(<SiteFooter />);
+
+    expect(html).toContain('aria-label="Cookie information" data-cookie-notice="true" hidden=""');
+    expect(html).toContain('<summary>Cookies &amp; privacy</summary>');
+    expect(html).toContain('id="cookie-information"');
+    expect(html).toContain('data-dismiss-cookie-notice="true"');
+    expect(html).not.toMatch(/accept|agree|consent/i);
+  });
+
   it('links the project name to the brochure site and keeps repository resources available', () => {
     const html = renderToStaticMarkup(<SiteFooter />);
     const repository = 'https://github.com/JonReed/cloudflare-family-wishlist';

@@ -14,6 +14,9 @@ Choose **My wishlist** or another person's gift tag to switch lists. Everyone ad
 family space can add, edit and remove wishes on every list. Treat it as a shared family notebook,
 not a private diary.
 
+Cookie information lives in the footer. Its short introduction appears once in each browser, with
+no acceptance step. **Cookies & privacy** stays available whenever you want to read the details.
+
 ## Add an idea
 
 Add a wish on the list you want it to appear on. A name is enough: a shop link, picture, notes,

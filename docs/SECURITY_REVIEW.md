@@ -427,3 +427,19 @@ reservations, distinguish signed-in recipient privacy from anonymous shared-link
 disclose directly loaded product pictures. This release's notes and user guide state those changes;
 the brochure update is a separate follow-up. Live brochure requests returned HTTP 403 in this
 environment, so this was a source review rather than verification of deployed pages.
+
+## v1.1.3 release preparation
+
+The reviewed range is `v1.1.2` (`f7e9a4ef613b3607c389d0b7da3739af4552e264`) through `v1.1.3`,
+prepared on 16 October 2026. Changes move cookie information into `SiteFooter`, retain the native
+privacy disclosure on error pages and add a nonce-protected public display helper. It remembers
+showing the introduction automatically using only `wishlist-cookie-notice-seen=1` in local storage.
+This preference is not acceptance, a credential or an identifier and is never sent to the server.
+Blocked storage and JavaScript-free pages retain the native disclosure without a repeating banner.
+No database rules, guest credentials, dependencies or Cloudflare permissions change.
+
+Release verification includes the complete quality and audit gates, footer/script rendering tests,
+and Chrome desktop/mobile checks of first display, reload without dismissal, closing, reopening,
+navigation, shared/signed-in browser memory, blocked storage, and native guest forms without
+JavaScript. This is focused source and local browser verification, not a new independent security
+scan or evidence of every household deployment. The earlier brochure follow-up remains separate.
