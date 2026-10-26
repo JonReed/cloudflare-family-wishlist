@@ -81,6 +81,7 @@ const TEXT_EVIDENCE_SELECTORS = [
   ['price-to-pay', '.priceToPay'],
   ['price-to-pay', '.apex-pricetopay-value'],
   ['price-amazon-offscreen', '.a-price .a-offscreen'],
+  ['price-ebay-primary', '#RightSummaryPanel [data-testid="x-price-primary"]'],
   ['price-visible', '.product-price'],
   ['price-visible', '.product_price'],
   ['price-visible', '.price-amount']

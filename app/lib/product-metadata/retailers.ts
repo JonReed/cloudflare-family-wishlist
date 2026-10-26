@@ -86,7 +86,35 @@ const AMAZON_UK_ADAPTER: RetailerAdapter = {
   }
 };
 
-const RETAILER_ADAPTERS = [AMAZON_UK_ADAPTER] as const;
+const EBAY_UK_ADAPTER: RetailerAdapter = {
+  matches(url) {
+    const hostname = url.hostname.toLowerCase();
+    return hostname === 'ebay.co.uk' || hostname.endsWith('.ebay.co.uk');
+  },
+  // eBay puts its primary price after a large block of scripts. The general
+  // 512 KiB page limit can still capture the title and picture, but not price.
+  htmlByteLimit: MAX_RETAILER_HTML_BYTES * 2,
+  cleanTitle(rawTitle) {
+    return cleanText(rawTitle).replace(/\s*[|–—]\s*eBay(?: UK)?$/i, '');
+  },
+  titleCandidates() {
+    return [];
+  },
+  priceCandidates(evidence) {
+    return [{ price: firstEvidence(evidence, ['price-ebay-primary']), currency: '' }];
+  },
+  imageCandidates() {
+    return [];
+  },
+  retryUrl(url) {
+    return url;
+  },
+  canonicalUrl(url) {
+    return url;
+  }
+};
+
+const RETAILER_ADAPTERS = [AMAZON_UK_ADAPTER, EBAY_UK_ADAPTER] as const;
 
 export function retailerAdapter(productUrl: string | URL): RetailerAdapter | null {
   const url = typeof productUrl === 'string' ? new URL(productUrl) : productUrl;

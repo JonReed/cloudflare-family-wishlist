@@ -141,9 +141,23 @@ describe('fetchProductMetadata', () => {
         })
       )
       .mockResolvedValueOnce(new Response('Forbidden', { status: 403 }));
+    const renderedHtml = `
+      <meta property="og:title" content="Birthday puzzle | eBay UK">
+      <meta property="og:image" content="https://i.ebayimg.com/images/g/puzzle/s-l400.jpg">
+      <div class="similar-items">
+        <span data-testid="x-price-primary">£19.99</span>
+      </div>
+      <script>${'x'.repeat(1_100_000)}</script>
+      <div id="RightSummaryPanel">
+        <div data-testid="x-price-primary">
+          <span class="x-price-primary__price"><span>£192.58</span></span>
+        </div>
+        <div class="x-financing-details-v2">Pay from £16.00 per month</div>
+      </div>
+    `;
     const renderPage = vi.fn<ProductPageRenderer>(() =>
       Promise.resolve({
-        html: '<meta property="og:title" content="Birthday puzzle">',
+        html: renderedHtml,
         finalUrl: 'https://www.ebay.co.uk/itm/123456789012',
         navigationUrls: []
       })
@@ -154,12 +168,32 @@ describe('fetchProductMetadata', () => {
         fetchPage,
         renderPage
       })
-    ).resolves.toMatchObject({ title: 'Birthday puzzle' });
+    ).resolves.toMatchObject({
+      title: 'Birthday puzzle',
+      price: '192.58',
+      imageUrl: 'https://i.ebayimg.com/images/g/puzzle/s-l400.jpg'
+    });
     expect(fetchPage.mock.calls.map(([url]) => url)).toEqual([
       'https://ebay.io/m/CPVGen',
       'https://www.ebay.co.uk/itm/123456789012'
     ]);
     expect(renderPage).toHaveBeenCalledExactlyOnceWith('https://www.ebay.co.uk/itm/123456789012');
+  });
+
+  it('does not use an eBay recommendation as the item price', async () => {
+    await expect(
+      fetchProductMetadata('https://www.ebay.co.uk/itm/123456789012', 'wishlist.example', {
+        fetchPage: () =>
+          Promise.resolve(
+            htmlResponse(`
+              <meta property="og:title" content="Birthday puzzle">
+              <div class="similar-items">
+                <span data-testid="x-price-primary">£19.99</span>
+              </div>
+            `)
+          )
+      })
+    ).resolves.toMatchObject({ title: 'Birthday puzzle', price: '' });
   });
 
   it('separates malformed Browser Run output from a navigation failure', async () => {

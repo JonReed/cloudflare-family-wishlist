@@ -431,8 +431,10 @@ Product import is deliberately staged:
 4. Run the bounded HTML through one native `HTMLRewriter` evidence pass. Ordered rules prefer a
    retailer's explicit current/base price and primary product image, then JSON-LD, Open Graph,
    schema.org microdata and known visible product fields. Retailer adapters contain narrowly scoped
-   rules such as Amazon UK title cleanup, price selection and high-resolution image selection;
-   standard metadata remains the default for every other site.
+   rules such as Amazon UK title cleanup, price selection and high-resolution image selection.
+   eBay UK pages get a two-MiB extraction window because their current primary price can follow
+   large scripts beyond the general 512-KiB limit; only the primary item price is used, not finance
+   offers or recommendations. Standard metadata remains the default for every other site.
 5. If a reliable title or GBP price is still missing and AI is enabled, remove scripts, styles,
    navigation, site headers and footers, forms, cookie controls, adverts, recommendations, reviews,
    social controls and repeated text. Headings, price-adjacent lines and main product content are
