@@ -53,8 +53,8 @@
     "react-router": "^8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.54.2",
-    "@cloudflare/vitest-plugin": "^1.1.2",
+    "@cloudflare/vite-plugin": "^1.65.0",
+    "@cloudflare/vitest-plugin": "^1.4.7",
     "@cloudflare/workers-types": "^5.20260831.1",
     "@eslint/js": "^10.0.1",
     "@react-router/dev": "^8",
@@ -71,8 +71,16 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.68.0",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.11",
-    "wrangler": "^4.127.1"
+    "vite": "^8.3.5",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.152.0"
+  },
+  "overrides": {
+    "miniflare": {
+      "undici": "7.30.1"
+    },
+    "@cloudflare/vitest-plugin": {
+      "zod": "4.6.6"
+    }
   }
 }

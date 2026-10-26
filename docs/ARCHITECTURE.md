@@ -423,9 +423,11 @@ Product import is deliberately staged:
 3. When a blocked response, verification page or empty application shell would otherwise end the
    lookup, ask the Browser Run `content` Quick Action to render that already-validated public URL.
    It receives no family headers, cookies or identity, blocks image/media/font downloads, has a
-   ten-second navigation/action timeout and is attempted at most once. Its response and navigation
-   URLs are validated and bounded before the same deterministic extraction runs again. Browser Run
-   is identifiable automation and may still be challenged; failure quietly preserves manual entry.
+   ten-second navigation/action timeout and is attempted at most once. Its JSON response is read up to
+   four MiB so large rendered pages can be parsed before their HTML is trimmed to the extraction limit.
+   Oversized responses receive a distinct safe diagnostic. Response and navigation URLs are validated
+   before the same deterministic extraction runs again. Browser Run is identifiable automation and
+   may still be challenged; failure quietly preserves manual entry.
 4. Run the bounded HTML through one native `HTMLRewriter` evidence pass. Ordered rules prefer a
    retailer's explicit current/base price and primary product image, then JSON-LD, Open Graph,
    schema.org microdata and known visible product fields. Retailer adapters contain narrowly scoped
@@ -452,8 +454,10 @@ product contributes structured titles, offers and pictures, so recommendations c
 
 Failed lookups carry a safe diagnostic summary to both the JSON helper and ordinary form responses:
 the requested hostname, attempted fetch/retry/browser stages, numeric HTTP statuses, fixed outcome
-descriptions and elapsed time. No page HTML, full URLs, query strings, credentials, response headers
-or raw exception messages enter this summary. Browser-service failures and shop failures are distinct.
+descriptions and elapsed time. Browser timeouts, service HTTP failures, oversized pages and invalid
+service responses have separate fixed descriptions. No page HTML, full URLs, query strings,
+credentials, response headers or raw exception messages enter this summary. Browser-service failures
+and shop failures are distinct.
 The form keeps these details collapsed, with an optional clipboard control and selectable text.
 
 Product images remain HTTPS URLs rather than copied binary data. Deterministic metadata remains the

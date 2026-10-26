@@ -15,6 +15,64 @@ function htmlResponse(html: string, init?: ResponseInit): Response {
 }
 
 describe('fetchProductMetadata', () => {
+  it('waits for rendered metadata with one bounded browser action', async () => {
+    const quickAction = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          success: true,
+          result: '<title>A useful product</title>',
+          meta: { finalUrl: 'https://shop.example/product' }
+        })
+      )
+    );
+    const browser = { quickAction } as unknown as Parameters<
+      typeof createBrowserRunProductRenderer
+    >[0];
+
+    await expect(
+      createBrowserRunProductRenderer(browser)('https://shop.example/product')
+    ).resolves.toMatchObject({
+      html: '<title>A useful product</title>'
+    });
+    expect(quickAction).toHaveBeenCalledWith(
+      'content',
+      expect.objectContaining({
+        gotoOptions: { waitUntil: 'networkidle2', timeout: 10_000 },
+        bestAttempt: true
+      })
+    );
+  });
+
+  it('accepts an eBay-sized Browser Run JSON response before trimming its HTML', async () => {
+    const browser = {
+      quickAction: () =>
+        Promise.resolve(
+          Response.json({
+            success: true,
+            result: '<meta property="og:title" content="Birthday puzzle">' + 'x'.repeat(2_500_000),
+            meta: { status: 200, finalUrl: 'https://www.ebay.co.uk/itm/123456789012' }
+          })
+        )
+    } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+
+    await expect(
+      fetchProductMetadata('https://www.ebay.co.uk/itm/123456789012', 'wishlist.example', {
+        fetchPage: () => Promise.resolve(new Response('Forbidden', { status: 403 })),
+        renderPage: createBrowserRunProductRenderer(browser)
+      })
+    ).resolves.toMatchObject({ title: 'Birthday puzzle' });
+  });
+
+  it('reports a rendered page that exceeds the browser response limit', async () => {
+    const browser = {
+      quickAction: () =>
+        Promise.resolve(Response.json({ success: true, result: 'x'.repeat(4_300_000) }))
+    } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+    await expect(
+      createBrowserRunProductRenderer(browser)('https://shop.example/product')
+    ).rejects.toThrow('rendered page too large');
+  });
+
   it.each([429, 503])(
     'reports Browser Run service HTTP %s without exposing its response',
     async (status) => {
@@ -30,6 +88,88 @@ describe('fetchProductMetadata', () => {
       expect(JSON.stringify(failure.diagnostics)).not.toContain('SECRET');
     }
   );
+
+  it('keeps the Browser Run HTTP status when its error body cannot be read', async () => {
+    const browser = {
+      quickAction: () =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream({
+              pull() {
+                throw new Error('SECRET body failure');
+              }
+            }),
+            { status: 422 }
+          )
+        )
+    } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+    await expect(
+      createBrowserRunProductRenderer(browser)('https://shop.example/product')
+    ).rejects.toThrow('service HTTP 422');
+  });
+
+  it('reports a plain browser navigation timeout without exposing its error', async () => {
+    const browser = {
+      quickAction: () =>
+        Promise.reject(new Error('Navigation timeout of 10000 ms exceeded at SECRET URL'))
+    } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+    const failure = await fetchProductMetadata('https://shop.example/product', 'wishlist.example', {
+      fetchPage: () => Promise.resolve(htmlResponse('', { status: 403 })),
+      renderPage: createBrowserRunProductRenderer(browser)
+    }).catch((error: unknown) => error);
+    if (!(failure instanceof ProductMetadataError)) throw new Error('Expected metadata error');
+    expect(failure.diagnostics?.steps).toContain('Browser fallback: timed out');
+    expect(JSON.stringify(failure.diagnostics)).not.toContain('SECRET');
+  });
+
+  it('reports an unclassified browser service failure without exposing its error', async () => {
+    const browser = {
+      quickAction: () => Promise.reject(new Error('SECRET internal failure'))
+    } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+    await expect(
+      createBrowserRunProductRenderer(browser)('https://shop.example/product')
+    ).rejects.toThrow('service failed');
+  });
+
+  it('renders the resolved product page after a short link redirects to a blocked shop', async () => {
+    const fetchPage = vi
+      .fn<(url: string, init: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 301,
+          headers: { Location: 'https://www.ebay.co.uk/itm/123456789012' }
+        })
+      )
+      .mockResolvedValueOnce(new Response('Forbidden', { status: 403 }));
+    const renderPage = vi.fn<ProductPageRenderer>(() =>
+      Promise.resolve({
+        html: '<meta property="og:title" content="Birthday puzzle">',
+        finalUrl: 'https://www.ebay.co.uk/itm/123456789012',
+        navigationUrls: []
+      })
+    );
+
+    await expect(
+      fetchProductMetadata('https://ebay.io/m/CPVGen', 'wishlist.example', {
+        fetchPage,
+        renderPage
+      })
+    ).resolves.toMatchObject({ title: 'Birthday puzzle' });
+    expect(fetchPage.mock.calls.map(([url]) => url)).toEqual([
+      'https://ebay.io/m/CPVGen',
+      'https://www.ebay.co.uk/itm/123456789012'
+    ]);
+    expect(renderPage).toHaveBeenCalledExactlyOnceWith('https://www.ebay.co.uk/itm/123456789012');
+  });
+
+  it('separates malformed Browser Run output from a navigation failure', async () => {
+    const browser = {
+      quickAction: () => Promise.resolve(new Response('not JSON'))
+    } as unknown as Parameters<typeof createBrowserRunProductRenderer>[0];
+    await expect(
+      createBrowserRunProductRenderer(browser)('https://shop.example/product')
+    ).rejects.toThrow('invalid service response');
+  });
 
   it('records retailer retry and a browser verification page in order', async () => {
     const failure = await fetchProductMetadata(

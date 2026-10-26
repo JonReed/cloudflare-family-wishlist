@@ -60,6 +60,9 @@ to production. If a migration is added, rerun `npm run db:migrate:local` before 
 Work on `main`. The `stable` branch is maintained by the release workflow; do not make changes directly on it. See [RELEASES.md](RELEASES.md) for the release procedure.
 
 Run `npm run quality` and `npm run audit` before every commit or push. CI repeats those checks.
+`package.json` overrides Miniflare's `undici` and the Cloudflare Vitest plugin's `zod` with patched
+releases because those packages pin older versions. Remove either override only after the upstream
+package uses a safe version and both gates still pass.
 The quality gate includes `scripts:check`, keeping native Node compatibility verified for every setup
 tool. Setup runners invoke Wrangler with `process.execPath` and its JavaScript entry,
 not `npx.cmd`: Windows cannot execute that command shim directly through `spawnSync`. Do not add

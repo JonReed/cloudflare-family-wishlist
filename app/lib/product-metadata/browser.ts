@@ -2,9 +2,23 @@ import { MAX_RETAILER_HTML_BYTES, readBoundedHtml } from './transport';
 import { type ProductPageRenderer, ProductRenderError } from './types';
 import { isRecord } from './text';
 
-const MAX_BROWSER_RESPONSE_BYTES = MAX_RETAILER_HTML_BYTES * 2 + 64 * 1024;
+// Browser Run wraps the rendered HTML in JSON. Large shop pages can exceed the
+// HTML extraction limit before we can parse and trim that envelope.
+const MAX_BROWSER_RESPONSE_BYTES = MAX_RETAILER_HTML_BYTES * 4;
 
 const BROWSER_TIMEOUT_MS = 10_000;
+
+function browserRunFailure(error: unknown): string {
+  if (error instanceof Error) {
+    if (
+      ['TimeoutError', 'AbortError'].includes(error.name) ||
+      /\b(?:timed out|timeout|deadline exceeded)\b/i.test(error.message)
+    ) {
+      return 'timed out';
+    }
+  }
+  return 'service failed';
+}
 
 function browserRunResponseMetadata(response: Response): Record<string, number | string> {
   const rawBrowserMilliseconds = response.headers.get('x-browser-ms-used');
@@ -33,8 +47,12 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
         // Avoid spending the fallback allowance on heavy binary resources.
         rejectResourceTypes: ['image', 'media', 'font']
       });
-      const responseText = await readBoundedHtml(response, MAX_BROWSER_RESPONSE_BYTES);
       if (!response.ok) {
+        try {
+          await response.body?.cancel();
+        } catch {
+          // A broken error stream must not hide the service's HTTP status.
+        }
         console.warn(
           JSON.stringify({
             event: 'product_browser_render_failed',
@@ -44,7 +62,16 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
         throw new ProductRenderError(`service HTTP ${response.status}`);
       }
 
-      const parsed: unknown = JSON.parse(responseText);
+      const responseText = await readBoundedHtml(response, MAX_BROWSER_RESPONSE_BYTES + 1);
+      if (new TextEncoder().encode(responseText).byteLength > MAX_BROWSER_RESPONSE_BYTES) {
+        throw new ProductRenderError('rendered page too large');
+      }
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch {
+        throw new ProductRenderError('invalid service response');
+      }
       if (!isRecord(parsed) || parsed.success !== true || typeof parsed.result !== 'string') {
         console.warn(
           JSON.stringify({
@@ -97,11 +124,7 @@ export function createBrowserRunProductRenderer(browser: BrowserRun): ProductPag
         })
       );
       if (error instanceof ProductRenderError) throw error;
-      throw new ProductRenderError(
-        error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
-          ? 'timed out'
-          : 'service failed or invalid response'
-      );
+      throw new ProductRenderError(browserRunFailure(error));
     }
   };
 }
