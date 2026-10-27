@@ -4,6 +4,8 @@ import { useFetcher } from 'react-router';
 import type { ActiveFamilyShareLink, ShareableWishlist } from '../lib/db/shared-wishlists';
 import { StopSharingForm } from './stop-sharing-form';
 
+type ListedShareLink = Omit<ActiveFamilyShareLink, 'token'> & { shareUrl: string };
+
 type FamilyShareResult = {
   shareUrl?: string;
   shareLinkId?: string;
@@ -19,7 +21,7 @@ export function FamilySharing({
   initialSelectedWishlistIds = []
 }: {
   wishlists: ShareableWishlist[];
-  links: ActiveFamilyShareLink[];
+  links: ListedShareLink[];
   serverResult?: FamilyShareResult;
   initialSelectedWishlistIds?: string[];
 }) {
@@ -44,7 +46,9 @@ export function FamilySharing({
         ?.querySelector<HTMLElement>('.family-share-error')
         ?.focus({ preventScroll: true });
     } else if (fetcher.data?.shareUrl) {
-      const input = sectionRef.current?.querySelector<HTMLInputElement>('[data-share-link]');
+      const input = sectionRef.current?.querySelector<HTMLInputElement>(
+        '.family-share-result [data-share-link]'
+      );
       input?.focus({ preventScroll: true });
       input?.select();
     }
@@ -206,6 +210,23 @@ export function FamilySharing({
                     }).format(new Date(link.createdAt))}
                   </time>
                 </p>
+                <div className="family-share-list-address">
+                  <div className="family-share-list-copy">
+                    <a
+                      className="family-share-url"
+                      href={link.shareUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-share-link
+                    >
+                      {link.shareUrl}
+                    </a>
+                    <button type="button" className="family-share-copy-button" data-copy-share-link>
+                      Copy link
+                    </button>
+                  </div>
+                  <p className="share-copy-status" role="status" aria-live="polite" />
+                </div>
               </div>
               <div className="profile-share-actions">
                 <StopSharingForm
@@ -225,8 +246,9 @@ export function FamilySharing({
         </p>
       )}
       <p className="profile-shares-note">
-        Your family can have up to five active sharing links. An address is shown only when it is
-        made. You can review and stop sharing every link here at any time.
+        Your family can have up to five active sharing links. You can copy or stop sharing any link
+        here at any time. Older links may have a different address than the one first sent; both
+        addresses open the same shared lists.
       </p>
     </section>
   );

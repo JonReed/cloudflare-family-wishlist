@@ -53,7 +53,7 @@ describe('shared wishlists', () => {
     ]);
   });
 
-  it('creates a high-entropy link while storing only its hash', async () => {
+  it('creates a stable sharing address from its stored hash', async () => {
     const member = await createMember('owner@example.com');
     const token = await createWishlistShareLink(
       env.DB,
@@ -67,10 +67,11 @@ describe('shared wishlists', () => {
       .bind(member.wishlistId)
       .first<{ name: string; token_hash: string }>();
 
-    expect(token).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect(token).toMatch(/^[0-9a-f]{32}$/);
     expect(stored?.name).toBe('Uncle David');
     expect(stored?.token_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(stored?.token_hash).not.toBe(token);
+    expect(token).toBe(stored?.token_hash.slice(0, 32));
     await expect(hasWishlistShareLink(env.DB, member.wishlistId)).resolves.toBe(true);
   });
 

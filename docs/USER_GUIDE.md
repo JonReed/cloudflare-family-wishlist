@@ -85,10 +85,11 @@ The private name helps your family recognise the link; it does not restrict who 
 it. Share it only where you are comfortable sharing the selected lists' contents.
 
 Your family can have up to five active links in total. All links appear together in **Manage**,
-including older single-list links. Each entry shows its name, visible lists, who made it and when.
-Choose **Stop sharing this link**, then confirm, to stop that address working. Other links and all
+including older single-list links. Each entry shows its name, visible lists, who made it and when,
+and a URL you can copy again. Older links may show a different address from the one first sent;
+both addresses open the same lists and stop working together.
+Choose **Stop sharing this link**, then confirm, to stop both addresses working. Other links and all
 saved wishes stay available. It cannot erase copies or screenshots someone has already made.
-Copy the address when you make it; it will not be shown again after you leave the page.
 
 ## Your profile and family
 

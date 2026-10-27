@@ -289,8 +289,13 @@ current claimant so one member cannot change another member's claim.
 
 ## Read-only sharing boundary
 
-A sharing URL carries 16 random bytes encoded as a 22-character URL-safe secret. D1 stores only its
-SHA-256 hash, so a database read cannot recover a working link. Each row has a private family-facing
+A sharing link begins with 16 random bytes encoded as a 22-character URL-safe secret. D1 stores its
+SHA-256 hash; the 32-character lowercase hex prefix of that hash is the stable address shown on
+**Manage**. Both forms are accepted by public reads and guest mutations. New links show the stable
+address immediately. For links created before this change, the original address cannot be recovered
+from its hash, but it continues to work alongside the displayed address. Both stop working when the
+row is deleted. The displayed address has 128 bits of entropy, but a D1 read can derive it; database
+access therefore grants access to the shared lists. Each row also has a private family-facing
 name and a separate internal UUID. Atomic conditional inserts count both sharing tables to enforce
 at most five active links across the household. Existing rows above that limit remain usable, but
 creation stays blocked until fewer than five remain. Unknown and removed links return the same
@@ -304,14 +309,16 @@ lists cannot leave a partial selection; duplicate IDs are deduplicated. The sele
 creation while each wishlist's contents stay current.
 
 The authenticated `/family` route is the single sharing surface for every enabled member. Its
-inventory combines both tables, showing only currently enabled owners in each visible-list summary.
+inventory combines both tables, builds each URL from the current request origin and the hash prefix,
+and shows only currently enabled owners in each visible-list summary. Responses remain private and
+uncached.
 A universal revocation service deletes the selected UUID from either table in a guarded D1 batch;
 selection rows cascade for new links. The public page stops working immediately. Public shop picture addresses remain public.
 The loader omits admission and invitation data for ordinary members, and all admission actions retain
 the organiser check before any database or Access mutation.
 
 The public query selects the list owner and ordinary item fields directly from `wishlists`, `members`
-and `items`. A token-hash lookup unions the selected IDs from either kind of link before reading
+and `items`. A token-hash or displayed-address lookup unions the selected IDs from either kind of link before reading
 ordinary wish details; it returns one result per selected wishlist, including empty lists.
 A left join on `claims` returns a reservation enum: available, reserved, yours or bought. Public
 responses never include claimant identifiers, names, hashes or another claimant’s purchase state.

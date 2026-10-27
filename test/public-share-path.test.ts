@@ -7,10 +7,11 @@ import {
 } from '../app/lib/public-share-path';
 
 const token = 'a'.repeat(22);
+const listedToken = 'b'.repeat(32);
 const itemId = '2f7e4767-27b0-4b2d-a8e6-cd8bbba99930';
 
 describe('public share request boundary', () => {
-  it.each([`/shared/${token}`, `/shared/${token}/`])(
+  it.each([`/shared/${token}`, `/shared/${token}/`, `/shared/${listedToken}`])(
     'allows the exact read-only public path: %s',
     (path) => {
       expect(isPublicSharePath(path)).toBe(true);
@@ -48,6 +49,7 @@ describe('public share request boundary', () => {
 
   it('redacts capability paths from application logs', () => {
     expect(redactedRequestPath(`/shared/${token}`)).toBe('/shared/:secret');
+    expect(redactedRequestPath(`/shared/${listedToken}`)).toBe('/shared/:secret');
     expect(redactedRequestPath(`/shared/${token}/image/${itemId}`)).toBe('/shared/:redacted');
     expect(redactedRequestPath(`/shared/${token}/unexpected`)).toBe('/shared/:redacted');
   });
@@ -57,6 +59,11 @@ it('allows POST only to the shared list, never its image route', () => {
   expect(
     isPublicShareRequest(
       new Request(`https://wishlist.example/shared/${token}`, { method: 'POST' })
+    )
+  ).toBe(true);
+  expect(
+    isPublicShareRequest(
+      new Request(`https://wishlist.example/shared/${listedToken}`, { method: 'POST' })
     )
   ).toBe(true);
   expect(

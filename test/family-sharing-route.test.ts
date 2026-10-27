@@ -86,7 +86,7 @@ describe('family sharing route', () => {
     expect(result).toMatchObject({ shareLinkName: 'Grandad' });
     if (!('shareUrl' in result) || typeof result.shareUrl !== 'string')
       throw new Error('Expected a created link');
-    expect(result.shareUrl).toMatch(/^https:\/\/wishlist.example\/shared\/[A-Za-z0-9_-]{22}$/);
+    expect(result.shareUrl).toMatch(/^https:\/\/wishlist.example\/shared\/[0-9a-f]{32}$/);
     const token = new URL(result.shareUrl).pathname.split('/')[2];
     await expect(getSharedWishlists(env.DB, token)).resolves.toHaveLength(2);
     const request = new Request('https://wishlist.example/family');
@@ -103,6 +103,7 @@ describe('family sharing route', () => {
       ownerDisplayName: 'bob'
     });
     expect(loaded.shareLinks.map((link) => link.name)).toEqual(['Grandad']);
+    expect(loaded.shareLinks[0]?.shareUrl).toBe(result.shareUrl);
   });
 
   it('preserves failed selections and never creates a token when public Access verification fails', async () => {

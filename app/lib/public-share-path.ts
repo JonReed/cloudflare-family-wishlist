@@ -1,4 +1,4 @@
-const SHARE_TOKEN = '[A-Za-z0-9_-]{22}';
+const SHARE_TOKEN = '(?:[A-Za-z0-9_-]{22}|[0-9a-f]{32})';
 const SHARED_WISHLIST_PATH = new RegExp(`^/shared/${SHARE_TOKEN}/?$`);
 
 export function isPublicSharePath(pathname: string): boolean {

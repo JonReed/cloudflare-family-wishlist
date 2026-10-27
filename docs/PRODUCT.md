@@ -149,7 +149,11 @@ and creation date, with a confirmed **Stop sharing this link** control. Stopping
 invalidates its public page while preserving other links and saved wishes. Disabled
 owners' lists are omitted from both public viewing and the inventory's visible-list summary.
 
-The unguessable address is the permission and is shown only when created; only its hash is stored.
+The unguessable address is the permission. **Manage** shows a working address for every active link,
+so any admitted member can copy it again. Links created before this change may have a different
+original address already sent to guests; that address keeps working alongside the one on **Manage**.
+Stopping the link invalidates both addresses. The stored hash is sufficient to derive the displayed
+address, so database access must be treated as access to the shared lists.
 Creating another never changes an existing link. At five active links, the form explains that one
 must first be stopped, and atomic server checks reject creation above the limit. Existing links from
 before consolidation remain usable and manageable, even when their total exceeds five; no new link

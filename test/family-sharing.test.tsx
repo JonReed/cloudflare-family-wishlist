@@ -4,6 +4,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { cloudflareContext } from '../app/lib/context';
+import {
+  changeGuestClaim,
+  consumeGuestClaimBudget,
+  hasGuestClaims
+} from '../app/lib/db/guest-claims';
 import { ensureMemberForEmail } from '../app/lib/db/members';
 import {
   createFamilyShareLink,
@@ -35,6 +40,7 @@ async function fixture() {
 describe('family sharing', () => {
   beforeEach(async () => {
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM guest_claim_limits'),
       env.DB.prepare('DELETE FROM family_share_links'),
       env.DB.prepare('DELETE FROM wishlist_share_links'),
       env.DB.prepare('DELETE FROM claims'),
@@ -45,7 +51,7 @@ describe('family sharing', () => {
     ]);
   });
 
-  it('shares only selected lists, keeps empty lists, and stores a hash and private name', async () => {
+  it('shares only selected lists, keeps empty lists, and lists a stable address', async () => {
     const { admin, bob, carol } = await fixture();
     const { token, shareLinkId } = await createFamilyShareLink(
       env.DB,
@@ -76,21 +82,91 @@ describe('family sharing', () => {
     )
       .bind(shareLinkId)
       .first<{ name: string; token_hash: string }>();
-    expect(token).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect(token).toMatch(/^[0-9a-f]{32}$/);
     expect(stored?.name).toBe('Uncle David');
     expect(stored?.token_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(stored?.token_hash).not.toBe(token);
+    expect(token).toBe(stored?.token_hash.slice(0, 32));
     expect(JSON.stringify(shared)).not.toContain('Uncle David');
     expect(await listActiveFamilyShareLinks(env.DB, admin.id)).toMatchObject([
       {
         id: shareLinkId,
         name: 'Uncle David',
+        token,
         wishlists: [
           { id: admin.wishlistId, ownerDisplayName: 'alice' },
           { id: bob.wishlistId, ownerDisplayName: 'bob' }
         ]
       }
     ]);
+  });
+
+  it('shows replacement addresses for older links while their original addresses keep working', async () => {
+    const { admin, bob } = await fixture();
+    const oldSingleToken = 'A'.repeat(22);
+    const oldFamilyToken = 'B'.repeat(22);
+    const hash = async (token: string) =>
+      [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)))]
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+    const singleHash = await hash(oldSingleToken);
+    const familyHash = await hash(oldFamilyToken);
+    const singleId = crypto.randomUUID();
+    const familyId = crypto.randomUUID();
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO wishlist_share_links
+         (id, wishlist_id, name, token_hash, created_by_member_id) VALUES (?1, ?2, ?3, ?4, ?5)`
+      ).bind(singleId, bob.wishlistId, 'Old single link', singleHash, admin.id),
+      env.DB.prepare(
+        `INSERT INTO family_share_links
+         (id, name, token_hash, created_by_member_id) VALUES (?1, ?2, ?3, ?4)`
+      ).bind(familyId, 'Old family link', familyHash, admin.id),
+      env.DB.prepare(
+        'INSERT INTO family_share_link_wishlists (share_link_id, wishlist_id) VALUES (?1, ?2)'
+      ).bind(familyId, admin.wishlistId)
+    ]);
+
+    const listed = await listActiveShareLinks(env.DB, admin.id);
+    expect(listed).toHaveLength(2);
+    const single = listed.find((link) => link.id === singleId);
+    const family = listed.find((link) => link.id === familyId);
+    if (!single || !family) throw new Error('Expected both older links.');
+    expect(single.token).toBe(singleHash.slice(0, 32));
+    expect(family.token).toBe(familyHash.slice(0, 32));
+    expect((await getSharedWishlists(env.DB, oldSingleToken)).map((list) => list.id)).toEqual(
+      (await getSharedWishlists(env.DB, single.token)).map((list) => list.id)
+    );
+    expect((await getSharedWishlists(env.DB, oldFamilyToken)).map((list) => list.id)).toEqual(
+      (await getSharedWishlists(env.DB, family.token)).map((list) => list.id)
+    );
+
+    await consumeGuestClaimBudget(env.DB, oldFamilyToken, 'a'.repeat(64), 3_600_000);
+    await consumeGuestClaimBudget(env.DB, family.token, 'b'.repeat(64), 3_600_000);
+    const budget = await env.DB.prepare('SELECT attempts FROM guest_claim_limits WHERE scope = ?1')
+      .bind(`link:${familyHash}`)
+      .first<{ attempts: number }>();
+    expect(budget?.attempts).toBe(2);
+
+    await createWishlistItem(env.DB, admin.id, admin.wishlistId, {
+      title: 'Shared gift',
+      notes: '',
+      productUrl: '',
+      imageUrl: '',
+      price: '',
+      priority: 'normal'
+    });
+    const itemId = (await listFamilyWishlists(env.DB, admin.id)).find(
+      (list) => list.id === admin.wishlistId
+    )?.items[0]?.id;
+    if (!itemId) throw new Error('Expected a shared gift.');
+    const guestHash = 'c'.repeat(64);
+    await changeGuestClaim(env.DB, family.token, guestHash, itemId, 'claim');
+    await expect(hasGuestClaims(env.DB, oldFamilyToken, guestHash)).resolves.toBe(true);
+
+    await revokeShareLink(env.DB, admin.id, familyId);
+    await expect(getSharedWishlists(env.DB, oldFamilyToken)).resolves.toEqual([]);
+    await expect(getSharedWishlists(env.DB, family.token)).resolves.toEqual([]);
   });
 
   it('publishes availability without private claim details and returns pictures only for selected lists', async () => {

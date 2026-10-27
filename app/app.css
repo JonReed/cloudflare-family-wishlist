@@ -2140,8 +2140,60 @@ button:disabled {
 }
 
 .family-sharing .profile-share-item > div:first-child {
+  flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.family-share-list-address {
+  max-width: 44rem;
+  margin-top: 0.6rem;
+}
+
+.family-share-list-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.75rem;
+}
+
+.family-share-url {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow-wrap: anywhere;
+  color: var(--leaf);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2rem;
+}
+
+.family-share-copy-button {
+  flex: none;
+  min-height: 2.5rem;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0;
+  color: var(--leaf);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.family-share-copy-button:hover {
+  color: var(--leaf-dark);
+}
+
+.family-share-copy-button:focus-visible,
+.family-share-url:focus-visible {
+  outline: 2px solid var(--rust);
+  outline-offset: 3px;
+}
+
+.family-share-list-address .share-copy-status:empty {
+  display: none;
 }
 
 .family-page-message {

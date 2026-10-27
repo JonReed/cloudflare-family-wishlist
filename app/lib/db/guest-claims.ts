@@ -1,4 +1,9 @@
-import { SHARED_WISHLIST_IDS, SharedWishlistInputError, tokenHash } from './shared-wishlists';
+import {
+  SHARED_WISHLIST_IDS,
+  SharedWishlistInputError,
+  shareLinkTokenHash,
+  shareLookupKey
+} from './shared-wishlists';
 
 export class GuestClaimLimitError extends Error {
   constructor() {
@@ -18,7 +23,8 @@ export async function consumeGuestClaimBudget(
   guestHash: string,
   now = Date.now()
 ) {
-  const linkHash = await tokenHash(token);
+  // Both an older address and its displayed address share the same limit.
+  const linkHash = await shareLinkTokenHash(db, token);
   const hour = Math.floor(now / 3600000);
   // Check the link first: rejected requests must not allocate rows for rotated guest codes.
   for (const [scope, limit] of [
@@ -52,7 +58,7 @@ export async function hasGuestClaims(
       `SELECT 1 FROM claims WHERE guest_token_hash = ?2
     AND item_id IN (${SHARED_ITEMS}) LIMIT 1`
     )
-    .bind(await tokenHash(token), guestHash)
+    .bind(await shareLookupKey(token), guestHash)
     .first());
 }
 
@@ -81,7 +87,7 @@ export async function changeGuestClaim(
   else throw new SharedWishlistInputError('Choose a reservation action from the list.');
   const result = await db
     .prepare(sql)
-    .bind(await tokenHash(token), guestHash, itemId)
+    .bind(await shareLookupKey(token), guestHash, itemId)
     .run();
   if (result.meta.changes !== 1)
     throw new SharedWishlistInputError(

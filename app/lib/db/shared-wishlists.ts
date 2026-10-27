@@ -3,6 +3,7 @@ import type { ItemPriority } from './wishlists';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHARE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{22}$/;
+const SHARE_ADDRESS_PATTERN = /^[0-9a-f]{32}$/;
 const SHARE_LINK_NAME_MAX_LENGTH = 80;
 
 type SharedWishlistRow = {
@@ -41,6 +42,7 @@ export type SharedWishlist = {
 export type ActiveWishlistShareLink = {
   id: string;
   name: string;
+  token: string;
   wishlistId: string;
   ownerDisplayName: string;
   createdByDisplayName: string;
@@ -52,6 +54,7 @@ export type ShareableWishlist = { id: string; ownerDisplayName: string };
 export type ActiveFamilyShareLink = {
   id: string;
   name: string;
+  token: string;
   createdByDisplayName: string;
   createdAt: string;
   wishlists: ShareableWishlist[];
@@ -66,7 +69,10 @@ function requireUuid(value: unknown, label: string): string {
 }
 
 function requireToken(value: unknown): string {
-  if (typeof value !== 'string' || !SHARE_TOKEN_PATTERN.test(value)) {
+  if (
+    typeof value !== 'string' ||
+    (!SHARE_TOKEN_PATTERN.test(value) && !SHARE_ADDRESS_PATTERN.test(value))
+  ) {
     throw new SharedWishlistInputError('The sharing link is invalid.');
   }
   return value;
@@ -108,8 +114,26 @@ async function hashShareToken(token: string): Promise<string> {
   return sha256Hex(token);
 }
 
-export async function tokenHash(value: unknown): Promise<string> {
-  return hashShareToken(requireToken(value));
+export async function shareLookupKey(value: unknown): Promise<string> {
+  const token = requireToken(value);
+  return SHARE_ADDRESS_PATTERN.test(token) ? token : hashShareToken(token);
+}
+
+export async function shareLinkTokenHash(db: D1Database, value: unknown): Promise<string> {
+  const key = await shareLookupKey(value);
+  const row = await db
+    .prepare(
+      `SELECT token_hash AS tokenHash FROM wishlist_share_links
+       WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
+       UNION ALL
+       SELECT token_hash AS tokenHash FROM family_share_links
+       WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
+       LIMIT 1`
+    )
+    .bind(key)
+    .first<{ tokenHash: string }>();
+  if (!row) throw new SharedWishlistInputError('The sharing link is invalid.');
+  return row.tokenHash;
 }
 
 export async function hasWishlistShareLink(db: D1Database, wishlistId: string): Promise<boolean> {
@@ -140,6 +164,7 @@ export async function listActiveWishlistShareLinks(
       `SELECT
          wishlist_share_links.id,
          wishlist_share_links.name,
+         substr(wishlist_share_links.token_hash, 1, 32) AS token,
          wishlist_share_links.wishlist_id AS wishlistId,
          owners.display_name AS ownerDisplayName,
          creators.display_name AS createdByDisplayName,
@@ -221,7 +246,7 @@ export async function createWishlistShareLink(
     );
   }
 
-  return token;
+  return hash.slice(0, 32);
 }
 
 export async function revokeWishlistShareLink(
@@ -279,7 +304,8 @@ export async function listActiveFamilyShareLinks(
   const actorId = requireUuid(actorMemberId, 'The signed-in member');
   const { results } = await db
     .prepare(
-      `SELECT links.id, links.name, creators.display_name AS createdByDisplayName,
+      `SELECT links.id, links.name, substr(links.token_hash, 1, 32) AS token,
+       creators.display_name AS createdByDisplayName,
        links.created_at AS createdAt, wishlists.id AS wishlistId,
        owners.display_name AS ownerDisplayName
      FROM family_share_links AS links
@@ -306,6 +332,7 @@ export async function listActiveFamilyShareLinks(
       link = {
         id: row.id,
         name: row.name,
+        token: row.token,
         createdByDisplayName: row.createdByDisplayName,
         createdAt: row.createdAt,
         wishlists: []
@@ -363,7 +390,7 @@ export async function createFamilyShareLink(
       'We couldn’t create this link. Check the selected wishlists are available and that fewer than five sharing links are active.'
     );
   }
-  return { token, shareLinkId };
+  return { token: hash.slice(0, 32), shareLinkId };
 }
 
 export async function revokeFamilyShareLink(
@@ -403,6 +430,7 @@ export async function listActiveShareLinks(
     ...singles.map((link) => ({
       id: link.id,
       name: link.name,
+      token: link.token,
       createdByDisplayName: link.createdByDisplayName,
       createdAt: link.createdAt,
       wishlists: visibleIds.has(link.wishlistId)
@@ -441,11 +469,12 @@ export async function revokeShareLink(
 
 // Both link types grant the same item-scoped guest permissions.
 export const SHARED_WISHLIST_IDS = `
-  SELECT wishlist_id FROM wishlist_share_links WHERE token_hash = ?1
+  SELECT wishlist_id FROM wishlist_share_links
+  WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
   UNION
   SELECT selected.wishlist_id FROM family_share_links AS links
   INNER JOIN family_share_link_wishlists AS selected ON selected.share_link_id = links.id
-  WHERE links.token_hash = ?1
+  WHERE links.token_hash = ?1 OR substr(links.token_hash, 1, 32) = ?1
 `;
 
 export async function getSharedWishlist(
@@ -461,7 +490,7 @@ export async function getSharedWishlists(
   token: unknown,
   guestHash: string | null = null
 ): Promise<SharedWishlist[]> {
-  const hash = await tokenHash(token);
+  const key = await shareLookupKey(token);
   const { results } = await db
     .prepare(
       `WITH shared_wishlist_ids AS (${SHARED_WISHLIST_IDS})
@@ -495,7 +524,7 @@ export async function getSharedWishlists(
          items.created_at DESC,
          items.id DESC`
     )
-    .bind(hash, guestHash)
+    .bind(key, guestHash)
     .all<SharedWishlistRow>();
 
   const wishlists = new Map<string, SharedWishlist>();

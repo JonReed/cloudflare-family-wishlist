@@ -70,7 +70,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     member,
     people: isOrganiser ? await listFamilyPeople(env.DB) : [],
     shareableWishlists,
-    shareLinks: await listActiveShareLinks(env.DB, member.id),
+    shareLinks: (await listActiveShareLinks(env.DB, member.id)).map(({ token, ...link }) => ({
+      ...link,
+      shareUrl: new URL(`/shared/${token}`, request.url).toString()
+    })),
     initialSelectedWishlistIds: shareableWishlists
       .filter((wishlist) => wishlist.id === requestedWishlistId)
       .map((wishlist) => wishlist.id),
