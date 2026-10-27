@@ -330,8 +330,6 @@
 }
 
 .parcel-hero {
-  --parcel-table-image: url('/images/parcel-table.webp');
-
   position: relative;
   display: grid;
   min-height: 0;
@@ -347,7 +345,7 @@
       rgb(238 227 207 / 0.68)
     ),
     linear-gradient(180deg, rgb(255 250 240 / 0.04), rgb(91 66 40 / 0.08)),
-    var(--parcel-table-image);
+    url('/shared-assets/parcel-table.webp');
   background-position:
     center,
     center,
@@ -759,10 +757,6 @@
   margin: 0.5rem 0 1rem;
   font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 3rem);
-}
-
-.public-share-board {
-  --parcel-table-image: url('/shared-assets/parcel-table.webp');
 }
 
 .public-share-sheet .wishlist-heading h2 {
@@ -2761,7 +2755,7 @@ button:disabled {
         rgb(238 227 207 / 0.72)
       ),
       linear-gradient(180deg, rgb(255 250 240 / 0.03), rgb(91 66 40 / 0.08)),
-      var(--parcel-table-image);
+      url('/shared-assets/parcel-table.webp');
     background-position:
       center,
       center,

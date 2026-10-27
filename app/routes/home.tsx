@@ -23,7 +23,7 @@ import {
 import { productFormDraft } from '../lib/wishlist-form-draft';
 import { redirect } from 'react-router';
 import { SiteHeader } from '../components/site-header';
-import { FamilyWishlistTags } from '../components/family-wishlist-tags';
+import { WishlistTags } from '../components/wishlist-tags';
 import { WishlistSheet } from '../components/wishlist/sheet';
 import { AddWishPanel } from '../components/wishlist/add-panel';
 import { SiteFooter } from '../components/site-footer';
@@ -187,7 +187,17 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           <h1 id="page-title" className="sr-only">
             Family wishlists
           </h1>
-          <FamilyWishlistTags wishlists={wishlists} activeWishlistId={activeWishlist?.id} />
+          <WishlistTags
+            wishlists={wishlists.map((wishlist) => ({
+              id: wishlist.id,
+              displayName: wishlist.owner.displayName,
+              to: `/?list=${encodeURIComponent(wishlist.id)}`,
+              isOwn: wishlist.isOwn
+            }))}
+            ariaLabel="Choose a family wishlist"
+            activeWishlistId={activeWishlist?.id}
+            preventScrollReset
+          />
         </section>
 
         <div className="content-wrap page-wrap">

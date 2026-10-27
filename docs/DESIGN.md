@@ -281,7 +281,7 @@ not jump the page down to the list. They are navigation, not filter chips.
 
 The tag body, layout and states remain responsive HTML and CSS. The reinforced hole and fibrous cord
 use the small transparent
-[`public/images/tag-string-hanging.png`](../public/images/tag-string-hanging.png) cut-out. Its eyelet
+[`public/shared-assets/tag-string-hanging.png`](../public/shared-assets/tag-string-hanging.png) cut-out. Its eyelet
 is anchored at the tag hole and its loose loop falls down and left under gravity, so the material
 detail and physical direction do not depend on fragile CSS drawing.
 
@@ -321,7 +321,7 @@ Colours must retain sufficient contrast without resorting to saturated software-
 ### Imagery
 
 The family selector uses
-[`public/images/parcel-table.webp`](../public/images/parcel-table.webp), a purpose-built editorial
+[`public/shared-assets/parcel-table.webp`](../public/shared-assets/parcel-table.webp), a purpose-built editorial
 still life with year-round wrapping materials. It is faded beneath the family’s gift tags and remains
 a decorative CSS background, so it does not add redundant alternative text. It has no marketing copy:
 the family names are the useful content. Keep it shallow enough that the start of the active wishlist

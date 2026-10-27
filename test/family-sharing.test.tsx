@@ -1,6 +1,7 @@
 import { createExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { cloudflareContext } from '../app/lib/context';
@@ -207,26 +208,28 @@ describe('family sharing', () => {
     expect(shared.flatMap((list) => list.items).map((item) => item.id)).not.toContain(carolItem.id);
     const loaderData = { wishlists: shared, token, recoveryCode: 'a'.repeat(43) };
     const html = renderToStaticMarkup(
-      <SharedWishlistPage
-        loaderData={loaderData}
-        params={{ token }}
-        matches={[
-          {
-            id: 'root',
-            params: {},
-            pathname: '/',
-            loaderData: { cspNonce: 'test', isPublicShare: true },
-            handle: undefined
-          },
-          {
-            id: 'routes/shared-wishlist',
-            params: { token },
-            pathname: `/shared/${token}`,
-            loaderData,
-            handle: undefined
-          }
-        ]}
-      />
+      <MemoryRouter initialEntries={[`/shared/${token}`]}>
+        <SharedWishlistPage
+          loaderData={loaderData}
+          params={{ token }}
+          matches={[
+            {
+              id: 'root',
+              params: {},
+              pathname: '/',
+              loaderData: { cspNonce: 'test', isPublicShare: true },
+              handle: undefined
+            },
+            {
+              id: 'routes/shared-wishlist',
+              params: { token },
+              pathname: `/shared/${token}`,
+              loaderData,
+              handle: undefined
+            }
+          ]}
+        />
+      </MemoryRouter>
     );
     for (const privateValue of [
       'purchased',
@@ -244,10 +247,10 @@ describe('family sharing', () => {
     expect(html).toContain('alice’s wishlist');
     expect(html).toContain('bob’s wishlist');
     expect(html).toContain(
-      '<div class="parcel-hero family-board public-share-board"><nav aria-label="Shared wishlists" class="family-tags">'
+      '<div class="parcel-hero family-board"><nav aria-label="Shared wishlists" class="family-tags">'
     );
-    expect(html).toContain(`href="#wishlist-${admin.wishlistId}" class="family-tag"`);
-    expect(html).toContain(`href="#wishlist-${bob.wishlistId}" class="family-tag"`);
+    expect(html).toContain(`href="/shared/${token}#wishlist-${admin.wishlistId}"`);
+    expect(html).toContain(`href="/shared/${token}#wishlist-${bob.wishlistId}"`);
     expect(html).toContain('src="/shared-assets/tag-string-hanging.png"');
     expect(html).not.toContain('href="/?list=');
     expect(shared[0]?.items[0]?.reservation).toBe('reserved');

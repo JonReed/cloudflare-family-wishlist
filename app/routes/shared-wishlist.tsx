@@ -1,7 +1,7 @@
 import { data, redirect } from 'react-router';
 
 import { Brand } from '../components/brand';
-import { SharedWishlistTags } from '../components/family-wishlist-tags';
+import { WishlistTags } from '../components/wishlist-tags';
 import { SiteFooter } from '../components/site-footer';
 import { WishGiftLabel } from '../components/wishlist/gift-label';
 import { WishTitle } from '../components/wishlist/wish-title';
@@ -340,8 +340,15 @@ export default function SharedWishlistPage({ loaderData, actionData }: Route.Com
           <header className="public-share-overview">
             <p className="section-kicker">Gift ideas</p>
             <h1>Family wishlists</h1>
-            <div className="parcel-hero family-board public-share-board">
-              <SharedWishlistTags wishlists={wishlists} />
+            <div className="parcel-hero family-board">
+              <WishlistTags
+                wishlists={wishlists.map((wishlist) => ({
+                  id: wishlist.id,
+                  displayName: wishlist.ownerDisplayName,
+                  to: `#wishlist-${wishlist.id}`
+                }))}
+                ariaLabel="Shared wishlists"
+              />
             </div>
           </header>
         ) : null}
