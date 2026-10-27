@@ -107,7 +107,8 @@ different previously sent address and that both addresses work. Keep technical t
 Profile contains personal details, photo guidance and sign-out; it has no sharing-link inventory.
 
 Stopping sharing first opens a native disclosure explaining that the link will stop working, with
-a second explicit **Yes, stop sharing this link** action. Closing the disclosure cancels without
+a second explicit **Yes, stop sharing this link** action. Keep the disclosure trigger in place as
+it opens, including on narrow screens. Closing the disclosure cancels without
 changing anything. Stopping sharing updates the row in place after server confirmation and preserves unfinished sharing
 choices. Show pending feedback and errors beside that link. Move focus to the next link's stop-sharing
 summary, the previous one if necessary, or the empty message when none remain; leave focus alone if

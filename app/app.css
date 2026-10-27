@@ -2145,6 +2145,23 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.family-sharing .profile-share-item {
+  align-items: flex-start;
+}
+
+.family-sharing .profile-share-actions {
+  width: min(100%, 25rem);
+  justify-content: flex-end;
+}
+
+.family-sharing .removal-confirmation {
+  width: 100%;
+}
+
+.family-sharing .removal-confirmation > summary {
+  margin-left: auto;
+}
+
 .family-share-list-address {
   max-width: 44rem;
   margin-top: 0.6rem;
@@ -2633,6 +2650,15 @@ button:disabled {
 
   .profile-share-actions {
     flex: initial;
+  }
+
+  .family-sharing .profile-share-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .family-sharing .removal-confirmation > summary {
+    margin-left: 0;
   }
 
   .wish-row {
