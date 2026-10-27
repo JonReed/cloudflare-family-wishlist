@@ -262,7 +262,9 @@ public visitor cannot do.
 
 When a sharing link includes several lists, introduce it with **Family wishlists** and the same
 gift tags used for member navigation. On shared pages the tags jump to each person's paper sheet;
-their decorative images load from the public shared-assets path. Each selected list has its own
+their decorative images load from the public shared-assets path. Give the tag board the same full
+page width as the signed-in selector, so the same names wrap at the same viewport widths. Only the
+paper sheets use the narrower reading width. Each selected list has its own
 heading and wish count, including a clear empty state. Keep the whole view readable without scripts.
 
 ### Finding the right person

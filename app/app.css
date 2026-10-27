@@ -747,12 +747,6 @@
   margin-inline: auto;
 }
 
-.public-share-overview {
-  width: 100%;
-  max-width: 64rem;
-  margin-inline: auto;
-}
-
 .public-share-overview h1 {
   margin: 0.5rem 0 1rem;
   font-family: var(--font-display);
