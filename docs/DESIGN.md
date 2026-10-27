@@ -261,8 +261,9 @@ reservations. Once the browser returns its required cookie, keep reservation act
 The absence of those controls is sufficient; do not add software-oriented explanations about what a
 public visitor cannot do.
 
-When a sharing link includes several lists, introduce it with **Family wishlists** and a compact
-set of name links that jump to each person's section. Each selected list has its own paper sheet,
+When a sharing link includes several lists, introduce it with **Family wishlists** and the same
+gift tags used for member navigation. On shared pages the tags jump to each person's paper sheet;
+their decorative images load from the public shared-assets path. Each selected list has its own
 heading and wish count, including a clear empty state. Keep the whole view readable without scripts.
 
 ### Finding the right person

@@ -78,6 +78,7 @@ Anyone in the family can create and manage sharing links.
 
 Anyone with the address can view those selected people's current wishes without signing in, but
 cannot edit them or see who is buying anything. They can reserve gifts, and everyone with the link can see which gifts are reserved. New family members are not added automatically.
+When the link includes several lists, gift tags at the top jump to each person's list.
 Reserved wishes have a pale green background and a **✓ Reserved** label beside the name. This stays
 the same whether someone else is planning to buy the gift or has bought it. Your own purchases show
 **✓ Bought** in the browser that remembers your reservations.

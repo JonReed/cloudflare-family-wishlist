@@ -243,6 +243,13 @@ describe('family sharing', () => {
     expect(html).not.toContain('/image/');
     expect(html).toContain('alice’s wishlist');
     expect(html).toContain('bob’s wishlist');
+    expect(html).toContain(
+      '<div class="parcel-hero family-board public-share-board"><nav aria-label="Shared wishlists" class="family-tags">'
+    );
+    expect(html).toContain(`href="#wishlist-${admin.wishlistId}" class="family-tag"`);
+    expect(html).toContain(`href="#wishlist-${bob.wishlistId}" class="family-tag"`);
+    expect(html).toContain('src="/shared-assets/tag-string-hanging.png"');
+    expect(html).not.toContain('href="/?list=');
     expect(shared[0]?.items[0]?.reservation).toBe('reserved');
     expect(shared[1]?.items[0]?.reservation).toBe('available');
     expect(html).toContain('wish-row-reserved');

@@ -56,6 +56,7 @@ describe('shared wishlist reservation presentation', () => {
       );
 
       expect(html).toContain('A good book');
+      expect(html).not.toContain('aria-label="Shared wishlists"');
       expect(html).toContain('<h3 id="wish-title-wish-1">A good book</h3>');
       expect(html).toContain('<summary aria-controls="wish-title-wish-1">');
       expect(html).toContain('<details class="wish-title-toggle" hidden="">');
