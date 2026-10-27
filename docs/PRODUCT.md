@@ -133,15 +133,16 @@ including add/edit previews. Picture requests consume no Worker requests or D1 r
 browser sends no wishlist referrer, but picture hosts receive the visitor's request and may use their
 own cookies if the browser allows them. A failed picture must leave the written wish usable.
 Stopping a link blocks future wishlist access; it does not revoke public shop picture addresses.
-Every shared link allows guest reservations. Public visitors see only availability or “Reserved”
-for someone else's claim, and can manage their own reservations through a private browser credential.
-The owner can also visit anonymously and learn availability; that trade-off is explicitly accepted.
-Guest credentials are not family identities. Revoking a link blocks further access without deleting
-reservations. Another enabled family member, excluding the list owner, can clear an abandoned guest
-reservation after confirmation. Guests can save a recovery code to use another browser.
-The first guest reservation asks for confirmation to verify that the browser saved the required
-cookie before reserving the gift. If cookies are blocked, the gift stays available. Returning guests
-reserve in one click.
+Every shared link owns the reservations made through it. Reopening the same link on any device
+shows the same reservations and lets its holder mark them bought, mark them not bought or release
+them. Reserving takes one click and needs no cookie, sign-in or recovery code. Other sharing links
+see only “Reserved” for those gifts, including purchases, and cannot change them. The family sees
+the sharing link's name against its reservations; that name is retained if the link is stopped.
+The owner can also use the link and see or manage its reservations; that trade-off is explicitly
+accepted. Another enabled family member, excluding the list owner, can clear an abandoned guest
+reservation after confirmation. Revoking a link blocks further access without deleting reservations.
+Older browser-owned reservations remain reserved because their originating link was not recorded;
+a family member other than the owner can clear them after checking with the guest.
 
 The household can have up to five active sharing links in total. Each has a private, recognisable
 name such as “Uncle David”. **Manage** shows every link's name, currently visible lists, creator
@@ -162,11 +163,12 @@ family admission controls on the same page remain organiser-only.
 
 ## Product invariants
 
-Family Wishlist’s own cookies support family sign-in/security and guest reservation ownership only.
+Family Wishlist’s own cookies support family sign-in and security only. Shared-link reservations
+work without cookies.
 Explain them and the separate privacy/cookie behavior of external picture hosts site-wide
-through the permanent footer disclosure and before guest reservation actions. The footer introduction
+through the permanent footer disclosure. The footer introduction
 appears once per browser, remembered automatically with a fixed local preference; it never requires
-acceptance. Viewing a shared link must not create or renew a guest cookie.
+acceptance. Shared-link browsing and reservation actions do not create or renew a guest cookie.
 Do not add advertising or analytics tracking without revisiting the notice and applicable consent rules.
 
 1. One deployment represents one trusted family group.
@@ -179,7 +181,7 @@ Do not add advertising or analytics tracking without revisiting the notice and a
 7. Core wishlist and claim actions work without browser JavaScript.
 8. A normal family deployment should fit within Cloudflare's free tier.
 9. The configured initial organiser is an admin; invited members default to the member role.
-10. All sharing links allow guest reservations, but never wish editing or disclosure of another claimant's identity or purchase state.
+10. All sharing links allow guest reservations, but never wish editing or disclosure of another link’s or family member’s identity or purchase state.
 11. Creating a viewing link first verifies the exact hostname's narrow public Access application; an
     unusable login-gated link must never be created.
 

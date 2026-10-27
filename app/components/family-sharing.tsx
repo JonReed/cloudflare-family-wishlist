@@ -91,8 +91,8 @@ export function FamilySharing({
         <h2 id="family-sharing-title">Sharing links</h2>
         <p>
           Choose one or more lists to include in a link. Anyone with the link can see their current
-          wishes and reserve gifts without signing in. Reserved gifts are visible to anyone with the
-          link, including the wishlist owner.
+          wishes and manage this link’s reservations without signing in, including the wishlist
+          owner.
         </p>
       </div>
 
@@ -176,7 +176,7 @@ export function FamilySharing({
               aria-describedby="family-share-name-hint"
             />
             <p id="family-share-name-hint" className="profile-hint">
-              This name is private and helps you recognise the link later.
+              Your family will see this name beside gifts reserved through this link.
             </p>
           </div>
           <button

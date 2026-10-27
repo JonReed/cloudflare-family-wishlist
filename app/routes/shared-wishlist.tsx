@@ -7,17 +7,9 @@ import { WishGiftLabel } from '../components/wishlist/gift-label';
 import { WishTitle } from '../components/wishlist/wish-title';
 import { cloudflareContext } from '../lib/context';
 import {
-  createGuestSecret,
-  guestCookie,
-  hashGuestSecret,
-  readGuestSecret,
-  validGuestSecret
-} from '../lib/guest-identity';
-import {
   changeGuestClaim,
   consumeGuestClaimBudget,
-  GuestClaimLimitError,
-  hasGuestClaims
+  GuestClaimLimitError
 } from '../lib/db/guest-claims';
 import { secureMutationRequest } from '../lib/request-security';
 import {
@@ -41,19 +33,14 @@ function notFound(): never {
   throw data('Not found', { status: 404 });
 }
 
-export async function loader({ context, params, request }: Route.LoaderArgs) {
+export async function loader({ context, params }: Route.LoaderArgs) {
   try {
     const { env } = context.get(cloudflareContext);
     const token = params.token;
     if (!token) notFound();
-    const secret = readGuestSecret(request);
-    const wishlists = await getSharedWishlists(
-      env.DB,
-      token,
-      secret ? await hashGuestSecret(secret) : null
-    );
+    const wishlists = await getSharedWishlists(env.DB, token);
     if (!wishlists.length) notFound();
-    return data({ wishlists, token, recoveryCode: secret });
+    return data({ wishlists, token });
   } catch (error) {
     if (error instanceof SharedWishlistInputError) {
       notFound();
@@ -81,60 +68,12 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   try {
     const form = await secured.formData();
     const intent = form.get('intent');
-    const existingSecret = readGuestSecret(secured);
-    if (!existingSecret && intent === 'confirm-claim')
-      throw new SharedWishlistInputError(
-        'Your browser did not save the required reservation cookie. Allow cookies for this site, then choose the gift again. The gift has not been reserved.'
-      );
-    if (!existingSecret && intent !== 'claim' && intent !== 'recover')
-      throw new SharedWishlistInputError(
-        'This browser has no reservation code. Allow required cookies and recover your reservations using your saved code.'
-      );
-    const secret = existingSecret ?? createGuestSecret();
-    const guestHash = await hashGuestSecret(secret);
-    await consumeGuestClaimBudget(env.DB, token, guestHash);
-    if (intent === 'recover') {
-      const code = form.get('recoveryCode');
-      if (
-        !validGuestSecret(code) ||
-        !(await hasGuestClaims(env.DB, token, await hashGuestSecret(code)))
-      )
-        throw new SharedWishlistInputError(
-          'That recovery code has no reservations on this shared list. Check the code and link.'
-        );
-      return redirect(`/shared/${token}`, {
-        status: 303,
-        headers: { 'Set-Cookie': guestCookie(request, code) }
-      });
-    }
+    await consumeGuestClaimBudget(env.DB, token);
     const itemId = form.get('itemId');
     if (typeof itemId !== 'string')
       throw new SharedWishlistInputError('Choose a gift from the list.');
-    if (!existingSecret && intent === 'claim') {
-      const item = wishlists
-        .flatMap((wishlist) => wishlist.items)
-        .find((item) => item.id === itemId);
-      if (!item || item.reservation !== 'available')
-        throw new SharedWishlistInputError(
-          'This gift is no longer available. Refresh the list to check.'
-        );
-      // Verify cookie storage on the next POST before creating a reservation that needs it.
-      return data(
-        { error: null, confirmation: { itemId, title: item.title } },
-        { headers: { 'Set-Cookie': guestCookie(request, secret) } }
-      );
-    }
-    await changeGuestClaim(
-      env.DB,
-      token,
-      guestHash,
-      itemId,
-      intent === 'confirm-claim' ? 'claim' : intent
-    );
-    return redirect(`/shared/${token}#wish-${itemId}`, {
-      status: 303,
-      headers: { 'Set-Cookie': guestCookie(request, secret) }
-    });
+    await changeGuestClaim(env.DB, token, itemId, intent);
+    return redirect(`/shared/${token}#wish-${itemId}`, { status: 303 });
   } catch (error) {
     if (error instanceof GuestClaimLimitError)
       return data({ error: error.message }, { status: 429, headers: { 'Retry-After': '3600' } });
@@ -249,8 +188,7 @@ function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }
 }
 
 export default function SharedWishlistPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { wishlists, token, recoveryCode } = loaderData;
-  const confirmation = actionData && 'confirmation' in actionData ? actionData.confirmation : null;
+  const { wishlists, token } = loaderData;
   const Heading = wishlists.length > 1 ? 'h2' : 'h1';
   return (
     <div className="site-shell public-share-shell">
@@ -260,82 +198,11 @@ export default function SharedWishlistPage({ loaderData, actionData }: Route.Com
         </span>
       </header>
       <main className="public-share-main page-wrap">
-        <section className="guest-sharing-intro" aria-label="Giving a gift">
-          <p>Choose a gift and reserve it so nobody else buys the same thing. No sign-in needed.</p>
-          <p>
-            Everyone with this link can see which gifts are reserved, including the wishlist owner.
+        {actionData?.error ? (
+          <p role="alert" className="form-alert">
+            {actionData.error}
           </p>
-          <p>
-            Reserving or recovering a gift uses a required cookie to remember your reservations for
-            up to one year. <a href="#cookie-information">Cookie details</a>
-          </p>
-          {actionData?.error ? (
-            <p role="alert" className="form-error">
-              {actionData.error}
-            </p>
-          ) : null}
-          {confirmation ? (
-            <section className="guest-confirmation" aria-label="Confirm your first reservation">
-              <h2>Reserve {confirmation.title}?</h2>
-              <p>
-                One more step for your first reservation. This checks that your browser can remember
-                your reservations. The gift stays available until you confirm.
-              </p>
-              <form method="post" action={`/shared/${token}`}>
-                <input type="hidden" name="itemId" value={confirmation.itemId} />
-                <button className="button-primary" name="intent" value="confirm-claim">
-                  Confirm: I’ll get this
-                </button>
-                <a className="button-quiet" href={`/shared/${token}#wish-${confirmation.itemId}`}>
-                  Cancel
-                </a>
-              </form>
-            </section>
-          ) : null}
-          <details className="guest-recovery">
-            <summary>Keep or recover your reservations</summary>
-            {recoveryCode ? (
-              <>
-                <p>
-                  This browser remembers your reservations. Save this private code to manage them on
-                  another device. Anyone with it can manage your reservations.
-                </p>
-                <label>
-                  Your recovery code
-                  <input
-                    aria-label="Your recovery code"
-                    readOnly
-                    value={recoveryCode}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </label>
-              </>
-            ) : (
-              <p>Your private recovery code will appear here after you reserve a gift.</p>
-            )}
-            <form method="post" action={`/shared/${token}`}>
-              <label>
-                Have a saved code?
-                <input
-                  name="recoveryCode"
-                  required
-                  minLength={43}
-                  maxLength={43}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </label>
-              <button className="button-quiet" name="intent" value="recover">
-                Recover my reservations
-              </button>
-            </form>
-            <p>
-              Recovering replaces this browser’s current code. Save it first if you already have
-              reservations here.
-            </p>
-          </details>
-        </section>
+        ) : null}
         {wishlists.length > 1 ? (
           <header className="public-share-overview">
             <p className="section-kicker">Gift ideas</p>

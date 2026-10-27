@@ -5,11 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { cloudflareContext } from '../app/lib/context';
-import {
-  changeGuestClaim,
-  consumeGuestClaimBudget,
-  hasGuestClaims
-} from '../app/lib/db/guest-claims';
+import { changeGuestClaim, consumeGuestClaimBudget } from '../app/lib/db/guest-claims';
 import { ensureMemberForEmail } from '../app/lib/db/members';
 import {
   createFamilyShareLink,
@@ -142,8 +138,8 @@ describe('family sharing', () => {
       (await getSharedWishlists(env.DB, family.token)).map((list) => list.id)
     );
 
-    await consumeGuestClaimBudget(env.DB, oldFamilyToken, 'a'.repeat(64), 3_600_000);
-    await consumeGuestClaimBudget(env.DB, family.token, 'b'.repeat(64), 3_600_000);
+    await consumeGuestClaimBudget(env.DB, oldFamilyToken, 3_600_000);
+    await consumeGuestClaimBudget(env.DB, family.token, 3_600_000);
     const budget = await env.DB.prepare('SELECT attempts FROM guest_claim_limits WHERE scope = ?1')
       .bind(`link:${familyHash}`)
       .first<{ attempts: number }>();
@@ -161,9 +157,12 @@ describe('family sharing', () => {
       (list) => list.id === admin.wishlistId
     )?.items[0]?.id;
     if (!itemId) throw new Error('Expected a shared gift.');
-    const guestHash = 'c'.repeat(64);
-    await changeGuestClaim(env.DB, family.token, guestHash, itemId, 'claim');
-    await expect(hasGuestClaims(env.DB, oldFamilyToken, guestHash)).resolves.toBe(true);
+    await changeGuestClaim(env.DB, family.token, itemId, 'claim');
+    expect((await getSharedWishlists(env.DB, oldFamilyToken))[0].items[0].reservation).toBe(
+      'yours'
+    );
+    await changeGuestClaim(env.DB, oldFamilyToken, itemId, 'bought');
+    expect((await getSharedWishlists(env.DB, family.token))[0].items[0].reservation).toBe('bought');
 
     await revokeShareLink(env.DB, admin.id, familyId);
     await expect(getSharedWishlists(env.DB, oldFamilyToken)).resolves.toEqual([]);
@@ -206,7 +205,7 @@ describe('family sharing', () => {
       'https://cdn.example.com/gift.webp'
     ]);
     expect(shared.flatMap((list) => list.items).map((item) => item.id)).not.toContain(carolItem.id);
-    const loaderData = { wishlists: shared, token, recoveryCode: 'a'.repeat(43) };
+    const loaderData = { wishlists: shared, token };
     const html = renderToStaticMarkup(
       <MemoryRouter initialEntries={[`/shared/${token}`]}>
         <SharedWishlistPage

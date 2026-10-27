@@ -93,7 +93,7 @@ const LIST_FAMILY_WISHLISTS = `
     items.position AS item_position,
     claims.state AS claim_state,
     claims.claimed_by_member_id,
-    claimants.display_name AS claimed_by_display_name
+    COALESCE(claimants.display_name, claims.share_link_name) AS claimed_by_display_name
   FROM wishlists
   INNER JOIN members ON members.id = wishlists.owner_member_id
   LEFT JOIN items ON items.wishlist_id = wishlists.id

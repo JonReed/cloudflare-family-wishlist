@@ -9,7 +9,6 @@ import {
   createFamilyShareLink,
   revokeShareLink,
   getSharedWishlists,
-  revokeWishlistShareLink,
   listActiveWishlistShareLinks
 } from '../app/lib/db/shared-wishlists';
 import {
@@ -18,17 +17,7 @@ import {
   listFamilyWishlists,
   releaseGuestClaim
 } from '../app/lib/db/wishlists';
-import {
-  changeGuestClaim,
-  consumeGuestClaimBudget,
-  hasGuestClaims
-} from '../app/lib/db/guest-claims';
-import {
-  createGuestSecret,
-  guestCookie,
-  hashGuestSecret,
-  readGuestSecret
-} from '../app/lib/guest-identity';
+import { changeGuestClaim, consumeGuestClaimBudget } from '../app/lib/db/guest-claims';
 import { action, loader } from '../app/routes/shared-wishlist';
 import { inviteAndProvisionMember } from './family-fixtures';
 
@@ -45,30 +34,32 @@ async function fixture() {
     priority: 'normal'
   });
   const item = (await listFamilyWishlists(env.DB, owner.id))[0].items[0];
-  const token = await createWishlistShareLink(env.DB, owner.id, owner.wishlistId, 'Friends');
-  const secret = createGuestSecret();
-  return { owner, giver, item, token, secret, hash: await hashGuestSecret(secret) };
+  const token = await createWishlistShareLink(env.DB, owner.id, owner.wishlistId, 'Uncle David');
+  return { owner, giver, item, token };
 }
-function context() {
+function routeArgs(token: string) {
   const context = new RouterContextProvider();
   context.set(cloudflareContext, { env, ctx: createExecutionContext(), cspNonce: 'test-nonce' });
-  return context;
+  return {
+    params: { token },
+    context,
+    request: new Request(`${origin}/shared/${token}`),
+    pattern: '/shared/:token',
+    url: new URL(`${origin}/shared/${token}`)
+  };
 }
-function request(
-  token: string,
-  secret: string,
-  intent: string,
-  itemId = '',
-  extra: Record<string, string> = {}
-) {
+function request(token: string, intent: string, itemId = '', extra: Record<string, string> = {}) {
   return new Request(`${origin}/shared/${token}`, {
     method: 'POST',
-    headers: { Origin: origin, Cookie: guestCookie(new Request(origin), secret).split(';')[0] },
+    headers: { Origin: origin },
     body: new URLSearchParams({ intent, itemId, ...extra })
   });
 }
+async function reservation(token: string) {
+  return (await getSharedWishlists(env.DB, token))[0].items[0].reservation;
+}
 
-describe('guest reservations', () => {
+describe('link-owned guest reservations', () => {
   beforeEach(async () => {
     await env.DB.batch(
       [
@@ -83,93 +74,177 @@ describe('guest reservations', () => {
       ].map((table) => env.DB.prepare(`DELETE FROM ${table}`))
     );
   });
-  it('shares one reservation with members, exposes only availability, and hides owner data', async () => {
+
+  it('uses the link name for family members while hiding all claims from the signed-in owner', async () => {
     const f = await fixture();
-    await changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'claim');
-    const publicLists = await getSharedWishlists(env.DB, f.token);
-    expect(publicLists[0].items[0].reservation).toBe('reserved');
-    expect(JSON.stringify(publicLists)).not.toContain(f.hash);
-    expect(JSON.stringify(publicLists)).not.toContain(f.secret);
-    expect((await getSharedWishlists(env.DB, f.token, f.hash))[0].items[0].reservation).toBe(
-      'yours'
-    );
+    await changeGuestClaim(env.DB, f.token, f.item.id, 'claim');
+    expect(await reservation(f.token)).toBe('yours');
     const ownerItem = (await listFamilyWishlists(env.DB, f.owner.id)).find(
       (list) => list.id === f.owner.wishlistId
     )!.items[0];
     expect(ownerItem.claimVisibility).toBe('hidden');
     expect(ownerItem).not.toHaveProperty('claim');
+    expect(JSON.stringify(ownerItem)).not.toContain('Uncle David');
     const giverItem = (await listFamilyWishlists(env.DB, f.giver.id)).find(
       (list) => list.id === f.owner.wishlistId
     )!.items[0];
     expect(giverItem).toMatchObject({
-      claim: { claimedByDisplayName: 'A guest', isClaimedByViewer: false }
+      claim: { claimedByDisplayName: 'Uncle David', isClaimedByViewer: false }
     });
+    const publicJson = JSON.stringify(await getSharedWishlists(env.DB, f.token));
+    expect(publicJson).not.toContain('Uncle David');
+    expect(publicJson).not.toContain('guest_token_hash');
+    expect(publicJson).not.toContain('share_link_name');
     await expect(claimWishlistItem(env.DB, f.giver.id, f.item.id)).rejects.toThrow();
-    await changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'bought');
-    expect((await getSharedWishlists(env.DB, f.token))[0].items[0].reservation).toBe('reserved');
-    expect((await getSharedWishlists(env.DB, f.token, f.hash))[0].items[0].reservation).toBe(
-      'bought'
-    );
-    await changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'unbought');
-    await changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'release');
-    expect((await getSharedWishlists(env.DB, f.token))[0].items[0].reservation).toBe('available');
   });
-  it('permits exactly one winner across concurrent member and guest requests', async () => {
+
+  it('shows and manages the same reservations from a fresh browser without cookies', async () => {
+    const f = await fixture();
+    const args = routeArgs(f.token);
+    const claimed = await action({ ...args, request: request(f.token, 'claim', f.item.id) });
+    expect(claimed).toBeInstanceOf(Response);
+    if (!(claimed instanceof Response)) throw new Error('Expected redirect');
+    expect(claimed.status).toBe(303);
+    expect(claimed.headers.get('Location')).toBe(`/shared/${f.token}#wish-${f.item.id}`);
+    expect(claimed.headers.has('Set-Cookie')).toBe(false);
+    const freshBrowser = await loader(routeArgs(f.token));
+    expect(freshBrowser.data.wishlists[0].items[0].reservation).toBe('yours');
+    expect(freshBrowser.data).not.toHaveProperty('recoveryCode');
+    expect(new Headers(freshBrowser.init?.headers).has('Set-Cookie')).toBe(false);
+    for (const [intent, state] of [
+      ['bought', 'bought'],
+      ['unbought', 'yours'],
+      ['release', 'available']
+    ]) {
+      const changed = await action({
+        ...routeArgs(f.token),
+        request: request(f.token, intent, f.item.id)
+      });
+      expect(changed).toBeInstanceOf(Response);
+      if (!(changed instanceof Response)) throw new Error('Expected redirect');
+      expect(changed.headers.has('Set-Cookie')).toBe(false);
+      expect((await loader(routeArgs(f.token))).data.wishlists[0].items[0].reservation).toBe(state);
+    }
+  });
+
+  it('isolates two named links to the same wishlist, including purchase state and posted credentials', async () => {
+    const f = await fixture();
+    const other = await createWishlistShareLink(
+      env.DB,
+      f.owner.id,
+      f.owner.wishlistId,
+      'Aunt Jane'
+    );
+    await changeGuestClaim(env.DB, f.token, f.item.id, 'claim');
+    await changeGuestClaim(env.DB, f.token, f.item.id, 'bought');
+    expect(await reservation(f.token)).toBe('bought');
+    expect(await reservation(other)).toBe('reserved');
+    for (const intent of ['claim', 'release', 'bought', 'unbought']) {
+      const forged = request(other, intent, f.item.id, {
+        token: f.token,
+        share_link_name: 'Uncle David'
+      });
+      forged.headers.set('Cookie', '__Host-wishlist-guest=' + 'a'.repeat(43));
+      expect(await action({ ...routeArgs(other), request: forged })).toMatchObject({
+        init: { status: 409 }
+      });
+    }
+    expect(await reservation(f.token)).toBe('bought');
+  });
+
+  it('permits exactly one winner across concurrent member and link requests', async () => {
     const f = await fixture();
     const results = await Promise.allSettled([
-      changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'claim'),
+      changeGuestClaim(env.DB, f.token, f.item.id, 'claim'),
       claimWishlistItem(env.DB, f.giver.id, f.item.id)
     ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
-    expect(
-      (await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first<{ n: number }>())?.n
-    ).toBe(1);
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 1 });
   });
-  it('scopes guest writes and recovery to the selected lists on a family link', async () => {
+
+  it('permits exactly one concurrent claim from different links and rejects repeat submissions', async () => {
     const f = await fixture();
-    const third = await inviteAndProvisionMember(env.DB, f.owner, 'third@example.com');
+    const other = await createWishlistShareLink(
+      env.DB,
+      f.owner.id,
+      f.owner.wishlistId,
+      'Aunt Jane'
+    );
+    const results = await Promise.allSettled(
+      [f.token, other].map((token) => changeGuestClaim(env.DB, token, f.item.id, 'claim'))
+    );
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    const winner = results[0].status === 'fulfilled' ? f.token : other;
+    await expect(changeGuestClaim(env.DB, winner, f.item.id, 'claim')).rejects.toThrow();
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 1 });
+  });
+
+  it('checks selected lists, enabled owners and active links on every write, retaining names after revocation', async () => {
+    const f = await fixture();
     const selected = await createFamilyShareLink(
       env.DB,
       f.owner.id,
       [f.owner.wishlistId, f.giver.wishlistId],
-      'Both lists'
+      'Grandparents'
     );
     const excluded = await createFamilyShareLink(
       env.DB,
       f.owner.id,
-      [third.wishlistId],
+      [f.giver.wishlistId],
       'Other list'
     );
-    const otherHash = await hashGuestSecret(createGuestSecret());
-    const results = await Promise.allSettled([
-      changeGuestClaim(env.DB, selected.token, f.hash, f.item.id, 'claim'),
-      changeGuestClaim(env.DB, selected.token, otherHash, f.item.id, 'claim')
-    ]);
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
-    const winningHash = results[0].status === 'fulfilled' ? f.hash : otherHash;
-    expect(await hasGuestClaims(env.DB, selected.token, winningHash)).toBe(true);
-    expect(await hasGuestClaims(env.DB, excluded.token, winningHash)).toBe(false);
-    await expect(
-      changeGuestClaim(env.DB, excluded.token, winningHash, f.item.id, 'bought')
-    ).rejects.toThrow();
+    await expect(changeGuestClaim(env.DB, excluded.token, f.item.id, 'claim')).rejects.toThrow();
+    await changeGuestClaim(env.DB, selected.token, f.item.id, 'claim');
+    await env.DB.prepare('UPDATE members SET disabled_at = ?1 WHERE id = ?2')
+      .bind('2026-10-27', f.owner.id)
+      .run();
+    await expect(changeGuestClaim(env.DB, selected.token, f.item.id, 'bought')).rejects.toThrow();
+    await env.DB.prepare('UPDATE members SET disabled_at = NULL WHERE id = ?1')
+      .bind(f.owner.id)
+      .run();
     await revokeShareLink(env.DB, f.owner.id, selected.shareLinkId);
-    await expect(
-      changeGuestClaim(env.DB, selected.token, winningHash, f.item.id, 'bought')
-    ).rejects.toThrow();
-    expect(await hasGuestClaims(env.DB, selected.token, winningHash)).toBe(false);
-    // Another active link to the same list can still recover and manage the reservation.
-    expect(await hasGuestClaims(env.DB, f.token, winningHash)).toBe(true);
-    await changeGuestClaim(env.DB, f.token, winningHash, f.item.id, 'bought');
+    await expect(changeGuestClaim(env.DB, selected.token, f.item.id, 'release')).rejects.toThrow();
+    await expect(changeGuestClaim(env.DB, f.token, f.item.id, 'release')).rejects.toThrow();
+    expect(await reservation(f.token)).toBe('reserved');
+    expect(
+      (await listFamilyWishlists(env.DB, f.giver.id)).find(
+        (list) => list.id === f.owner.wishlistId
+      )!.items[0]
+    ).toMatchObject({
+      claim: { claimedByDisplayName: 'Grandparents' }
+    });
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 1 });
   });
+
+  it('preserves old browser reservations without assigning them to an arbitrary link', async () => {
+    const f = await fixture();
+    // The previous Worker remains able to write after the additive migration.
+    await env.DB.prepare(
+      'INSERT INTO claims (item_id, guest_token_hash, state) VALUES (?1, ?2, ?3)'
+    )
+      .bind(f.item.id, 'a'.repeat(64), 'purchased')
+      .run();
+    expect(await reservation(f.token)).toBe('reserved');
+    await expect(changeGuestClaim(env.DB, f.token, f.item.id, 'release')).rejects.toThrow();
+    const giverItem = (await listFamilyWishlists(env.DB, f.giver.id)).find(
+      (list) => list.id === f.owner.wishlistId
+    )!.items[0];
+    expect(giverItem).toMatchObject({ claim: { claimedByDisplayName: 'A guest' } });
+    await releaseGuestClaim(env.DB, f.giver.id, f.item.id);
+    await changeGuestClaim(env.DB, f.token, f.item.id, 'claim');
+    expect(await reservation(f.token)).toBe('yours');
+  });
+
   it('allows only enabled non-owner family members to clear guest claims, never member claims', async () => {
     const f = await fixture();
     await claimWishlistItem(env.DB, f.giver.id, f.item.id);
     await expect(releaseGuestClaim(env.DB, f.owner.id, f.item.id)).rejects.toThrow();
     await expect(releaseGuestClaim(env.DB, f.giver.id, f.item.id)).rejects.toThrow();
     await env.DB.prepare('DELETE FROM claims WHERE item_id = ?1').bind(f.item.id).run();
-    await changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'claim');
+    await changeGuestClaim(env.DB, f.token, f.item.id, 'claim');
+    await expect(releaseGuestClaim(env.DB, f.owner.id, f.item.id)).rejects.toThrow();
     await env.DB.prepare('UPDATE members SET disabled_at = ?1 WHERE id = ?2')
-      .bind('2026-10-09', f.giver.id)
+      .bind('2026-10-27', f.giver.id)
       .run();
     await expect(releaseGuestClaim(env.DB, f.giver.id, f.item.id)).rejects.toThrow();
     await expect(releaseGuestClaim(env.DB, crypto.randomUUID(), f.item.id)).rejects.toThrow();
@@ -177,249 +252,58 @@ describe('guest reservations', () => {
       .bind(f.giver.id)
       .run();
     await releaseGuestClaim(env.DB, f.giver.id, f.item.id);
-    expect((await getSharedWishlists(env.DB, f.token))[0].items[0].reservation).toBe('available');
+    expect(await reservation(f.token)).toBe('available');
   });
-  it('rejects another guest, unrelated items, invalid intent and revoked or disabled access', async () => {
+
+  it('enforces one atomic hourly budget per link across devices', async () => {
     const f = await fixture();
-    await changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'claim');
-    const other = await hashGuestSecret(createGuestSecret());
-    for (const intent of ['release', 'bought', 'unbought', 'claim'])
-      await expect(changeGuestClaim(env.DB, f.token, other, f.item.id, intent)).rejects.toThrow();
-    await expect(changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'edit')).rejects.toThrow();
-    const unrelated = await createWishlistShareLink(
-      env.DB,
-      f.giver.id,
-      f.giver.wishlistId,
-      'Other'
-    );
-    await expect(
-      changeGuestClaim(env.DB, unrelated, f.hash, f.item.id, 'release')
-    ).rejects.toThrow();
-    await env.DB.prepare('UPDATE members SET disabled_at = ?1 WHERE id = ?2')
-      .bind('2026-10-09', f.owner.id)
-      .run();
-    await expect(changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'release')).rejects.toThrow();
-    await env.DB.prepare('UPDATE members SET disabled_at = NULL WHERE id = ?1')
-      .bind(f.owner.id)
-      .run();
-    const link = (await listActiveWishlistShareLinks(env.DB, f.owner.id)).find(
-      (link) => link.wishlistId === f.owner.wishlistId
-    )!;
-    await revokeWishlistShareLink(env.DB, f.owner.id, link.id);
-    await expect(changeGuestClaim(env.DB, f.token, f.hash, f.item.id, 'release')).rejects.toThrow();
-    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 1 });
-    await expect(releaseGuestClaim(env.DB, f.owner.id, f.item.id)).rejects.toThrow();
-    await releaseGuestClaim(env.DB, f.giver.id, f.item.id);
-  });
-  it('enforces per-guest and per-link budgets even when guests rotate credentials', async () => {
-    const f = await fixture();
-    for (let i = 0; i < 40; i++) await consumeGuestClaimBudget(env.DB, f.token, f.hash, 3600000);
-    await expect(consumeGuestClaimBudget(env.DB, f.token, f.hash, 3600000)).rejects.toThrow(
-      'Too many'
-    );
-    await consumeGuestClaimBudget(env.DB, f.token, f.hash, 7200000);
-    await env.DB.prepare(
-      "UPDATE guest_claim_limits SET attempts = 200 WHERE scope LIKE 'link:%'"
-    ).run();
-    await expect(
-      consumeGuestClaimBudget(env.DB, f.token, await hashGuestSecret(createGuestSecret()), 7200000)
-    ).rejects.toThrow('Too many');
-    expect(
-      await env.DB.prepare(
-        "SELECT COUNT(*) AS n FROM guest_claim_limits WHERE scope LIKE 'guest:%'"
-      ).first()
-    ).toEqual({ n: 1 });
-  });
-  it('admits only one concurrent request for the final link slot without allocating rejected guests', async () => {
-    const f = await fixture();
-    await consumeGuestClaimBudget(env.DB, f.token, f.hash, 3600000);
-    await env.DB.prepare(
-      "UPDATE guest_claim_limits SET attempts = 199 WHERE scope LIKE 'link:%'"
-    ).run();
-    const hashes = await Promise.all([
-      hashGuestSecret(createGuestSecret()),
-      hashGuestSecret(createGuestSecret())
-    ]);
+    for (let i = 0; i < 200; i++) await consumeGuestClaimBudget(env.DB, f.token, 3600000);
+    await expect(consumeGuestClaimBudget(env.DB, f.token, 3600000)).rejects.toThrow('Too many');
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM guest_claim_limits').first()).toEqual({
+      n: 1
+    });
+    await consumeGuestClaimBudget(env.DB, f.token, 7200000);
+    await env.DB.prepare('UPDATE guest_claim_limits SET attempts = 199').run();
     const results = await Promise.allSettled(
-      hashes.map((hash) => consumeGuestClaimBudget(env.DB, f.token, hash, 3600000))
+      [0, 1].map(() => consumeGuestClaimBudget(env.DB, f.token, 7200000))
     );
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
-    expect(
-      await env.DB.prepare(
-        "SELECT attempts FROM guest_claim_limits WHERE scope LIKE 'link:%'"
-      ).first()
-    ).toEqual({ attempts: 200 });
-    expect(
-      await env.DB.prepare(
-        "SELECT COUNT(*) AS n FROM guest_claim_limits WHERE scope LIKE 'guest:%'"
-      ).first()
-    ).toEqual({ n: 2 });
+    expect(await env.DB.prepare('SELECT attempts FROM guest_claim_limits').first()).toEqual({
+      attempts: 200
+    });
+    const args = routeArgs(f.token);
+    await env.DB.prepare('UPDATE guest_claim_limits SET hour = ?1')
+      .bind(Math.floor(Date.now() / 3600000))
+      .run();
+    expect(await action({ ...args, request: request(f.token, 'claim', f.item.id) })).toMatchObject({
+      init: { status: 429, headers: { 'Retry-After': '3600' } }
+    });
+    expect(await reservation(f.token)).toBe('available');
   });
-  it('reads without setting cookies and handles private form cookies, recovery and missing cookies', async () => {
+
+  it('rejects cross-origin forms, invalid inputs and obsolete recovery actions', async () => {
     const f = await fixture();
-    const args = {
-      params: { token: f.token },
-      context: context(),
-      request: new Request(`${origin}/shared/${f.token}`),
-      pattern: '/shared/:token',
-      url: new URL(`${origin}/shared/${f.token}`)
-    };
-    const loaded = await loader(args);
-    expect(loaded.data.recoveryCode).toBeNull();
-    expect(new Headers(loaded.init?.headers).has('Set-Cookie')).toBe(false);
-    const claimed = await action({
-      ...args,
-      request: request(f.token, f.secret, 'claim', f.item.id)
-    });
-    expect(claimed).toBeInstanceOf(Response);
-    if (claimed instanceof Response) {
-      expect(claimed.status).toBe(303);
-      const cookie = claimed.headers.get('Set-Cookie')!;
-      expect(cookie).toContain('HttpOnly');
-      expect(cookie).toContain('Secure');
-      expect(cookie).toContain('SameSite=Lax');
-      expect(cookie).toContain('Max-Age=31536000');
-    }
-    const returning = await loader({
-      ...args,
-      request: new Request(args.request.url, {
-        headers: { Cookie: `__Host-wishlist-guest=${f.secret}` }
-      })
-    });
-    expect(returning.data.recoveryCode).toBe(f.secret);
-    expect(returning.data.wishlists[0].items[0].reservation).toBe('yours');
-    expect(new Headers(returning.init?.headers).has('Set-Cookie')).toBe(false);
-    expect(await hasGuestClaims(env.DB, f.token, f.hash)).toBe(true);
-    const recovered = await action({
-      ...args,
-      request: request(f.token, createGuestSecret(), 'recover', '', { recoveryCode: f.secret })
-    });
-    expect(recovered).toBeInstanceOf(Response);
-    if (recovered instanceof Response)
-      expect(recovered.headers.get('Set-Cookie')).toContain(f.secret);
-    const missing = request(f.token, f.secret, 'release', f.item.id);
-    missing.headers.delete('Cookie');
-    expect(await action({ ...args, request: missing })).toMatchObject({ init: { status: 409 } });
-    const crossOrigin = request(f.token, f.secret, 'release', f.item.id);
+    const args = routeArgs(f.token);
+    const crossOrigin = request(f.token, 'claim', f.item.id);
     crossOrigin.headers.set('Origin', 'https://attacker.example');
     await expect(action({ ...args, request: crossOrigin })).rejects.toMatchObject({ status: 403 });
-    expect(
-      await action({
-        ...args,
-        request: request(f.token, f.secret, 'recover', '', { recoveryCode: createGuestSecret() })
-      })
-    ).toMatchObject({ init: { status: 409 } });
-  });
-  it('verifies cookie storage before the first reservation and does not orphan a claim when cookies are blocked', async () => {
-    const f = await fixture();
-    const args = {
-      params: { token: f.token },
-      context: context(),
-      pattern: '/shared/:token',
-      url: new URL(`${origin}/shared/${f.token}`)
-    };
-    const firstRequest = request(f.token, f.secret, 'claim', f.item.id);
-    firstRequest.headers.delete('Cookie');
-    const started = await action({ ...args, request: firstRequest });
-    expect(started).toMatchObject({ data: { confirmation: { itemId: f.item.id } } });
-    if (started instanceof Response) throw new Error('Expected first-use confirmation');
-    const cookie = new Headers(started.init?.headers).get('Set-Cookie')!;
-    const secret = readGuestSecret(
-      new Request(origin, { headers: { Cookie: cookie.split(';')[0] } })
-    )!;
-    expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(false);
-    const blocked = request(f.token, secret, 'confirm-claim', f.item.id);
-    blocked.headers.delete('Cookie');
-    const blockedResult = await action({ ...args, request: blocked });
-    expect(blockedResult).toMatchObject({ init: { status: 409 } });
-    if (!(blockedResult instanceof Response))
-      expect(blockedResult.data.error).toContain('did not save');
-    expect((await getSharedWishlists(env.DB, f.token))[0].items[0].reservation).toBe('available');
-    const claimed = await action({
-      ...args,
-      request: request(f.token, secret, 'confirm-claim', f.item.id)
-    });
-    expect(claimed).toBeInstanceOf(Response);
-    if (claimed instanceof Response) expect(claimed.status).toBe(303);
-    expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(true);
-    const recovery = request(f.token, f.secret, 'recover', '', { recoveryCode: secret });
-    recovery.headers.delete('Cookie');
-    const recovered = await action({ ...args, request: recovery });
-    expect(recovered).toBeInstanceOf(Response);
-    if (recovered instanceof Response)
-      expect(recovered.headers.get('Set-Cookie')).toContain(secret);
-    const conflict = request(f.token, f.secret, 'claim', f.item.id);
-    conflict.headers.delete('Cookie');
-    const rejected = await action({ ...args, request: conflict });
-    expect(rejected).toMatchObject({ init: { status: 409 } });
-    if (!(rejected instanceof Response))
-      expect(new Headers(rejected.init?.headers).has('Set-Cookie')).toBe(false);
-  });
-  it('handles simultaneous first-use forms using the browser cookie at confirmation time', async () => {
-    const f = await fixture();
-    const args = {
-      params: { token: f.token },
-      context: context(),
-      pattern: '/shared/:token',
-      url: new URL(`${origin}/shared/${f.token}`)
-    };
-    const starts = await Promise.all(
-      [0, 1].map(() => {
-        const first = request(f.token, f.secret, 'claim', f.item.id);
-        first.headers.delete('Cookie');
-        return action({ ...args, request: first });
-      })
-    );
-    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 0 });
-    const last = starts[1];
-    if (last instanceof Response) throw new Error('Expected first-use confirmation');
-    const cookie = new Headers(last.init?.headers).get('Set-Cookie')!;
-    const secret = readGuestSecret(
-      new Request(origin, { headers: { Cookie: cookie.split(';')[0] } })
-    )!;
-    await action({ ...args, request: request(f.token, secret, 'confirm-claim', f.item.id) });
-    expect(await hasGuestClaims(env.DB, f.token, await hashGuestSecret(secret))).toBe(true);
-  });
-  it.each(['http://localhost:5173', 'http://127.0.0.1:5173', 'http://[::1]:5173'])(
-    'permits a development cookie only on the HTTP loopback origin %s',
-    (url) => {
-      const secret = createGuestSecret();
-      const cookie = guestCookie(new Request(url), secret);
-      expect(cookie).toMatch(/^wishlist-guest=/);
-      expect(cookie).not.toContain('Secure');
-      expect(readGuestSecret(new Request(url, { headers: { Cookie: cookie.split(';')[0] } }))).toBe(
-        secret
-      );
+    for (const [intent, itemId] of [
+      ['claim', 'invalid'],
+      ['edit', f.item.id],
+      ['recover', ''],
+      ['confirm-claim', f.item.id]
+    ]) {
+      expect(await action({ ...args, request: request(f.token, intent, itemId) })).toMatchObject({
+        init: { status: 409 }
+      });
     }
-  );
-  it.each([
-    origin,
-    'http://wishlist.example',
-    'http://localhost.example',
-    'http://127.0.0.1.attacker.example'
-  ])('requires a secure host-only cookie on %s', (url) => {
-    const secret = createGuestSecret();
-    expect(guestCookie(new Request(url), secret)).toMatch(/^__Host-wishlist-guest=.*; Secure$/);
-    expect(
-      readGuestSecret(new Request(url, { headers: { Cookie: `wishlist-guest=${secret}` } }))
-    ).toBeNull();
-  });
-  it('does not accept injected, malformed or duplicate guest cookies', () => {
-    const secret = createGuestSecret();
-    expect(
-      readGuestSecret(
-        new Request(origin, { headers: { Cookie: `__Host-wishlist-guest=${secret}` } })
-      )
-    ).toBe(secret);
-    expect(
-      readGuestSecret(
-        new Request(origin, {
-          headers: { Cookie: `__Host-wishlist-guest=${secret}; __Host-wishlist-guest=${secret}` }
-        })
-      )
-    ).toBeNull();
-    expect(
-      readGuestSecret(new Request(origin, { headers: { Cookie: '__Host-wishlist-guest=bad' } }))
-    ).toBeNull();
+    expect(await action(args)).toMatchObject({ init: { status: 405 } });
+    expect(await reservation(f.token)).toBe('available');
+    const link = (await listActiveWishlistShareLinks(env.DB, f.owner.id))[0];
+    await revokeShareLink(env.DB, f.owner.id, link.id);
+    await expect(loader(args)).rejects.toMatchObject({ init: { status: 404 } });
+    await expect(
+      action({ ...args, request: request(f.token, 'claim', f.item.id) })
+    ).rejects.toMatchObject({ init: { status: 404 } });
   });
 });

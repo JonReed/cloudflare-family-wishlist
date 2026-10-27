@@ -81,8 +81,8 @@ cannot edit them or see who is buying anything. They can reserve gifts, and ever
 When the link includes several lists, gift tags at the top jump to each person's list.
 Reserved wishes have a pale green background and a **✓ Reserved** label beside the name. This stays
 the same whether someone else is planning to buy the gift or has bought it. Your own purchases show
-**✓ Bought** in the browser that remembers your reservations.
-The private name helps your family recognise the link; it does not restrict who can open or forward
+**✓ Bought** whenever you open the same sharing link, on any device.
+The private name identifies its reservations to your family; it does not restrict who can open or forward
 it. Share it only where you are comfortable sharing the selected lists' contents.
 
 Your family can have up to five active links in total. All links appear together in **Manage**,
@@ -123,29 +123,19 @@ For hosting or update problems, the organiser can use the
 ## Reserve a gift as a guest
 
 1. Open the sharing link you were sent. **Done when:** the shared lists appear without sign-in.
-2. Choose **I’ll get this** on an available wish. **Done when:** it says **You’re getting this**, or
-   a confirmation appears for this browser's first reservation.
-3. If the confirmation appears, choose **Confirm: I’ll get this**.
-   **Done when:** it says **You’re getting this**. If a cookie error appears, allow required cookies
-   for this site and choose the gift again; the failed attempt has not reserved it.
-4. Open **Keep or recover your reservations** and save **Your recovery code** privately.
-   **Done when:** you have saved the code; anyone with it can manage your reservations. This browser
-   also remembers them using a cookie. Clearing cookies without saving the code loses that access.
-5. After buying the gift, choose **Mark as bought**. **Done when:** it says **You’ve bought this**.
-   Other guests still see only **Reserved**.
-6. If you change your mind, choose **Leave for someone else**. **Done when:** the wish is available again.
+2. Choose **I’ll get this** on an available wish. **Done when:** it says **You’re getting this**.
+3. After buying the gift, choose **Mark as bought**. **Done when:** it says **You’ve bought this**.
+   People using a different sharing link still see only **Reserved**.
+4. If you change your mind, choose **Leave for someone else**. **Done when:** the wish is available again.
 
-To switch browsers:
+To return on another device, open the same sharing link. **Done when:** its reserved gifts show
+**You’re getting this** or **You’ve bought this**, with the same controls. Everyone using that link
+shares those reservations. You do not need cookies, a recovery code or another sign-in.
 
-1. Open the same sharing link in the other browser. **Done when:** the shared lists appear.
-2. Open **Keep or recover your reservations**. **Done when:** the recovery fields appear.
-3. Save this browser's current code privately if you already have reservations here.
-   **Done when:** its code is saved, or this browser has no reservations to keep.
-4. Paste your saved code from the original browser into **Have a saved code?**.
-   **Done when:** the pasted code is visible in that field.
-5. Choose **Recover my reservations**. **Done when:** your reserved gifts show **You’re getting this**
-   or **You’ve bought this**. If an error appears, check the code and use the original sharing link.
+The family sees the name given to your sharing link against the gifts you reserve. Stopping the
+link preserves reservations so gifts are not bought twice. A family member other than the recipient
+can open **Clear a guest reservation** and confirm after checking it should be released.
 
-If both cookie and code are lost, ask a family member other than the recipient to clear the guest
-reservation from their signed-in view. They open **Clear a guest reservation** and confirm only after
-checking it should be released. Stopping sharing preserves reservations so gifts are not bought twice.
+Reservations made with the old browser-code system remain reserved, but cannot be attached to a
+named link because the original link was not recorded. Ask a family member other than the recipient
+to clear one before reserving it again through your link.

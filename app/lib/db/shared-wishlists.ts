@@ -122,14 +122,7 @@ export async function shareLookupKey(value: unknown): Promise<string> {
 export async function shareLinkTokenHash(db: D1Database, value: unknown): Promise<string> {
   const key = await shareLookupKey(value);
   const row = await db
-    .prepare(
-      `SELECT token_hash AS tokenHash FROM wishlist_share_links
-       WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
-       UNION ALL
-       SELECT token_hash AS tokenHash FROM family_share_links
-       WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
-       LIMIT 1`
-    )
+    .prepare(`SELECT token_hash AS tokenHash FROM (${SHARED_LINKS}) LIMIT 1`)
     .bind(key)
     .first<{ tokenHash: string }>();
   if (!row) throw new SharedWishlistInputError('The sharing link is invalid.');
@@ -468,6 +461,14 @@ export async function revokeShareLink(
 }
 
 // Both link types grant the same item-scoped guest permissions.
+export const SHARED_LINKS = `
+  SELECT token_hash, name FROM wishlist_share_links
+  WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
+  UNION ALL
+  SELECT token_hash, name FROM family_share_links
+  WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
+`;
+
 export const SHARED_WISHLIST_IDS = `
   SELECT wishlist_id FROM wishlist_share_links
   WHERE token_hash = ?1 OR substr(token_hash, 1, 32) = ?1
@@ -487,8 +488,7 @@ export async function getSharedWishlist(
 
 export async function getSharedWishlists(
   db: D1Database,
-  token: unknown,
-  guestHash: string | null = null
+  token: unknown
 ): Promise<SharedWishlist[]> {
   const key = await shareLookupKey(token);
   const { results } = await db
@@ -506,7 +506,9 @@ export async function getSharedWishlists(
          items.price_currency AS item_price_currency,
          items.priority AS item_priority,
          claims.item_id IS NOT NULL AS reserved,
-         CASE WHEN claims.guest_token_hash = ?2 THEN claims.state ELSE NULL END AS own_claim_state
+         CASE WHEN claims.share_link_name IS NOT NULL
+           AND claims.guest_token_hash IN (SELECT token_hash FROM (${SHARED_LINKS}))
+           THEN claims.state ELSE NULL END AS own_claim_state
        FROM shared_wishlist_ids
        INNER JOIN wishlists ON wishlists.id = shared_wishlist_ids.wishlist_id
        INNER JOIN members ON members.id = wishlists.owner_member_id
@@ -524,7 +526,7 @@ export async function getSharedWishlists(
          items.created_at DESC,
          items.id DESC`
     )
-    .bind(key, guestHash)
+    .bind(key)
     .all<SharedWishlistRow>();
 
   const wishlists = new Map<string, SharedWishlist>();

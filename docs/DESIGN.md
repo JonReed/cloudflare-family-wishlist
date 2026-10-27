@@ -233,8 +233,8 @@ bought restores that appearance. Keep the wish in its existing position. The rec
 list must never receive a bought label or row style.
 
 On shared lists, give every reserved wish the same sage wash and outlined shop link, with a tick and
-**Reserved** beside its title. This includes the current guest's reservations. Show **Bought** only
-for the current guest's own purchases; other people's claims and purchases both stay **Reserved**,
+**Reserved** beside its title. This includes the current link's reservations. Show **Bought** only
+for the current link's own purchases; other people's claims and purchases both stay **Reserved**,
 with no buyer details. Marking a guest's purchase as not bought restores the **Reserved** label and
 keeps the wash. Releasing a reservation restores the ordinary paper row and filled shop link.
 
@@ -253,11 +253,10 @@ from this list, we’ll keep it secret so the surprise isn’t spoiled.”
 The link-shared view is a calm paper list with the Family Wishlist mark, the person's name,
 wish count and ordinary wish details. It has no signed-in navigation, wish editing or add controls. Every link offers guest reservation
 controls with explicit text status: Available to give, Reserved, You’re getting this, or You’ve bought
-this. Only the current guest can change their reservation. Keep recovery behind a native disclosure
-and explain that anyone with the link, including the owner, can see reservation availability.
-For a guest's first reservation, show the gift title and **Confirm: I’ll get this** beside **Cancel**.
-Explain that the gift stays available until confirmed and that this checks the browser can remember
-reservations. Once the browser returns its required cookie, keep reservation actions to one click.
+this. Anyone opening the same link sees and can change that link’s reservations on any device.
+Keep reservation actions to one click. Begin with the wishes and list navigation, without an
+instruction block, first-use confirmation or recovery disclosure. Reuse the ordinary site footer
+and its one-time cookie notice. Explain link ownership when creating a link on **Manage**.
 The absence of those controls is sufficient; do not add software-oriented explanations about what a
 public visitor cannot do.
 

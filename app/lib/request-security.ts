@@ -3,6 +3,11 @@ const MAX_MUTATION_BODY_BYTES = 32 * 1024;
 const FORM_CONTENT_TYPES = new Set(['application/x-www-form-urlencoded', 'multipart/form-data']);
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
 
+export function isLocalHttpRequest(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.protocol === 'http:' && LOOPBACK_HOSTNAMES.has(url.hostname);
+}
+
 export class RequestSecurityError extends Error {
   constructor(
     message: string,

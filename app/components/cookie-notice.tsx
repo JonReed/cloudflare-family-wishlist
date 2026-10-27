@@ -3,8 +3,8 @@ export function CookieNotice() {
     <div className="footer-privacy">
       <aside className="cookie-notice" aria-label="Cookie information" data-cookie-notice hidden>
         <p>
-          We use required cookies for sign-in and guest reservations. Product pictures load from
-          other websites. <a href="#cookie-information">Read about cookies and privacy</a>.
+          We use required cookies for family sign-in. Product pictures load from other websites.{' '}
+          <a href="#cookie-information">Read about cookies and privacy</a>.
         </p>
         <button type="button" data-dismiss-cookie-notice aria-label="Close cookie information">
           Close
@@ -14,8 +14,8 @@ export function CookieNotice() {
         <summary>Cookies &amp; privacy</summary>
         <div id="cookie-information" className="cookie-information" tabIndex={-1}>
           <p>
-            We use only required cookies to keep family sign-in secure and let guests manage their
-            reserved gifts. Family Wishlist does not use advertising or analytics cookies.
+            We use only required cookies to keep family sign-in secure. Family Wishlist does not use
+            advertising or analytics cookies.
           </p>
           <h2>Product pictures</h2>
           <p>
@@ -26,11 +26,9 @@ export function CookieNotice() {
           </p>
           <h2>Guest reservations</h2>
           <p>
-            When you start reserving a gift or recover your reservations, this site saves a private
-            code in a cookie called <code>__Host-wishlist-guest</code>. It identifies your
-            reservations without asking for your name or email. It lasts for up to one year from
-            your last reservation action or recovery, so you can return for birthdays and other
-            occasions. Simply viewing a shared list does not create or renew this cookie.
+            Reservations belong to the named sharing link. Anyone using that link can see and manage
+            its reservations from any device. Returning to the same link brings back its
+            reservations, even if you clear cookies. No reservation cookie is needed.
           </p>
           <h2>Family sign-in and security</h2>
           <p>
@@ -70,9 +68,8 @@ export function CookieNotice() {
           </p>
           <p>
             You can block or delete cookies in your browser settings. Blocking required cookies
-            prevents sign-in or managing guest reservations. Before clearing them, save your code
-            under “Keep or recover your reservations” on a shared list. Deleting a cookie does not
-            cancel a reservation: use “Leave for someone else” to release a gift.
+            prevents family sign-in. Shared-link reservations work without cookies. Use “Leave for
+            someone else” to release a gift.
           </p>
           <p>
             This wishlist is run by the household that shared it with you. Contact the family

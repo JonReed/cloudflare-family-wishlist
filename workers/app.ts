@@ -2,8 +2,11 @@ import { RouterContextProvider, createRequestHandler } from 'react-router';
 
 import { AuthenticationError, authenticateAccessRequest } from '../app/lib/auth/access';
 import { cloudflareContext, identityContext, type RuntimeEnv } from '../app/lib/context';
-import { isLocalHttpRequest } from '../app/lib/guest-identity';
-import { RequestSecurityError, secureMutationRequest } from '../app/lib/request-security';
+import {
+  isLocalHttpRequest,
+  RequestSecurityError,
+  secureMutationRequest
+} from '../app/lib/request-security';
 import { isPublicShareRequest, redactedRequestPath } from '../app/lib/public-share-path';
 import { withSecurityHeaders } from '../app/lib/security-headers';
 

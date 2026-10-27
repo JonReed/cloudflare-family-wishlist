@@ -89,7 +89,7 @@ Shared links are the narrow exception to the authenticated request flow. `worker
 GET/HEAD on exact shared-list paths, and POST on exact shared-list paths.
 `app/lib/db/shared-wishlists.ts` hashes capability tokens and returns public availability without
 claimant identities or other people's purchase status. `app/lib/db/guest-claims.ts` checks the active
-link and guest credential inside each reservation write. Shared routes must never call the
+link and its reservation ownership inside each reservation write. Shared routes must never call the
 authenticated family-list query or accept item edits.
 
 The route is intentionally server-first. Prefer a loader/action and an ordinary form over adding a
@@ -229,10 +229,10 @@ after reading the account-specific private handoff and verifying the active Wran
 - Cloudflare Access policy/DNS changes are external mutations and require explicit maintainer authority.
 - Keep the unauthenticated Worker exception limited to GET/HEAD on exact shared-list
   paths, plus POST on exact shared-list paths. A neighbouring route must not inherit public access.
-- Never store, log or put raw sharing or guest secrets in a query string. Public D1 reads may return
-  availability and the current guest's own purchase state, but no claimant identifiers or other
+- Never store, log or put raw sharing secrets in a query string. Public D1 reads may return
+  availability and the current link's own purchase state, but no claimant identifiers or other
   people's purchase state. Return picture URLs only within the selected, enabled lists.
-- Guest writes must check active link scope, enabled owners and credential ownership in SQL, share
+- Guest writes must check active link scope, enabled owners and canonical link ownership in SQL, share
   the member claim uniqueness constraint, and enforce origin/body checks and database-backed budgets.
   Revocation must retain reservations. Clearing a guest claim requires an enabled family member
   other than the owner and must never clear a member's claim.
@@ -245,7 +245,7 @@ after reading the account-specific private handoff and verifying the active Wran
   do not move authenticated JavaScript bundles into that public Access bypass. Shared pages omit
   the React client runtime; their HTTPS picture requests go directly to the image host. Their
   optional helpers remember the one-time footer notice, hide failed pictures and collapse long titles
-  with an accessible full-title disclosure. Keep the notice preference separate from guest credentials:
+  with an accessible full-title disclosure. The notice preference is shared by family and public pages:
   it is a fixed local flag, never acceptance or a visitor identifier. Without JavaScript, the permanent
   footer privacy disclosure works, titles stay complete and reading and reservations still work.
   Retired `/shared/<token>/image/<item>` routes must not retain the Worker authentication
@@ -322,7 +322,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                                  |
 | `test/shared-wishlists.test.ts`         | five-link inventory, revocation, public availability and safe hotlinked pictures     |
 | `test/family-sharing.test.tsx`          | selected lists, private claim details, group revocation and picture disclosure scope |
-| `test/guest-claims.test.ts`             | guest ownership, recovery, budgets, concurrent claims and signed-in owner privacy    |
+| `test/guest-claims.test.ts`             | link ownership, device independence, budgets, concurrent claims and owner privacy    |
 | `test/family-sharing-route.test.ts`     | member sharing, organiser admission boundary, Access preflight and server forms      |
 | `test/public-share-path.test.ts`        | exact public read/POST authentication exceptions and log redaction                   |
 | `test/public-share-worker.test.ts`      | Worker auth boundary, public privacy and token invalidation                          |
