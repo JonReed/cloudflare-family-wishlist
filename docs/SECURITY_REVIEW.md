@@ -443,3 +443,48 @@ and Chrome desktop/mobile checks of first display, reload without dismissal, clo
 navigation, shared/signed-in browser memory, blocked storage, and native guest forms without
 JavaScript. This is focused source and local browser verification, not a new independent security
 scan or evidence of every household deployment. The earlier brochure follow-up remains separate.
+
+## v1.1.4 release preparation
+
+- **Application range:** `v1.1.3` (`3be1a78dfaa9ff6ae3fc903457884fec6cfd1667`) through
+  `4308de1c14da17efc9d07e5a30d7853a7460e800`. Release preparation adds version metadata,
+  documentation and upgrade tests, with no further application or dependency changes.
+- **Review date:** 28 October 2026.
+- **Method:** focused source and regression-test review of link-owned guest reservations, URL aliases,
+  shared assets, bounded Browser Run responses and the household deployment path. This is not a new
+  independent or exhaustive security scan. Earlier verdicts remain limited to their stated ranges.
+
+Reservations now use the sharing link's canonical hash and a stored link-name snapshot. Both an old
+address and its displayed alias resolve to the same scope and atomic per-link request limit. Every
+guest write rechecks link membership, enabled owners and reservation ownership in SQL. A unique claim
+per item prevents competing family members or links from reserving the same gift. Public results
+expose availability and the current link's purchase state, without family claimant identities, stored
+hashes or link names. Anyone holding a link can manage its reservations; this intended behaviour is
+documented on Manage and in the user guide. The signed-in owner's claim-free query remains unchanged.
+Origin checks and bounded form handling remain in force; guest cookies and recovery codes are removed.
+
+Migration `0016_link_reservations.sql` adds a nullable column without changing existing rows. Older
+browser-owned reservations remain reserved and cannot be taken over through a sharing link. The
+upgrade regression starts at the v1.1.3 schema, preserves member claims and guest claims/purchases,
+reapplies the migration list safely, checks old Worker inserts and exercises new link reservations.
+The real-Git updater test also verifies delivery of this migration file while preserving household
+workflows and settings. Existing deployment tests verify migrations precede Worker deployment,
+failure stops the deployment and successful SQL is not undone after a later Worker failure.
+
+Release verification runs the complete quality and dependency-audit gates against an isolated copy
+of the intended release files, excluding the unrelated uncommitted cookie-layout work. The release
+workflow repeats both gates against the final tag. Prior browser QA covered desktop and 390-pixel
+mobile tag layouts and navigation, cross-browser reservation/purchase/release, family display names,
+and the one-time notice. CI and the reference Cloudflare build passed at the application tip above.
+
+This evidence does not establish every household's build configuration, live database migration or
+scheduled delivery, and does not constitute fresh Safari/Firefox or retailer-wide verification.
+Configured household updates use `npm run deploy:production` to migrate before deployment; a custom
+bare Wrangler deploy command bypasses that step. The prior live scheduled-delivery evidence remains
+in [release readiness](RELEASE_READINESS.md).
+
+Brochure source was rechecked at `9e69404b892d5bd4f3018a16f5c2fd67abd7bed1` in the separate
+website repository. The previously recorded follow-up still applies: its recipient-privacy copy
+needs the shared-link exception, and its feature/privacy copy needs guest reservations and directly
+loaded pictures. This release's user guide and notes describe those behaviours; no brochure deployment
+was performed as part of this release.

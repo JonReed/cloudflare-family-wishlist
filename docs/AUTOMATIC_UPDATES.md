@@ -90,7 +90,10 @@ npm run deploy:production
 ```
 
 This tells Cloudflare how to install a new version. It includes any required changes to how the
-app stores your lists.
+app stores your lists. Pending database migrations run automatically before the new app is deployed;
+you do not need to run SQL yourself. Already applied migrations are skipped on later updates or
+retries. If a migration fails, deployment stops and the previous app stays in place. Follow the
+failure and retry steps below; do not create a replacement database.
 
 **Done when:** the **Deploy command** field says `npm run deploy:production`.
 

@@ -59,6 +59,10 @@ await test('a stable release updates a household, preserves workflows and settin
   try {
     f.commit(f.root, '.github/local.yml', 'household workflow\n');
     writeFileSync(join(f.root, '.wishlist-installation.json'), 'private installation settings');
+    const migrationPath = 'migrations/0016_link_reservations.sql';
+    const migration = readFileSync(join(import.meta.dirname, '..', migrationPath), 'utf8');
+    mkdirSync(join(f.upstream, 'migrations'));
+    f.commit(f.upstream, migrationPath, migration);
     const released = f.release('second release\n');
     f.commit(f.upstream, '.github/local.yml', 'upstream workflow requiring extra permissions\n');
     f.git(f.upstream, 'branch', '-f', 'stable', 'HEAD');
@@ -69,6 +73,7 @@ await test('a stable release updates a household, preserves workflows and settin
     assert.equal(result.sourceCommit, target);
     assert.notEqual(target, released);
     assert.equal(readFileSync(join(f.root, 'app.txt'), 'utf8'), 'second release\n');
+    assert.equal(readFileSync(join(f.root, migrationPath), 'utf8'), migration);
     assert.equal(readFileSync(join(f.root, '.github/local.yml'), 'utf8'), 'household workflow\n');
     assert.equal(
       readFileSync(join(f.root, '.wishlist-installation.json'), 'utf8'),
@@ -78,6 +83,7 @@ await test('a stable release updates a household, preserves workflows and settin
     assert.equal(f.git(f.remote, 'rev-parse', 'main'), result.deploymentCommit);
     assert.equal(f.git(f.root, 'status', '--porcelain'), '');
     assert.equal(updateFork({ ...f, apply: true }).status, 'current');
+    assert.equal(readFileSync(join(f.root, migrationPath), 'utf8'), migration);
     f.release('third release\n');
     assert.equal(updateFork({ ...f, apply: true }).status, 'updated');
     assert.equal(readFileSync(join(f.root, 'app.txt'), 'utf8'), 'third release\n');
