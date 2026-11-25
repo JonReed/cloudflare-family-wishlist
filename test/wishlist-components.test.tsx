@@ -20,7 +20,12 @@ const ownItem: WishlistItem = {
   claimVisibility: 'hidden'
 };
 
-function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
+function rowHtml(
+  item: WishlistItem,
+  isOwn = true,
+  wasJustEdited = false,
+  eligibleBuyers: FamilyWishlist['owner'][] = []
+) {
   const wishlist: FamilyWishlist = {
     id: 'list-1',
     owner: { id: 'member-1', displayName: 'Sam' },
@@ -35,6 +40,7 @@ function rowHtml(item: WishlistItem, isOwn = true, wasJustEdited = false) {
           <WishlistItemRow
             wishlist={wishlist}
             item={item}
+            eligibleBuyers={eligibleBuyers}
             wasJustEdited={wasJustEdited}
             onItemEdited={vi.fn()}
             onEditorOpened={vi.fn()}
@@ -114,6 +120,35 @@ describe('extracted wishlist components', () => {
     expect(html).toContain('value="claim-item"');
     expect(html).toContain('I’ll get this');
     expect(html.indexOf('class="wish-footer"')).toBeLessThan(html.indexOf('value="claim-item"'));
+  });
+
+  it('offers assignment only for a visible guest reservation with eligible buyers', () => {
+    const guestItem: WishlistItem = {
+      ...ownItem,
+      claimVisibility: 'visible',
+      claim: {
+        state: 'purchased',
+        claimedByMemberId: null,
+        claimedByDisplayName: 'Guest link',
+        isClaimedByViewer: false,
+        guestReservedAt: '2026-10-01T12:00:00.000Z'
+      }
+    };
+    const buyers = [{ id: 'alex', displayName: 'Alex' }];
+    const html = rowHtml(guestItem, false, false, buyers);
+    expect(html).toContain('Manage guest reservation');
+    expect(html).toContain('<option value="alex">Alex</option>');
+    expect(html).toContain('value="assign-guest"');
+    expect(rowHtml(guestItem, false)).not.toContain('assign-guest');
+    expect(rowHtml(guestItem, true, false, buyers)).not.toContain('assign-guest');
+    expect(
+      rowHtml(
+        { ...guestItem, claim: { ...guestItem.claim!, claimedByMemberId: 'alex' } },
+        false,
+        false,
+        buyers
+      )
+    ).not.toContain('assign-guest');
   });
 
   it.each(['claimed', 'purchased'] as const)(

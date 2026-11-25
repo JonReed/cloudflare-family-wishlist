@@ -12,19 +12,25 @@ import {
   listActiveWishlistShareLinks
 } from '../app/lib/db/shared-wishlists';
 import {
+  assignGuestClaim,
+  listGuestClaimBuyers,
   claimWishlistItem,
   createWishlistItem,
   listFamilyWishlists,
-  releaseGuestClaim
+  releaseGuestClaim,
+  setOwnClaimState
 } from '../app/lib/db/wishlists';
 import { changeGuestClaim, consumeGuestClaimBudget } from '../app/lib/db/guest-claims';
 import { action, loader } from '../app/routes/shared-wishlist';
 import { inviteAndProvisionMember } from './family-fixtures';
 
 const origin = 'https://wishlist.example';
-async function fixture() {
-  const owner = await ensureMemberForEmail(env.DB, 'owner@example.com', 'owner@example.com');
-  const giver = await inviteAndProvisionMember(env.DB, owner, 'giver@example.com');
+async function fixture({ organiserOwnsList = true } = {}) {
+  const organiser = await ensureMemberForEmail(env.DB, 'admin@example.com', 'admin@example.com');
+  const owner = organiserOwnsList
+    ? organiser
+    : await inviteAndProvisionMember(env.DB, organiser, 'owner@example.com');
+  const giver = await inviteAndProvisionMember(env.DB, organiser, 'giver@example.com');
   await createWishlistItem(env.DB, owner.id, owner.wishlistId, {
     title: 'Guest gift',
     notes: '',
@@ -35,7 +41,7 @@ async function fixture() {
   });
   const item = (await listFamilyWishlists(env.DB, owner.id))[0].items[0];
   const token = await createWishlistShareLink(env.DB, owner.id, owner.wishlistId, 'Uncle David');
-  return { owner, giver, item, token };
+  return { organiser, owner, giver, item, token };
 }
 function routeArgs(token: string) {
   const context = new RouterContextProvider();
@@ -160,6 +166,105 @@ describe('link-owned guest reservations', () => {
     ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM claims').first()).toEqual({ n: 1 });
+  });
+
+  it.each(['claimed', 'purchased'] as const)(
+    'transfers a guest gift in its current %s state',
+    async (state) => {
+      const { organiser, owner, giver, item, token } = await fixture({ organiserOwnsList: false });
+      await changeGuestClaim(env.DB, token, item.id, 'claim');
+      const [list] = (await listFamilyWishlists(env.DB, organiser.id)).filter(
+        (list) => list.id === owner.wishlistId
+      );
+      const visible = list.items[0];
+      if (visible.claimVisibility !== 'visible' || !visible.claim?.guestReservedAt)
+        throw new Error('Missing guest reservation');
+      const reservedAt = visible.claim.guestReservedAt;
+      if (state === 'purchased') await changeGuestClaim(env.DB, token, item.id, 'bought');
+      const attempts = await Promise.allSettled(
+        [0, 1].map(() =>
+          assignGuestClaim(env.DB, organiser.id, list.id, item.id, giver.id, reservedAt)
+        )
+      );
+      expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1);
+      expect(
+        (await listFamilyWishlists(env.DB, giver.id)).find((w) => w.id === list.id)?.items[0]
+      ).toMatchObject({
+        claim: {
+          claimedByMemberId: giver.id,
+          claimedByDisplayName: giver.displayName,
+          state,
+          isClaimedByViewer: true
+        }
+      });
+      expect((await listFamilyWishlists(env.DB, owner.id))[0].items[0]).not.toHaveProperty('claim');
+      expect(await reservation(token)).toBe('reserved');
+      await expect(changeGuestClaim(env.DB, token, item.id, 'release')).rejects.toThrow();
+      await setOwnClaimState(
+        env.DB,
+        giver.id,
+        item.id,
+        state === 'claimed' ? 'purchased' : 'claimed'
+      );
+    }
+  );
+
+  it('distinguishes eligible namesakes only in the organiser’s buyer picker', async () => {
+    const { organiser, owner, giver } = await fixture({ organiserOwnsList: false });
+    const second = await inviteAndProvisionMember(
+      env.DB,
+      organiser,
+      'other@example.com',
+      giver.displayName
+    );
+    const choices = () => listGuestClaimBuyers(env.DB, organiser.id, owner.wishlistId);
+    expect(await choices()).toEqual(
+      expect.arrayContaining([
+        { id: giver.id, displayName: `${giver.displayName} (${giver.email})` },
+        { id: second.id, displayName: `${second.displayName} (${second.email})` },
+        { id: organiser.id, displayName: organiser.displayName }
+      ])
+    );
+    expect(await listGuestClaimBuyers(env.DB, giver.id, owner.wishlistId)).toEqual([]);
+    expect(await listGuestClaimBuyers(env.DB, organiser.id, organiser.wishlistId)).toEqual([]);
+    await env.DB.prepare("UPDATE members SET disabled_at = datetime('now') WHERE id = ?")
+      .bind(second.id)
+      .run();
+    expect(await choices()).toHaveLength(2);
+    expect(await choices()).toContainEqual({ id: giver.id, displayName: giver.displayName });
+  });
+
+  it('requires an enabled organiser, a different enabled owner, an eligible buyer and the displayed reservation', async () => {
+    const { organiser, owner, giver, item, token } = await fixture({ organiserOwnsList: false });
+    await changeGuestClaim(env.DB, token, item.id, 'claim');
+    const reservedAt = await env.DB.prepare('SELECT created_at FROM claims WHERE item_id = ?1')
+      .bind(item.id)
+      .first<string>('created_at');
+    if (!reservedAt) throw new Error('Missing guest reservation');
+    const assign = (
+      actor = organiser.id,
+      buyer = giver.id,
+      wishlist = owner.wishlistId,
+      created = reservedAt
+    ) => assignGuestClaim(env.DB, actor, wishlist, item.id, buyer, created);
+    await expect(assign(giver.id)).rejects.toThrow();
+    await expect(assign(organiser.id, owner.id)).rejects.toThrow();
+    await expect(assign(organiser.id, 'invalid')).rejects.toThrow();
+    await expect(assign(organiser.id, crypto.randomUUID())).rejects.toThrow();
+    await expect(assign(organiser.id, giver.id, organiser.wishlistId)).rejects.toThrow();
+    await expect(
+      assign(organiser.id, giver.id, owner.wishlistId, 'previous reservation')
+    ).rejects.toThrow();
+    for (const id of [organiser.id, giver.id, owner.id]) {
+      await env.DB.prepare("UPDATE members SET disabled_at = datetime('now') WHERE id = ?")
+        .bind(id)
+        .run();
+      await expect(assign()).rejects.toThrow();
+      await env.DB.prepare('UPDATE members SET disabled_at = NULL WHERE id = ?').bind(id).run();
+    }
+    await env.DB.prepare("UPDATE members SET role = 'admin' WHERE id = ?").bind(owner.id).run();
+    await expect(assign(owner.id)).rejects.toThrow();
+    expect(await reservation(token)).toBe('yours');
   });
 
   it('permits exactly one concurrent claim from different links and rejects repeat submissions', async () => {

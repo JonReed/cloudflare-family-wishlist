@@ -647,8 +647,12 @@ after revocation, or “A guest” for old browser-owned reservations. No claima
 Mutation budgets are atomic D1 counters: 200 attempts per sharing link per UTC hour, including
 unsuccessful reservations. The original and displayed addresses share the counter across devices.
 Admitted requests prune counter rows older than 24 hours. Revocation removes access, not reservations.
-An enabled family member other than the owner can explicitly clear guest reservations; member claims
-retain their existing ownership rules. No extra Cloudflare binding, token or dashboard setup is needed.
+An enabled family member other than the owner can explicitly clear guest reservations. On someone
+else's wishlist, the organiser can also assign a guest reservation to an enabled member other
+than the owner. One conditional update checks the role, members, list, item and guest reservation
+creation time, then replaces its guest hash and link name with the buyer's member ID. The gift
+keeps its current state, including a purchase marked since the organiser opened the form.
+Subsequent changes follow the existing member claim rules.
 
 ## Cookie transparency
 

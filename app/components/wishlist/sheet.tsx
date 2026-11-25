@@ -15,7 +15,13 @@ function focusEditError(form: HTMLFormElement): void {
   if (error instanceof HTMLElement) error.focus({ preventScroll: true });
 }
 
-export function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
+export function WishlistSheet({
+  wishlist,
+  eligibleBuyers
+}: {
+  wishlist: FamilyWishlist;
+  eligibleBuyers: FamilyWishlist['owner'][];
+}) {
   const [lastEditedItemId, setLastEditedItemId] = useState<string | null>(null);
   const sheetRef = useRef<HTMLElement>(null);
   const removalRef = useRef<{ itemId: string; candidates: string[] } | null>(null);
@@ -95,6 +101,7 @@ export function WishlistSheet({ wishlist }: { wishlist: FamilyWishlist }) {
               key={item.id}
               wishlist={wishlist}
               item={item}
+              eligibleBuyers={eligibleBuyers}
               wasJustEdited={lastEditedItemId === item.id}
               onItemEdited={handleItemEdited}
               onEditorOpened={handleEditorOpened}

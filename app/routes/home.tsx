@@ -3,12 +3,14 @@ import { cloudflareContext, identityContext, organiserEmailForRequest } from '..
 import { ensureMemberForEmail } from '../lib/db/members';
 import {
   listFamilyWishlists,
+  listGuestClaimBuyers,
   WishlistInputError,
   type ItemInput,
   createWishlistItem,
   updateWishlistItem,
   deleteWishlistItem,
   claimWishlistItem,
+  assignGuestClaim,
   releaseGuestClaim,
   setOwnClaimState,
   unclaimWishlistItem
@@ -50,7 +52,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const requestedWishlistId = new URL(request.url).searchParams.get('list');
   const activeWishlist =
     wishlists.find((wishlist) => wishlist.id === requestedWishlistId) ?? wishlists[0] ?? null;
-  return { member, wishlists, activeWishlist };
+  const eligibleBuyers =
+    member.role === 'admin' &&
+    activeWishlist &&
+    !activeWishlist.isOwn &&
+    activeWishlist.items.some(
+      (item) => item.claimVisibility === 'visible' && item.claim?.guestReservedAt
+    )
+      ? await listGuestClaimBuyers(env.DB, member.id, activeWishlist.id)
+      : [];
+  return { member, wishlists, activeWishlist, eligibleBuyers };
 }
 
 function formString(formData: FormData, name: string): string {
@@ -154,6 +165,16 @@ export async function action({ request, context }: Route.ActionArgs) {
       case 'release-guest':
         await releaseGuestClaim(env.DB, member.id, formString(formData, 'itemId'));
         return { wishlistId, updated: 'unclaim' as const };
+      case 'assign-guest':
+        await assignGuestClaim(
+          env.DB,
+          member.id,
+          wishlistId,
+          formString(formData, 'itemId'),
+          formString(formData, 'buyerId'),
+          formString(formData, 'guestReservedAt')
+        );
+        return { wishlistId, updated: 'claim' as const };
       case 'unclaim-item':
         await unclaimWishlistItem(env.DB, member.id, formString(formData, 'itemId'));
         return { wishlistId, updated: 'unclaim' as const };
@@ -176,7 +197,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData, actionData }: Route.ComponentProps) {
-  const { member, wishlists, activeWishlist } = loaderData;
+  const { member, wishlists, activeWishlist, eligibleBuyers } = loaderData;
 
   return (
     <div className="site-shell">
@@ -209,7 +230,11 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 
           {activeWishlist ? (
             <div className="wishlist-workspace">
-              <WishlistSheet key={activeWishlist.id} wishlist={activeWishlist} />
+              <WishlistSheet
+                key={activeWishlist.id}
+                wishlist={activeWishlist}
+                eligibleBuyers={eligibleBuyers}
+              />
               <AddWishPanel wishlist={activeWishlist} actionData={actionData} />
             </div>
           ) : (

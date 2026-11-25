@@ -2942,6 +2942,17 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.wish-footer .guest-claim-controls,
+.assign-guest-form > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.assign-guest-form {
+  align-items: end;
+  margin-block: 0.75rem 1rem;
+}
+
 .footer-privacy {
   grid-column: 1 / -1;
   font-size: 0.85rem;

@@ -21,13 +21,20 @@ export function ClaimStatus({ wishlist, item }: ClaimProps) {
   );
 }
 
-export function ClaimControls({ wishlist, item }: ClaimProps) {
+export function ClaimControls({
+  wishlist,
+  item,
+  eligibleBuyers
+}: ClaimProps & {
+  eligibleBuyers: FamilyWishlist['owner'][];
+}) {
   if (wishlist.isOwn || item.claimVisibility === 'hidden') return null;
-  if (item.claim && !item.claim.claimedByMemberId)
-    return (
+  if (item.claim && !item.claim.claimedByMemberId) {
+    const reservedAt = item.claim.guestReservedAt;
+    const clearReservation = (
       <details className="guest-claim-controls">
         <summary>Clear a guest reservation</summary>
-        <p>Check with the guest first so this gift is not bought twice.</p>
+        <p>Clearing makes this gift available again. Check with the guest first.</p>
         <form method="post" action={wishlistFormAction(wishlist.id)}>
           <ActionFields wishlistId={wishlist.id} itemId={item.id} />
           <button className="button-quiet" name="intent" value="release-guest">
@@ -36,6 +43,57 @@ export function ClaimControls({ wishlist, item }: ClaimProps) {
         </form>
       </details>
     );
+    if (!eligibleBuyers.length || !reservedAt) return clearReservation;
+    return (
+      <details className="guest-claim-controls">
+        <summary>Manage guest reservation</summary>
+        <InPlaceActionForm
+          method="post"
+          action={wishlistFormAction(wishlist.id)}
+          actionKey={`assign:${item.id}`}
+          className="assign-guest-form"
+        >
+          {({ isPending }) => (
+            <>
+              <ActionFields wishlistId={wishlist.id} itemId={item.id} />
+              <input type="hidden" name="guestReservedAt" value={reservedAt} />
+              <div>
+                <label className="form-label" htmlFor={`buyer-${item.id}`}>
+                  Gift buyer
+                </label>
+                <select
+                  className="form-control"
+                  id={`buyer-${item.id}`}
+                  name="buyerId"
+                  disabled={isPending}
+                  required
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Choose a family member
+                  </option>
+                  {eligibleBuyers.map((buyer) => (
+                    <option key={buyer.id} value={buyer.id}>
+                      {buyer.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="button-primary"
+                name="intent"
+                value="assign-guest"
+                disabled={isPending}
+              >
+                {isPending ? 'Assigning…' : 'Assign reservation'}
+              </button>
+            </>
+          )}
+        </InPlaceActionForm>
+        {clearReservation}
+      </details>
+    );
+  }
   if (item.claim && !item.claim.isClaimedByViewer) return null;
   const bought = item.claim?.state === 'purchased';
   const intent = !item.claim ? 'claim-item' : bought ? 'mark-not-purchased' : 'mark-purchased';

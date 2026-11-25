@@ -8,6 +8,7 @@ export type ClaimState = (typeof CLAIM_STATES)[number];
 
 type ClaimDetails = {
   state: ClaimState;
+  guestReservedAt?: string;
   claimedByMemberId: string | null;
   claimedByDisplayName: string;
   isClaimedByViewer: boolean;
@@ -61,6 +62,7 @@ type WishlistRow = {
   item_priority: ItemPriority | null;
   item_position: number | null;
   claim_state: ClaimState | null;
+  guest_reserved_at: string | null;
   claimed_by_member_id: string | null;
   claimed_by_display_name: string | null;
 };
@@ -92,6 +94,7 @@ const LIST_FAMILY_WISHLISTS = `
     items.priority AS item_priority,
     items.position AS item_position,
     claims.state AS claim_state,
+    CASE WHEN claims.guest_token_hash IS NOT NULL THEN claims.created_at END AS guest_reserved_at,
     claims.claimed_by_member_id,
     COALESCE(claimants.display_name, claims.share_link_name) AS claimed_by_display_name
   FROM wishlists
@@ -244,6 +247,7 @@ export async function listFamilyWishlists(
     const claim = row.claim_state
       ? {
           state: row.claim_state,
+          ...(row.guest_reserved_at ? { guestReservedAt: row.guest_reserved_at } : {}),
           claimedByMemberId: row.claimed_by_member_id,
           claimedByDisplayName: row.claimed_by_display_name ?? 'A guest',
           isClaimedByViewer: row.claimed_by_member_id === viewerId
@@ -517,6 +521,67 @@ export async function unclaimWishlistItem(
     .run();
 
   requireChanged(result, 'Only the person getting this gift can leave it for someone else.');
+}
+
+/** Only the organiser's picker needs sign-in emails to distinguish namesakes. */
+export async function listGuestClaimBuyers(
+  db: D1Database,
+  actorMemberId: string,
+  wishlistId: string
+): Promise<FamilyWishlist['owner'][]> {
+  const { results } = await db
+    .prepare(
+      `SELECT buyers.id, CASE WHEN COUNT(*) OVER (PARTITION BY buyers.display_name COLLATE NOCASE) > 1
+         THEN buyers.display_name || ' (' || buyers.email || ')' ELSE buyers.display_name END AS displayName
+       FROM members AS buyers
+       JOIN wishlists ON wishlists.id = ?1
+       JOIN members AS owners ON owners.id = wishlists.owner_member_id
+       WHERE buyers.disabled_at IS NULL AND owners.disabled_at IS NULL
+         AND owners.id NOT IN (buyers.id, ?2)
+         AND EXISTS (SELECT 1 FROM members WHERE id = ?2 AND role = 'admin' AND disabled_at IS NULL)
+       ORDER BY buyers.display_name COLLATE NOCASE, buyers.email`
+    )
+    .bind(wishlistId, actorMemberId)
+    .all<FamilyWishlist['owner']>();
+  return results;
+}
+
+export async function assignGuestClaim(
+  db: D1Database,
+  actorMemberId: string,
+  wishlistId: string,
+  itemId: string,
+  buyerId: string,
+  guestReservedAt: string
+): Promise<void> {
+  const result = await db
+    .prepare(
+      `UPDATE claims
+       SET claimed_by_member_id = ?1, guest_token_hash = NULL, share_link_name = NULL,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+       WHERE item_id = ?2 AND guest_token_hash IS NOT NULL AND created_at = ?3
+         AND EXISTS (SELECT 1 FROM members WHERE id = ?4 AND role = 'admin' AND disabled_at IS NULL)
+         AND EXISTS (SELECT 1 FROM members WHERE id = ?1 AND disabled_at IS NULL)
+         AND EXISTS (
+           SELECT 1 FROM items
+           JOIN wishlists ON wishlists.id = items.wishlist_id
+           JOIN members AS owners ON owners.id = wishlists.owner_member_id
+           WHERE items.id = claims.item_id AND wishlists.id = ?5
+             AND owners.disabled_at IS NULL AND owners.id NOT IN (?1, ?4)
+         )`
+    )
+    .bind(
+      requireUuid(buyerId, 'The selected family member'),
+      requireUuid(itemId, 'The item'),
+      guestReservedAt,
+      requireUuid(actorMemberId, 'The signed-in member'),
+      requireUuid(wishlistId, 'The wishlist')
+    )
+    .run();
+  requireChanged(
+    result,
+    'This reservation could not be assigned. Refresh the wishlist and try again.'
+  );
 }
 
 /** Recover an abandoned guest reservation without exposing it to its wishlist owner. */

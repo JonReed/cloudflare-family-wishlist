@@ -25,6 +25,7 @@ const priorityLabels = {
 export function WishlistItemRow({
   wishlist,
   item,
+  eligibleBuyers,
   wasJustEdited,
   onItemEdited,
   onEditorOpened,
@@ -33,6 +34,7 @@ export function WishlistItemRow({
 }: {
   wishlist: FamilyWishlist;
   item: WishlistItem;
+  eligibleBuyers: FamilyWishlist['owner'][];
   wasJustEdited: boolean;
   onItemEdited: (itemId: string, form: HTMLFormElement) => void;
   onEditorOpened: () => void;
@@ -105,7 +107,7 @@ export function WishlistItemRow({
               </a>
             ) : null}
           </div>
-          <ClaimControls wishlist={wishlist} item={item} />
+          <ClaimControls wishlist={wishlist} item={item} eligibleBuyers={eligibleBuyers} />
           <span className="edit-saved-status" role="status" aria-live="polite">
             {wasJustEdited ? 'Changes saved.' : ''}
           </span>

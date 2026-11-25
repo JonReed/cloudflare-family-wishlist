@@ -141,6 +141,9 @@ the sharing link's name against its reservations; that name is retained if the l
 The owner can also use the link and see or manage its reservations; that trade-off is explicitly
 accepted. Another enabled family member, excluding the list owner, can clear an abandoned guest
 reservation after confirmation. Revoking a link blocks further access without deleting reservations.
+On another person's wishlist, the organiser can assign an individual guest reservation to its
+buyer once that person is an enabled family member. The buyer can then manage it from their
+account. The gift keeps its buying status and every public link shows it as reserved.
 Older browser-owned reservations remain reserved because their originating link was not recorded;
 a family member other than the owner can clear them after checking with the guest.
 
@@ -221,7 +224,7 @@ The reference project stays delightfully small and family-centred:
 - private, invitation-only family spaces with optional sharing links with guest reservations;
 - one useful year-round wishlist per person;
 - Cloudflare-managed one-time PIN sign-in;
-- shared family editing with a single organiser role for admission;
+- shared family editing with one organiser who manages admission and can assign guest reservations;
 - clear high, normal and low priorities;
 - one independent deployment per family;
 - a calm, ad-free experience without affiliate tracking or analytics scripts; and
