@@ -136,10 +136,16 @@ describe('extracted wishlist components', () => {
     };
     const buyers = [{ id: 'alex', displayName: 'Alex' }];
     const html = rowHtml(guestItem, false, false, buyers);
-    expect(html).toContain('Manage guest reservation');
+    expect(html).toContain(
+      'Guest link has bought this</p><details class="guest-reservation-dialog"><summary class="button-text">Manage reservation</summary>'
+    );
+    expect(html.indexOf('Manage reservation')).toBeLessThan(html.indexOf('class="wish-footer"'));
+    expect(html).toContain('value="release-guest"');
     expect(html).toContain('<option value="alex">Alex</option>');
     expect(html).toContain('value="assign-guest"');
     expect(rowHtml(guestItem, false)).not.toContain('assign-guest');
+    expect(rowHtml(guestItem, false)).toContain('Manage reservation');
+    expect(rowHtml(guestItem, true, false, buyers)).not.toContain('Manage reservation');
     expect(rowHtml(guestItem, true, false, buyers)).not.toContain('assign-guest');
     expect(
       rowHtml(

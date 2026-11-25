@@ -51,6 +51,7 @@ function DialogContent({
 /** Native disclosure without JS; a top-layer dialog after hydration. */
 export function ActionDialog({
   trigger,
+  triggerClassName,
   title,
   className,
   compact = false,
@@ -59,6 +60,7 @@ export function ActionDialog({
   children
 }: {
   trigger: ReactNode;
+  triggerClassName?: string;
   title: string;
   className: string;
   compact?: boolean;
@@ -129,7 +131,7 @@ export function ActionDialog({
           if (event.currentTarget.open) onOpen?.();
         }}
       >
-        <summary>{trigger}</summary>
+        <summary className={triggerClassName}>{trigger}</summary>
         {children({ close: () => {}, requestClose: () => {}, enhanced: false })}
       </details>
     );
@@ -139,7 +141,9 @@ export function ActionDialog({
       <button
         ref={triggerRef}
         type="button"
-        className="action-dialog-trigger"
+        className={
+          triggerClassName ? `action-dialog-trigger ${triggerClassName}` : 'action-dialog-trigger'
+        }
         aria-haspopup="dialog"
         onClick={() => {
           setConfirmDiscard(false);

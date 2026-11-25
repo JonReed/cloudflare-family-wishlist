@@ -68,6 +68,7 @@
     "../app/components/wishlist/item-fields.tsx",
     "../app/components/wishlist/form-fields.tsx",
     "../app/components/wishlist/claim-controls.tsx",
+    "../app/components/wishlist/guest-reservation-dialog.tsx",
     "../app/components/wishlist/gift-label.tsx",
     "../app/components/wishlist/wish-title.tsx",
     "../app/components/wishlist/more-actions.tsx",

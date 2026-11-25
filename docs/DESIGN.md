@@ -171,6 +171,9 @@ Preserve the complete saved title and show it in full when enhancement is unavai
 and priority labels outside the clipped title.
 
 Show gift status as a quiet sentence below the details, without a boxed panel or heavy vertical rule.
+Place the small underlined **Manage reservation** link immediately after a guest’s buying status.
+Open assignment and clearing in the compact action dialog. Keep the wishlist stationary while
+the dialog is open and keep the clear confirmation inside it.
 The wrapping action line contains the
 shop link and relevant buying controls, with a small “Edit this wish ▾” disclosure at the right for Edit and
 Remove. Keep touch targets at least 44px high. The footer must reach the same right edge whether a

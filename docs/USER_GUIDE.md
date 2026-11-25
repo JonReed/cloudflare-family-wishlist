@@ -134,10 +134,10 @@ shares those reservations. You do not need cookies, a recovery code or another s
 
 The family sees the name given to your sharing link against the gifts you reserve. Stopping the
 link preserves reservations so gifts are not bought twice. A family member other than the recipient
-can open **Clear a guest reservation** and confirm after checking it should be released. The
-organiser finds this option under **Manage guest reservation**.
+can use the small **Manage reservation** link beside the buying status to clear it after checking
+with the guest. The organiser chooses **Clear reservation…** inside the dialog.
 
-If the guest joins the family, the organiser can open **Manage guest reservation** on someone
+If the guest joins the family, the organiser can open **Manage reservation** on someone
 else’s wishlist, choose the **Gift buyer**, then select **Assign reservation**. If buyers share
 a name, their sign-in emails distinguish them in the organiser’s picker. The wish shows
 that member’s name and keeps its “getting this” or “bought this” status. The buyer can manage it

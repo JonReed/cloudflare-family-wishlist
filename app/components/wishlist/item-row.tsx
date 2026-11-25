@@ -95,7 +95,7 @@ export function WishlistItemRow({
                 About {formatPrice(item.priceAmountMinor, item.priceCurrency)}
               </p>
             ) : null}
-            <ClaimStatus wishlist={wishlist} item={item} />
+            <ClaimStatus wishlist={wishlist} item={item} eligibleBuyers={eligibleBuyers} />
           </div>
         </div>
 
@@ -107,7 +107,7 @@ export function WishlistItemRow({
               </a>
             ) : null}
           </div>
-          <ClaimControls wishlist={wishlist} item={item} eligibleBuyers={eligibleBuyers} />
+          <ClaimControls wishlist={wishlist} item={item} />
           <span className="edit-saved-status" role="status" aria-live="polite">
             {wasJustEdited ? 'Changes saved.' : ''}
           </span>

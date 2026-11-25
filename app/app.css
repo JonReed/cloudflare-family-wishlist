@@ -2942,15 +2942,34 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.wish-footer .guest-claim-controls,
-.assign-guest-form > div {
-  min-width: 0;
-  max-width: 100%;
+.guest-reservation-status {
+  margin-top: 0.6rem;
 }
 
-.assign-guest-form {
-  align-items: end;
-  margin-block: 0.75rem 1rem;
+.guest-reservation-status > .wish-gift-status,
+.guest-reservation-dialog:not([open]) {
+  display: inline;
+}
+
+.guest-reservation-dialog > .button-text {
+  margin-inline-start: 0.4rem;
+  margin-block: -0.55rem;
+  vertical-align: baseline;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.guest-reservation-dialog form {
+  min-width: 0;
+}
+
+.guest-reservation-dialog form p {
+  margin: 0 0 1rem;
+  overflow-wrap: anywhere;
+}
+
+.guest-reservation-dialog select:enabled {
+  cursor: pointer;
 }
 
 .footer-privacy {
