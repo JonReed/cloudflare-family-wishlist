@@ -3,6 +3,7 @@ import { data, Form, redirect } from 'react-router';
 import { AddFamilyMemberForm } from '../components/add-family-member-form';
 import { FamilyMemberRemoval } from '../components/family-member-removal';
 import { FamilySharing } from '../components/family-sharing';
+import { FamilyPersonAvatar } from '../components/member-avatar';
 import { PageContents } from '../components/page-contents';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
@@ -300,9 +301,7 @@ function FamilyPersonRow({
 
   return (
     <li className="family-person">
-      <span className="family-person-initial" aria-hidden="true">
-        {person.displayName.charAt(0).toUpperCase() || '•'}
-      </span>
+      <FamilyPersonAvatar person={person} />
 
       <div className="family-person-details">
         <div className="family-person-heading">

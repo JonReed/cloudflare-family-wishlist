@@ -46,6 +46,8 @@ the full name remains available in the link's title. Keep the current destinatio
 navigation links with a quiet strip of parcel tape.
 
 Show the owner's Gravatar beside the active wishlist heading and a larger preview on Profile.
+On Manage, use the same photo for joined members and for invited members whose accounts are ready.
+Show initials for entries awaiting setup or removal.
 Use restrained square photos with slightly softened corners; missing or unavailable photos show
 the person's initials. The photo repeats the adjacent name, so it has empty alternative text.
 Profile links to Gravatar with guidance to create or change a photo using the same sign-in email.

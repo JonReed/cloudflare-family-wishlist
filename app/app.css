@@ -2335,6 +2335,12 @@ button:disabled {
   padding-block: 1.35rem;
 }
 
+.family-person > .member-avatar {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
 .family-person-initial {
   display: grid;
   width: 3.1rem;
@@ -2723,6 +2729,7 @@ button:disabled {
 
   .family-invite-copy {
     grid-column: 2;
+    grid-template-columns: minmax(0, 1fr);
     justify-items: start;
   }
 

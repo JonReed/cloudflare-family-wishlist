@@ -1,4 +1,16 @@
 import { avatarInitials } from '../lib/avatar-initials';
+import type { FamilyPerson } from '../lib/db/family-members';
+
+export function FamilyPersonAvatar({ person }: { person: FamilyPerson }) {
+  const memberId =
+    person.status === 'joined' ? person.id : person.status === 'waiting' ? person.memberId : null;
+  if (memberId) return <MemberAvatar member={{ id: memberId, displayName: person.displayName }} />;
+  return (
+    <span className="family-person-initial" aria-hidden="true">
+      {avatarInitials(person.displayName)}
+    </span>
+  );
+}
 
 export function MemberAvatar({
   member,

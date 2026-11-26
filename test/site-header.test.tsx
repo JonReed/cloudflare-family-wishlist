@@ -2,7 +2,27 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { SiteHeader } from '../app/components/site-header';
-import { MemberAvatar } from '../app/components/member-avatar';
+import { FamilyPersonAvatar, MemberAvatar } from '../app/components/member-avatar';
+import type { FamilyPerson } from '../app/lib/db/family-members';
+
+describe('family roster avatars', () => {
+  const person = { id: 'row-id', displayName: 'Jamie Reed', email: 'jamie@example.test' };
+  it.each<[FamilyPerson, string | null]>([
+    [{ ...person, status: 'joined', role: 'member', joinedAt: '' }, person.id],
+    [{ ...person, status: 'waiting', memberId: 'member-id', invitedAt: '' }, 'member-id'],
+    [{ ...person, status: 'waiting', memberId: null, invitedAt: '' }, null],
+    [{ ...person, status: 'attention', invitedAt: '' }, null],
+    [{ ...person, status: 'removing', joinedAt: '' }, null]
+  ])('uses the active member identity or local initials for %j', (row, memberId) => {
+    const html = renderToStaticMarkup(<FamilyPersonAvatar person={row} />);
+    if (memberId) expect(html).toContain(`src="/avatar/${memberId}?initials=JR"`);
+    else {
+      expect(html).toContain('>JR</span>');
+      expect(html).not.toContain('/avatar/');
+    }
+    expect(html).not.toContain(person.email);
+  });
+});
 
 describe('SiteHeader', () => {
   it('keeps the large profile preview styled and its image address private', () => {
