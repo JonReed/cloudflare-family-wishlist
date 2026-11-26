@@ -63,7 +63,7 @@ describe('shared wishlist reservation presentation', () => {
       expect(html).not.toContain('recoveryCode');
       expect(html).not.toContain('confirm-claim');
       expect(html).toContain('data-cookie-notice="true" hidden=""');
-      expect(html).toContain('<summary>Cookies &amp; privacy</summary>');
+      expect(html).toMatch(/<a href="\/shared\/cookies"[^>]*>Cookies &amp; privacy<\/a>/);
       expect(html).not.toContain('aria-label="Shared wishlists"');
       expect(html).toContain('<h3 id="wish-title-wish-1">A good book</h3>');
       expect(html).toContain('<summary aria-controls="wish-title-wish-1">');

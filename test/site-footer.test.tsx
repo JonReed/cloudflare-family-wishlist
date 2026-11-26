@@ -1,19 +1,37 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
+import CookiesPage from '../app/routes/cookies';
 import { version } from '../package.json';
 
 import { SiteFooter } from '../app/components/site-footer';
 
 describe('site footer', () => {
-  it('keeps cookie information in a native footer disclosure with an initially hidden introduction', () => {
+  it('links to the standalone privacy page from the project footer and one-time banner', () => {
     const html = renderToStaticMarkup(<SiteFooter />);
+    const [projectFooter, cookieFooter] = html.split('</footer>');
 
-    expect(html).toContain('aria-label="Cookie information" data-cookie-notice="true" hidden=""');
-    expect(html).toContain('<summary>Cookies &amp; privacy</summary>');
-    expect(html).toContain('id="cookie-information"');
-    expect(html).toContain('data-dismiss-cookie-notice="true"');
+    expect(projectFooter).toMatch(/<a href="\/shared\/cookies"[^>]*>Cookies &amp; privacy<\/a>/);
+    expect(cookieFooter).toMatch(
+      /<a href="\/shared\/cookies"[^>]*>Read about cookies and privacy<\/a>/
+    );
+    expect(html).not.toContain('<details');
+    expect(projectFooter).not.toContain('data-cookie-notice');
+    expect(cookieFooter).toContain(
+      '<footer class="cookie-notice" aria-label="Cookie information" data-cookie-notice="true" hidden=""'
+    );
+    expect(cookieFooter).toContain('data-dismiss-cookie-notice="true"');
     expect(html).not.toMatch(/accept|agree|consent/i);
+  });
+
+  it('renders the full privacy information without credentials or script-dependent controls', () => {
+    const html = renderToStaticMarkup(<CookiesPage />);
+    expect(html).toContain('<h1>Cookies &amp; privacy</h1>');
+    expect(html).toContain('CF_Authorization');
+    expect(html).toContain('wishlist-cookie-notice-seen');
+    expect(html).toContain('<h2>Guest reservations</h2>');
+    expect(html).not.toContain('data-cookie-notice');
+    expect(html).not.toContain('<details');
   });
 
   it('links the project name to the brochure site and keeps repository resources available', () => {

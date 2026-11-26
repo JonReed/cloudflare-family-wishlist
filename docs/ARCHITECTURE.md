@@ -45,7 +45,7 @@ signature, issuer, application audience, expiry and required identity claims bef
 email, giving every production request two complementary identity checks.
 
 Revocable viewing links use a deliberately configured, path-specific Access Bypass. The Worker
-independently recognises GET/HEAD on exact `/shared/<secret>` list paths, plus POST on
+independently recognises GET/HEAD on the static `/shared/cookies` page and exact `/shared/<secret>` list paths, plus POST on
 the exact list path for guest reservations. Neighbouring paths and all other mutations require Access. More-specific Access
 paths also expose the compiled stylesheet, gift-tag decoration and small cookie-notice, picture-failure and expandable-title helpers under `/shared-assets/*`,
 plus the favicon needed to render that public page. Authenticated JavaScript bundles, the web manifest and install icons remain
@@ -656,17 +656,22 @@ Subsequent changes follow the existing member claim rules.
 
 ## Cookie transparency
 
-`SiteFooter` includes `CookieNotice` on family pages, shared views and route error pages. Its permanent
-**Cookies & privacy** native disclosure works without JavaScript. Links target its disclosure content,
-opening the explanation before scrolling to it. The small nonce-protected `cookie-notice.js` helper
+`SiteFooter` renders the project footer with a link to `/shared/cookies`, followed by a separate `CookieBanner`
+footer on family pages, shared views and route error pages. The banner is fixed to the bottom of the
+viewport, independent of page length. The footer and banner link directly to the server-rendered **Cookies & privacy** page.
+The privacy page uses the existing shared-path Access bypass. It renders without browser scripts, identity or database access.
+The links suppress the referrer so a sharing token stays out of the privacy request. The small nonce-protected `cookie-notice.js` helper
 shows an introduction once per browser, automatically setting the fixed local preference
 `wishlist-cookie-notice-seen=1` when shown. It is display state, not acceptance, an identifier or a
-server-side record. Later visits and newly rendered footers skip the introduction. An optional Close
-button hides it immediately. If storage is unavailable, only the permanent disclosure appears.
+server-side record. The helper measures the visible bar with `ResizeObserver` and updates a
+nonce-protected style element to reserve its height. This keeps page controls and the project footer
+reachable above it without relaxing CSP or adding inline style attributes. Closing the bar or
+navigating away clears that space. Later visits and newly rendered footers skip the introduction. An optional Close
+button hides it immediately. If storage is unavailable, only the permanent footer link appears.
 Without JavaScript, the introduction stays hidden and the full explanation remains accessible.
 The notice lists Cloudflare Access cookies, purposes, lifetimes and the effects of deleting or
 blocking them. It explains that shared-link reservations work without cookies. Shared pages use
-the same one-time notice and permanent footer disclosure as family pages, with no extra introduction. There are no app analytics, advertising scripts,
+the same one-time notice and privacy page link as family pages, with no extra introduction. There are no app analytics, advertising scripts,
 localStorage or sessionStorage identifiers. The local notice preference contains only the fixed value
 `1` and is never sent to the server. See [Cookie operation](COOKIES.md) for the UK assessment
 and the installation operator's responsibilities.

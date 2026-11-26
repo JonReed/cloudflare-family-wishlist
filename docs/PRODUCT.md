@@ -169,8 +169,9 @@ family admission controls on the same page remain organiser-only.
 Family Wishlist’s own cookies support family sign-in and security only. Shared-link reservations
 work without cookies.
 Explain them and the separate privacy/cookie behavior of external picture hosts site-wide
-through the permanent footer disclosure. The footer introduction
-appears once per browser, remembered automatically with a fixed local preference; it never requires
+on a standalone **Cookies & privacy** page linked from the footer, available to signed-out shared-link visitors. A separate introduction
+bar stays at the bottom of the screen regardless of page length. It appears once per browser,
+remembered automatically with a fixed local preference; it never requires
 acceptance. Shared-link browsing and reservation actions do not create or renew a guest cookie.
 Do not add advertising or analytics tracking without revisiting the notice and applicable consent rules.
 

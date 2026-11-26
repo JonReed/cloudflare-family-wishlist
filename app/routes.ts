@@ -11,5 +11,6 @@ export default [
     route('product-details', 'routes/product-details.ts'),
     route('share-target', 'routes/share-target.ts')
   ]),
+  route('shared/cookies', 'routes/cookies.tsx'),
   route('shared/:token', 'routes/shared-wishlist.tsx')
 ] satisfies RouteConfig;

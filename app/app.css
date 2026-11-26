@@ -76,11 +76,13 @@
   html {
     background: var(--canvas);
     scroll-behavior: smooth;
+    scroll-padding-bottom: var(--cookie-notice-height, 0px);
   }
 
   body {
     min-width: 320px;
     margin: 0;
+    padding-bottom: var(--cookie-notice-height, 0px);
     background-color: var(--canvas);
     background-image:
       radial-gradient(circle at 15% 18%, rgb(255 255 255 / 0.25) 0 1px, transparent 1.5px),
@@ -113,7 +115,7 @@
 
 .site-shell {
   display: flex;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--cookie-notice-height, 0px));
   flex-direction: column;
 }
 
@@ -3020,15 +3022,21 @@ button:disabled {
   cursor: pointer;
 }
 
-.footer-privacy {
-  grid-column: 1 / -1;
+.cookie-notice {
+  position: fixed;
+  z-index: 10;
+  inset-inline: 0;
+  bottom: 0;
+  max-height: 50dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+  padding: 1rem max(1.25rem, calc((100vw - 90rem) / 2)) calc(1rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgb(48 51 41 / 0.08);
+  color: var(--ink);
   font-size: 0.85rem;
   line-height: 1.6;
-}
-.cookie-notice {
-  margin-bottom: 0.75rem;
-  border: 1px solid rgb(244 234 216 / 0.25);
-  padding: 1rem;
 }
 .cookie-notice:not([hidden]) {
   display: flex;
@@ -3040,31 +3048,28 @@ button:disabled {
   flex: 1 1 24rem;
 }
 .cookie-notice button {
+  cursor: pointer;
   min-height: 2.75rem;
   border: 1px solid currentColor;
   padding-inline: 1rem;
   font-weight: 600;
 }
-.cookie-details summary {
-  cursor: pointer;
-  width: fit-content;
-  min-height: 2.75rem;
-  padding-block: 0.65rem;
-  font-weight: 600;
-}
-.cookie-details summary:focus-visible,
 .cookie-notice button:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 4px;
 }
 .cookie-information {
   max-width: 48rem;
-  padding-block: 0.5rem 1rem;
+  line-height: 1.65;
   overflow-wrap: anywhere;
 }
+.cookie-information .wishlist-heading {
+  margin-bottom: 1rem;
+}
 .cookie-information h2 {
-  margin: 1rem 0 0.35rem;
-  font-size: 1rem;
+  margin: 1.75rem 0 0.4rem;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
   font-weight: 600;
 }
 .cookie-information p + p {

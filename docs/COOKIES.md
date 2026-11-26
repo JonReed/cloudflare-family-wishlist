@@ -1,8 +1,10 @@
 # Cookie operation
 
-Family Wishlist keeps cookie information in the footer on signed-in pages, shared lists and
-application error pages. **Cookies & privacy** always opens its explanation. An introduction appears
-once per browser, with an optional Close button and no acceptance step. It records that it was shown
+Family Wishlist links to a standalone **Cookies & privacy** page from the footer on signed-in pages, shared lists and
+application error pages. Anyone with access to a shared wishlist can also open `/shared/cookies` directly without signing in. An introduction appears
+once per browser in a separate bar fixed to the bottom of the screen, with an optional Close button
+and no acceptance step. It stays visible when scrolling long pages and reserves space so the last
+page controls and footer links remain reachable. It records that it was shown
 automatically, so you do not need to click anything to prevent it appearing on later visits.
 Cloudflare's own login/challenge pages are served by Cloudflare, outside the app layout.
 
@@ -19,7 +21,7 @@ The repository has no advertising/analytics scripts or local/session storage ide
 nonce-protected helper stores only the fixed local preference `wishlist-cookie-notice-seen=1` after
 showing the introduction. This is not consent or a visitor identifier, is never sent to the server,
 and lasts until site data is cleared. If storage is unavailable, the introduction stays hidden rather
-than repeating. Without JavaScript, the permanent native footer disclosure still opens normally.
+than repeating. Without JavaScript, the footer link still opens the full page.
 
 ## UK basis and limits
 
@@ -37,9 +39,10 @@ UK GDPR duties, where applicable, are separate from the cookie consent exception
 ## Check a deployment
 
 1. Open a shared link in a new private browser window with JavaScript enabled.
-   **Done when:** the introduction appears inside the footer and no cookie strip appears above the page.
+   **Done when:** the introduction appears in a separate bar at the bottom of the screen, stays there
+   while scrolling, and no cookie strip appears above the page.
 2. Reload without clicking Close. **Done when:** the introduction is absent and **Cookies & privacy**
-   still opens the full explanation without signing in or accepting anything.
+   opens the full explanation at `/shared/cookies` without signing in. Use the browser’s Back button to return to the shared list.
 3. Inspect cookies in the browser's developer tools: **Application → Storage → Cookies** in Chrome/Edge,
    **Storage → Cookies** in Firefox, or **Storage → Cookies** in Safari's Web Inspector.
    **Done when:** no new `__Host-wishlist-guest` cookie is present.

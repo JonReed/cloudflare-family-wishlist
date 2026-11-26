@@ -1,9 +1,17 @@
-import { isRouteErrorResponse, Link, Links, Meta, Outlet, useRouteLoaderData } from 'react-router';
+import {
+  isRouteErrorResponse,
+  Link,
+  Links,
+  Meta,
+  Outlet,
+  useLocation,
+  useRouteLoaderData
+} from 'react-router';
 
 import { ClientRuntime } from './components/client-runtime';
 import { SiteFooter } from './components/site-footer';
 import { cloudflareContext } from './lib/context';
-import { isPublicSharePath } from './lib/public-share-path';
+import { isCookiePrivacyPath, isPublicSharePath } from './lib/public-share-path';
 import type { Route } from './+types/root';
 import './app.css';
 
@@ -39,6 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
+  if (isCookiePrivacyPath(useLocation().pathname)) return <Outlet />;
   return (
     <>
       <Outlet />

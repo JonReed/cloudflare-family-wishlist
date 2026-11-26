@@ -19,6 +19,18 @@ describe('public share request boundary', () => {
     }
   );
 
+  it.each(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])(
+    'admits only document reads on the privacy page (%s)',
+    (method) => {
+      for (const path of ['/shared/cookies', '/shared/cookies/']) {
+        expect(isPublicSharePath(path)).toBe(true);
+        expect(
+          isPublicShareRequest(new Request(`https://wishlist.example${path}`, { method }))
+        ).toBe(method === 'GET' || method === 'HEAD');
+      }
+    }
+  );
+
   it.each(['GET', 'HEAD'])('allows %s only for exact shared list paths', (method) => {
     expect(
       isPublicShareRequest(new Request(`https://wishlist.example/shared/${token}`, { method }))
@@ -33,6 +45,8 @@ describe('public share request boundary', () => {
   it.each([
     '/shared',
     '/shared/not-a-secret',
+    '/shared/cookies/edit',
+    '/shared/cookies.data',
     `/shared/${token}/edit`,
     `/shared/${token}/image/not-an-item`,
     `/shared/${token}/image/${itemId}`,

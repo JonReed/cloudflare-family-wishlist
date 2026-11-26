@@ -18,12 +18,14 @@ novelty.
 
 ## Information architecture
 
-Keep cookie information in the footer. A compact introduction appears once per browser and records
-that it was shown automatically; never ask people to accept required cookies or click to acknowledge
-the notice. A Close button can hide that first introduction immediately. Keep a permanent **Cookies
-& privacy** native disclosure, available without JavaScript. Use only the fixed local preference
+Link to the standalone **Cookies & privacy** page from the project footer. Its compact introduction is a separate footer
+bar fixed to the bottom of the viewport, visible on both short and long pages. Reserve its measured
+height so it cannot cover the last controls or footer links, and respect the mobile safe area. It
+appears once per browser and records that it was shown automatically; never ask people to accept
+required cookies or click to acknowledge the notice. A Close button can hide it immediately.
+Link the introduction to that same public page. Both links work without expanding the footer, and the page is readable without JavaScript. Use only the fixed local preference
 `wishlist-cookie-notice-seen=1` to remember showing the introduction; no new cookie or visitor identifier
-is needed. If storage is unavailable, keep the permanent disclosure without a repeating introduction.
+is needed. If storage is unavailable, keep the permanent footer link without a repeating introduction.
 Explain that Family Wishlist uses required cookies, while directly loaded product pictures have
 separate hosts and cookie policies. Do not put a cookie strip above the page header.
 

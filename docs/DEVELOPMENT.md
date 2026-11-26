@@ -86,7 +86,7 @@ the formatting gate does not fail immediately after a fresh clone.
    `app/routes/home.tsx` with reusable brand/footer pieces in `app/components/`.
 
 Shared links are the narrow exception to the authenticated request flow. `workers/app.ts` admits
-GET/HEAD on exact shared-list paths, and POST on exact shared-list paths.
+GET/HEAD on the static `/shared/cookies` page and exact shared-list paths, and POST on exact shared-list paths.
 `app/lib/db/shared-wishlists.ts` hashes capability tokens and returns public availability without
 claimant identities or other people's purchase status. `app/lib/db/guest-claims.ts` checks the active
 link and its reservation ownership inside each reservation write. Shared routes must never call the
@@ -227,7 +227,7 @@ after reading the account-specific private handoff and verifying the active Wran
 - Preserve the bounded response reader, timeout and compensating policy deletion around Access API
   calls. Inject `fetch` in tests; never call the live API from the test suite.
 - Cloudflare Access policy/DNS changes are external mutations and require explicit maintainer authority.
-- Keep the unauthenticated Worker exception limited to GET/HEAD on exact shared-list
+- Keep the unauthenticated Worker exception limited to GET/HEAD on `/shared/cookies` and exact shared-list
   paths, plus POST on exact shared-list paths. A neighbouring route must not inherit public access.
 - Never store, log or put raw sharing secrets in a query string. Public D1 reads may return
   availability and the current link's own purchase state, but no claimant identifiers or other
@@ -247,7 +247,10 @@ after reading the account-specific private handoff and verifying the active Wran
   optional helpers remember the one-time footer notice, hide failed pictures and collapse long titles
   with an accessible full-title disclosure. The notice preference is shared by family and public pages:
   it is a fixed local flag, never acceptance or a visitor identifier. Without JavaScript, the permanent
-  footer privacy disclosure works, titles stay complete and reading and reservations still work.
+  footer link opens the public privacy page, titles stay complete and reading and reservations still work.
+  Keep the one-time cookie bar separate from the project footer and fixed to the viewport bottom.
+  Its measured height reserves page space through a nonce-protected style element; do not cover
+  the final controls or weaken CSP with inline style attributes.
   Retired `/shared/<token>/image/<item>` routes must not retain the Worker authentication
   exception. Keep legacy migration tables compatible with previously deployed releases.
 

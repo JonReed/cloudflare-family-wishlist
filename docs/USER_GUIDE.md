@@ -14,8 +14,8 @@ Choose **My wishlist** or another person's gift tag to switch lists. Everyone ad
 family space can add, edit and remove wishes on every list. Treat it as a shared family notebook,
 not a private diary.
 
-Cookie information lives in the footer. Its short introduction appears once in each browser, with
-no acceptance step. **Cookies & privacy** stays available whenever you want to read the details.
+Choose **Cookies & privacy** in the footer to open the full page. Guests can read it from a shared wishlist without signing in. Its short introduction appears once in each browser in a
+separate bar at the bottom of the screen, with no acceptance step.
 
 ## Add an idea
 
