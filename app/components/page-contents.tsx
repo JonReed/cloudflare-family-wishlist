@@ -9,17 +9,17 @@ export function PageContents({
 }) {
   return (
     <nav className="page-contents" aria-label={label}>
-      <p>Go straight to</p>
-      <ol>
-        {links.map((link, index) => (
+      <p>On this page</p>
+      <ul>
+        {links.map((link) => (
           <li key={link.href}>
             <a href={link.href}>
-              <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-              {link.label}
+              <span>{link.label}</span>
+              <span aria-hidden="true">↓</span>
             </a>
           </li>
         ))}
-      </ol>
+      </ul>
     </nav>
   );
 }

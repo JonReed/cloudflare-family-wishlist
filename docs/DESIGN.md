@@ -61,9 +61,9 @@ The product model remains deliberately small: one member, one list. Birthdays, C
 occasions do not create separate list types. A wish can stay useful throughout the year.
 
 **Add from anywhere** is a stable top-level destination rather than a profile-only setting. Its setup
-page begins with a compact, ruled contents line that jumps directly to Android, iPhone/iPad or desktop
-instructions. It should read as editorial navigation within the paper sheet, not a row of feature
-cards. Android’s install-once Share-menu journey is followed by the iPhone and iPad Share Sheet
+page begins with an evergreen **On this page** bar that jumps directly to Android, iPhone/iPad or
+desktop instructions. Underlined links and down arrows mark the section destinations. On narrow
+screens the links stack in full-width rows with generous touch targets. Android’s install-once Share-menu journey is followed by the iPhone and iPad Share Sheet
 journey with a tap-by-tap Apple Shortcut recipe and the deployment-specific address ready to copy.
 The desktop bookmarklet follows, called the “browser button” in family-facing copy, with a visual
 demonstration of the drag from the real button towards a labelled bookmarks bar. Do not assume that a
@@ -72,7 +72,7 @@ search field, exact choice and visible result. Every route must explicitly end a
 not imply that a wish is saved automatically.
 
 Sharing lives on **Manage** for every member. Household administration on that page is visible
-only to the organiser. Below its heading, reuse the ruled **Go straight to** subheader menu from
+only to the organiser. Below its heading, reuse the **On this page** bar from
 **Add from anywhere**. Show **Sharing links** for everyone and **Family members** and **Add someone**
 for the organiser, so sharing is visible before scrolling. These are ordinary section jump links
 that work without JavaScript. Adding
