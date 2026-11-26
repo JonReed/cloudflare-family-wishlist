@@ -104,22 +104,22 @@ describe('shared wishlists', () => {
     await expect(hasWishlistShareLink(env.DB, member.wishlistId)).resolves.toBe(true);
   });
 
-  it('atomically caps the household at five active viewing links', async () => {
+  it('atomically caps the household at ten active viewing links', async () => {
     const member = await createMember('owner@example.com');
     const attempts = await Promise.allSettled(
-      Array.from({ length: 6 }, (_, index) =>
+      Array.from({ length: 11 }, (_, index) =>
         createWishlistShareLink(env.DB, member.id, member.wishlistId, `Relative ${index + 1}`)
       )
     );
 
-    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(5);
+    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(10);
     const rejected = attempts.filter((attempt) => attempt.status === 'rejected');
     expect(rejected).toHaveLength(1);
     const rejectionReason: unknown = rejected[0]?.reason;
     expect(rejectionReason).toBeInstanceOf(Error);
     if (!(rejectionReason instanceof Error)) throw new Error('Expected link creation to fail.');
-    expect(rejectionReason.message).toContain('five sharing links');
-    await expect(listActiveWishlistShareLinks(env.DB, member.id)).resolves.toHaveLength(5);
+    expect(rejectionReason.message).toContain('10 active sharing links');
+    await expect(listActiveWishlistShareLinks(env.DB, member.id)).resolves.toHaveLength(10);
   });
 
   it('lists every active family viewing link for persistent management', async () => {

@@ -238,7 +238,7 @@ after reading the account-specific private handoff and verifying the active Wran
   other than the owner and must never clear a member's claim.
 - Keep sharing creation and management together on `/family` for every enabled member, while
   admission data and actions remain organiser-only. Count legacy and selection links together in
-  guarded inserts to enforce five active household links. Preserve existing tokens and show their
+  guarded inserts to enforce ten active household links. Preserve existing tokens and show their
   currently visible lists in the same inventory. Test mixed concurrent creation, legacy revocation,
   invalid selections and disabled actors/owners.
 - Keep generated CSS and the display-only `cookie-notice.js`, `product-pictures.js` and `wish-titles.js` helpers under `/shared-assets/*`;
@@ -323,7 +323,7 @@ after reading the account-specific private handoff and verifying the active Wran
 | `test/product-url.test.ts`              | safe HTTP(S) links, credential rejection and size limits                             |
 | `test/request-security.test.ts`         | mutation origins, content types and request-body boundary                            |
 | `test/share-target.test.ts`             | safe Android shared-text and direct-link extraction                                  |
-| `test/shared-wishlists.test.ts`         | five-link inventory, revocation, public availability and safe hotlinked pictures     |
+| `test/shared-wishlists.test.ts`         | ten-link inventory, revocation, public availability and safe hotlinked pictures      |
 | `test/family-sharing.test.tsx`          | selected lists, private claim details, group revocation and picture disclosure scope |
 | `test/guest-claims.test.ts`             | link ownership, device independence, budgets, concurrent claims and owner privacy    |
 | `test/family-sharing-route.test.ts`     | member sharing, organiser admission boundary, Access preflight and server forms      |

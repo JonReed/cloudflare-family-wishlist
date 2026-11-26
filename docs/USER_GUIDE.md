@@ -85,7 +85,7 @@ the same whether someone else is planning to buy the gift or has bought it. Your
 The private name identifies its reservations to your family; it does not restrict who can open or forward
 it. Share it only where you are comfortable sharing the selected lists' contents.
 
-Your family can have up to five active links in total. All links appear together in **Manage**,
+Your family can have up to ten active links in total. All links appear together in **Manage**,
 including older single-list links. Each entry shows its name, visible lists, who made it and when,
 and a URL you can copy again. Older links may show a different address from the one first sent;
 both addresses open the same lists and stop working together.

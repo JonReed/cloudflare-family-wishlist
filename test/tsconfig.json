@@ -78,6 +78,7 @@
     "../app/components/wishlist/item-row.tsx",
     "../app/lib/product-url.ts",
     "../app/lib/public-share-path.ts",
+    "../app/lib/share-link-limit.ts",
     "../app/lib/request-security.ts",
     "../app/lib/security-headers.ts",
     "../app/lib/share-target.ts",

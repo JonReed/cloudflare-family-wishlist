@@ -147,7 +147,7 @@ account. The gift keeps its buying status and every public link shows it as rese
 Older browser-owned reservations remain reserved because their originating link was not recorded;
 a family member other than the owner can clear them after checking with the guest.
 
-The household can have up to five active sharing links in total. Each has a private, recognisable
+The household can have up to ten active sharing links in total. Each has a private, recognisable
 name such as “Uncle David”. **Manage** shows every link's name, currently visible lists, creator
 and creation date, with a confirmed **Stop sharing this link** control. Stopping one immediately
 invalidates its public page while preserving other links and saved wishes. Disabled
@@ -158,10 +158,10 @@ so any admitted member can copy it again. Links created before this change may h
 original address already sent to guests; that address keeps working alongside the one on **Manage**.
 Stopping the link invalidates both addresses. The stored hash is sufficient to derive the displayed
 address, so database access must be treated as access to the shared lists.
-Creating another never changes an existing link. At five active links, the form explains that one
+Creating another never changes an existing link. At ten active links, the form explains that one
 must first be stopped, and atomic server checks reject creation above the limit. Existing links from
-before consolidation remain usable and manageable, even when their total exceeds five; no new link
-can be created until the total falls below five. Sharing is available to every admitted member;
+before consolidation remain usable and manageable, even when their total exceeds ten; no new link
+can be created until the total falls below ten. Sharing is available to every admitted member;
 family admission controls on the same page remain organiser-only.
 
 ## Product invariants

@@ -1,9 +1,10 @@
 import { createExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MemoryRouter } from 'react-router';
+import { createRoutesStub, MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { FamilySharing } from '../app/components/family-sharing';
 import { cloudflareContext } from '../app/lib/context';
 import { changeGuestClaim, consumeGuestClaimBudget } from '../app/lib/db/guest-claims';
 import { ensureMemberForEmail } from '../app/lib/db/members';
@@ -304,10 +305,30 @@ describe('family sharing', () => {
     await expect(getSharedWishlists(env.DB, created.token)).resolves.toEqual([]);
   });
 
-  it('atomically caps mixed single-list and group creation at five household links', async () => {
+  it.each([9, 10, 11])('shows the right creation controls with %i active links', (count) => {
+    const wishlist = { id: 'list', ownerDisplayName: 'Alex' };
+    const links = Array.from({ length: count }, (_, index) => ({
+      id: String(index),
+      name: `Relative ${index}`,
+      shareUrl: `https://wishlist.example/shared/${index}`,
+      createdAt: '2026-01-01T00:00:00Z',
+      createdByDisplayName: 'Alex',
+      wishlists: [wishlist]
+    }));
+    const Routes = createRoutesStub([
+      { path: '/family', Component: () => <FamilySharing links={links} wishlists={[wishlist]} /> }
+    ]);
+    const html = renderToStaticMarkup(<Routes initialEntries={['/family']} />);
+    expect(html).toContain('up to 10 active sharing links');
+    expect(html.includes('Create sharing link')).toBe(count < 10);
+    expect(html.includes(`Your family has ${count} active sharing links`)).toBe(count >= 10);
+    expect(html).toContain('Stop sharing this link');
+  });
+
+  it('atomically caps mixed single-list and group creation at ten household links', async () => {
     const { admin, bob } = await fixture();
     const attempts = await Promise.allSettled(
-      Array.from({ length: 8 }, (_, index) =>
+      Array.from({ length: 13 }, (_, index) =>
         index % 2
           ? createWishlistShareLink(env.DB, bob.id, bob.wishlistId, `Friend ${index}`)
           : createFamilyShareLink(
@@ -318,15 +339,15 @@ describe('family sharing', () => {
             )
       )
     );
-    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(5);
+    expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(10);
     expect(attempts.filter((attempt) => attempt.status === 'rejected')).toHaveLength(3);
     const links = await listActiveShareLinks(env.DB, bob.id);
-    expect(links).toHaveLength(5);
+    expect(links).toHaveLength(10);
     const first = links[0];
     if (!first) throw new Error('Missing link');
     await revokeShareLink(env.DB, bob.id, first.id);
     await createFamilyShareLink(env.DB, bob.id, [bob.wishlistId], 'Replacement');
-    await expect(listActiveShareLinks(env.DB, admin.id)).resolves.toHaveLength(5);
+    await expect(listActiveShareLinks(env.DB, admin.id)).resolves.toHaveLength(10);
   });
 
   it('shows legacy and new links together with exactly their currently visible lists', async () => {
@@ -358,13 +379,14 @@ describe('family sharing', () => {
     await expect(getSharedWishlists(env.DB, group.token)).resolves.toHaveLength(1);
   });
 
-  it('keeps more than five older links usable and manageable until the household frees space', async () => {
-    const { admin, bob } = await fixture();
+  it('keeps more than ten older links usable and manageable until the household frees space', async () => {
+    const { admin, bob, carol } = await fixture();
+    const wishlistIds = [admin.wishlistId, bob.wishlistId, carol.wishlistId];
     const olderLinks: { id: string; token: string }[] = [];
     // Before consolidation, each wishlist could have five links independently.
-    for (let index = 0; index < 6; index++) {
+    for (let index = 0; index < 11; index++) {
       const id = crypto.randomUUID();
-      const token = `${'A'.repeat(21)}${index}`;
+      const token = String(index).padStart(22, 'A');
       const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
       const hash = [...new Uint8Array(digest)]
         .map((byte) => byte.toString(16).padStart(2, '0'))
@@ -374,11 +396,11 @@ describe('family sharing', () => {
         (id, wishlist_id, name, token_hash, created_by_member_id)
         VALUES (?1, ?2, ?3, ?4, ?5)`
       )
-        .bind(id, index < 3 ? admin.wishlistId : bob.wishlistId, `Older ${index}`, hash, admin.id)
+        .bind(id, wishlistIds[index % wishlistIds.length], `Older ${index}`, hash, admin.id)
         .run();
       olderLinks.push({ id, token });
     }
-    await expect(listActiveShareLinks(env.DB, bob.id)).resolves.toHaveLength(6);
+    await expect(listActiveShareLinks(env.DB, bob.id)).resolves.toHaveLength(11);
     for (const link of olderLinks)
       await expect(getSharedWishlists(env.DB, link.token)).resolves.toHaveLength(1);
     await expect(
@@ -393,7 +415,7 @@ describe('family sharing', () => {
     ).rejects.toThrow();
     await revokeShareLink(env.DB, bob.id, second.id);
     await createFamilyShareLink(env.DB, bob.id, [bob.wishlistId], 'New link');
-    await expect(listActiveShareLinks(env.DB, admin.id)).resolves.toHaveLength(5);
+    await expect(listActiveShareLinks(env.DB, admin.id)).resolves.toHaveLength(10);
     await expect(getSharedWishlists(env.DB, first.token)).resolves.toEqual([]);
     for (const link of olderLinks.slice(2))
       await expect(getSharedWishlists(env.DB, link.token)).resolves.toHaveLength(1);

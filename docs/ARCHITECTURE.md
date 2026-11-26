@@ -299,13 +299,13 @@ from its hash, but it continues to work alongside the displayed address. Both st
 row is deleted. The displayed address has 128 bits of entropy, but a D1 read can derive it; database
 access therefore grants access to the shared lists. Each row also has a private family-facing
 name and a separate internal UUID. Atomic conditional inserts count both sharing tables to enforce
-at most five active links across the household. Existing rows above that limit remain usable, but
-creation stays blocked until fewer than five remain. Unknown and removed links return the same
+at most ten active links across the household. Existing rows above that limit remain usable, but
+creation stays blocked until fewer than ten remain. Unknown and removed links return the same
 not-found result.
 
 New selections use the additive `family_share_links` and `family_share_link_wishlists` tables, so
 existing single-list tokens and the running Worker's schema remain compatible during deployment.
-A guarded insert validates every selected UUID, the enabled actor and the combined five-link limit.
+A guarded insert validates every selected UUID, the enabled actor and the combined ten-link limit.
 A transactional D1 batch inserts the link and all selected wishlists together. Missing or disabled
 lists cannot leave a partial selection; duplicate IDs are deduplicated. The selection is fixed at
 creation while each wishlist's contents stay current.

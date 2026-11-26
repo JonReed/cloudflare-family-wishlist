@@ -1,4 +1,5 @@
 import { normaliseProductImageUrl } from '../product-url';
+import { MAX_ACTIVE_SHARE_LINKS } from '../share-link-limit';
 import type { ItemPriority } from './wishlists';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -206,9 +207,9 @@ export async function createWishlistShareLink(
        INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
        WHERE wishlists.id = ?5 AND owners.disabled_at IS NULL
          AND ((SELECT COUNT(*) FROM wishlist_share_links) +
-              (SELECT COUNT(*) FROM family_share_links)) < 5`
+              (SELECT COUNT(*) FROM family_share_links)) < ?6`
     )
-    .bind(shareLinkId, linkName, hash, actorId, targetWishlistId)
+    .bind(shareLinkId, linkName, hash, actorId, targetWishlistId, MAX_ACTIVE_SHARE_LINKS)
     .run();
 
   if (!result.success || result.meta.changes !== 1) {
@@ -229,9 +230,9 @@ export async function createWishlistShareLink(
       )
       .bind(actorId, targetWishlistId)
       .first<{ targetFound: number; activeLinkCount: number }>();
-    if (status?.targetFound === 1 && status.activeLinkCount >= 5) {
+    if (status?.targetFound === 1 && status.activeLinkCount >= MAX_ACTIVE_SHARE_LINKS) {
       throw new SharedWishlistInputError(
-        'Your family already has five sharing links. Stop sharing one from Manage before making another.'
+        `Your family can have up to ${MAX_ACTIVE_SHARE_LINKS} active sharing links. Stop sharing links from Manage before making another.`
       );
     }
     throw new SharedWishlistInputError(
@@ -361,14 +362,22 @@ export async function createFamilyShareLink(
        SELECT ?1, ?2, ?3, members.id FROM members
        WHERE members.id = ?4 AND members.disabled_at IS NULL
          AND ((SELECT COUNT(*) FROM wishlist_share_links) +
-              (SELECT COUNT(*) FROM family_share_links)) < 5
+              (SELECT COUNT(*) FROM family_share_links)) < ?7
          AND (
            SELECT COUNT(*) FROM wishlists
            INNER JOIN members AS owners ON owners.id = wishlists.owner_member_id
            WHERE wishlists.id IN (SELECT value FROM json_each(?5)) AND owners.disabled_at IS NULL
          ) = ?6`
       )
-      .bind(shareLinkId, linkName, hash, actorId, selection, selectedIds.length),
+      .bind(
+        shareLinkId,
+        linkName,
+        hash,
+        actorId,
+        selection,
+        selectedIds.length,
+        MAX_ACTIVE_SHARE_LINKS
+      ),
     db
       .prepare(
         `INSERT INTO family_share_link_wishlists (share_link_id, wishlist_id)
@@ -380,7 +389,7 @@ export async function createFamilyShareLink(
   ]);
   if (!linkResult?.success || linkResult.meta.changes !== 1) {
     throw new SharedWishlistInputError(
-      'We couldn’t create this link. Check the selected wishlists are available and that fewer than five sharing links are active.'
+      `We couldn’t create this link. Check the selected wishlists are available and that fewer than ${MAX_ACTIVE_SHARE_LINKS} sharing links are active.`
     );
   }
   return { token: hash.slice(0, 32), shareLinkId };

@@ -121,7 +121,7 @@ async function seedOlderHousehold(db: D1Database) {
       )
       .bind(crypto.randomUUID(), crypto.randomUUID(), admin.id)
   ]);
-  // Older installations allowed five links per list, so some already exceed the new family limit.
+  // Older installations allowed five links per list and could have more across the household.
   const activeOwner = owners[0];
   if (!activeOwner) throw new Error('Expected an active legacy owner');
   await db.batch([

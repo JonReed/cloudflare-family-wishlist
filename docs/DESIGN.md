@@ -104,7 +104,7 @@ also work without JavaScript.
 Show all active links together below the form, including older single-list links. Each entry gives
 its private name, currently visible wishlists, creator, creation date, a selectable URL with a
 **Copy link** control and an explicit **Stop sharing this link** action. Say when no lists are
-currently visible. Explain the household-wide allowance of five active links and replace the creation
+currently visible. Explain the household-wide allowance of ten active links and replace the creation
 form with a clear explanation when that limit is reached. Tell members that older links may have a
 different previously sent address and that both addresses work. Keep technical terms such as
 “revoke” out of family-facing copy.

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useFetcher } from 'react-router';
 
 import type { ActiveFamilyShareLink, ShareableWishlist } from '../lib/db/shared-wishlists';
+import { MAX_ACTIVE_SHARE_LINKS } from '../lib/share-link-limit';
 import { StopSharingForm } from './stop-sharing-form';
 import { Icon } from './icon';
 
@@ -37,7 +38,7 @@ export function FamilySharing({
       ? result.shareUrl
       : undefined;
   const error = !isPending ? result?.familyShareError : undefined;
-  const atLimit = links.length >= 5;
+  const atLimit = links.length >= MAX_ACTIVE_SHARE_LINKS;
 
   useEffect(() => {
     if (fetcher.state !== 'idle' || fetcher.data === handledResultRef.current) return;
@@ -129,8 +130,8 @@ export function FamilySharing({
 
       {atLimit ? (
         <p className="profile-shares-note">
-          Your family has reached the five-link allowance. Stop sharing links below until fewer than
-          five remain before making another.
+          Your family has {links.length} active sharing links. To create another, stop sharing links
+          below until fewer than {MAX_ACTIVE_SHARE_LINKS} are active.
         </p>
       ) : (
         <fetcher.Form
@@ -251,9 +252,9 @@ export function FamilySharing({
         </p>
       )}
       <p className="profile-shares-note">
-        Your family can have up to five active sharing links. You can copy or stop sharing any link
-        here at any time. Older links may have a different address than the one first sent; both
-        addresses open the same shared lists.
+        Your family can have up to {MAX_ACTIVE_SHARE_LINKS} active sharing links. You can copy or
+        stop sharing any link here at any time. Older links may have a different address than the
+        one first sent; both addresses open the same shared lists.
       </p>
     </section>
   );
