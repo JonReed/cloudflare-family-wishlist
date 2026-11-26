@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ItemFields } from '../app/components/wishlist/item-fields';
 import { WishlistItemRow } from '../app/components/wishlist/item-row';
-import { productFormDraft } from '../app/lib/wishlist-form-draft';
+import { productFormDraft, submittedWishDraft } from '../app/lib/wishlist-form-draft';
 import type { FamilyWishlist, WishlistItem } from '../app/lib/db/wishlists';
 
 const ownItem: WishlistItem = {
@@ -24,7 +24,8 @@ function rowHtml(
   item: WishlistItem,
   isOwn = true,
   wasJustEdited = false,
-  eligibleBuyers: FamilyWishlist['owner'][] = []
+  eligibleBuyers: FamilyWishlist['owner'][] = [],
+  initialEditDraft?: ReturnType<typeof submittedWishDraft>
 ) {
   const wishlist: FamilyWishlist = {
     id: 'list-1',
@@ -42,6 +43,7 @@ function rowHtml(
             item={item}
             eligibleBuyers={eligibleBuyers}
             wasJustEdited={wasJustEdited}
+            initialEditDraft={initialEditDraft}
             onItemEdited={vi.fn()}
             onEditorOpened={vi.fn()}
             onRemovalStart={vi.fn()}
@@ -278,6 +280,37 @@ describe('extracted wishlist components', () => {
     expect(html).toContain('data-product-title');
     expect(html.indexOf('value="high"')).toBeLessThan(html.indexOf('value="normal"'));
     expect(html.indexOf('value="normal"')).toBeLessThan(html.indexOf('value="low"'));
+  });
+
+  it('reopens a rejected native edit with the submitted fields while showing the saved wish', () => {
+    const form = new FormData();
+    form.set('title', 'Edited title');
+    form.set('notes', 'New notes');
+    const html = rowHtml(ownItem, true, false, [], submittedWishDraft(form));
+    expect(html).toMatch(/<details[^>]*open=""[^>]*class="wish-more"/);
+    expect(html).toMatch(/<details[^>]*open=""[^>]*class="edit-panel"/);
+    expect(html).toContain('value="Edited title"');
+    expect(html).toContain('New notes</textarea>');
+    expect(html).toContain('A good book</h3>');
+  });
+
+  it('retains editable fields after a rejected submission and bounds the returned draft', () => {
+    const form = new FormData();
+    form.set('productUrl', 'ftp://shop.example/gift');
+    form.set('title', 'My wish');
+    form.set('notes', 'a'.repeat(2100));
+    form.set('price', '12.40');
+    form.set('imageUrl', 'https://shop.example/photo');
+    form.set('priority', 'low');
+    expect(submittedWishDraft(form)).toEqual({
+      productUrl: 'ftp://shop.example/gift',
+      title: 'My wish',
+      notes: 'a'.repeat(2000),
+      price: '12.40',
+      imageUrl: 'https://shop.example/photo',
+      priority: 'low',
+      aiAssisted: false
+    });
   });
 
   it('keeps an existing form draft when product lookup supplies new details', () => {

@@ -2,7 +2,13 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Icon } from '../icon';
 
 /** A native disclosure, enhanced with outside-click and Escape dismissal. */
-export function WishMoreActions({ children }: { children: ReactNode }) {
+export function WishMoreActions({
+  children,
+  initiallyOpen = false
+}: {
+  children: ReactNode;
+  initiallyOpen?: boolean;
+}) {
   const ref = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const dismiss = (event: PointerEvent) => {
@@ -21,6 +27,7 @@ export function WishMoreActions({ children }: { children: ReactNode }) {
   return (
     <details
       ref={ref}
+      open={initiallyOpen}
       className="wish-more"
       onKeyDown={(event) => {
         if (event.key !== 'Escape' || ref.current?.querySelector('dialog[open]')) return;

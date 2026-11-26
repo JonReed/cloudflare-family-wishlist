@@ -1,5 +1,6 @@
 import type { FamilyWishlist, WishlistItem } from '../../lib/db/wishlists';
-import { useCallback } from 'react';
+import type { ProductFormDraft } from '../../lib/wishlist-form-draft';
+import { useCallback, useState } from 'react';
 import { ClaimControls, ClaimStatus } from './claim-controls';
 import { WishMoreActions } from './more-actions';
 import { EditWishForm } from '../edit-wish-form';
@@ -24,6 +25,7 @@ export function WishlistItemRow({
   item,
   eligibleBuyers,
   wasJustEdited,
+  initialEditDraft,
   onItemEdited,
   onEditorOpened,
   onRemovalStart,
@@ -33,11 +35,13 @@ export function WishlistItemRow({
   item: WishlistItem;
   eligibleBuyers: FamilyWishlist['owner'][];
   wasJustEdited: boolean;
+  initialEditDraft?: ProductFormDraft;
   onItemEdited: (itemId: string, form: HTMLFormElement) => void;
   onEditorOpened: () => void;
   onRemovalStart: (itemId: string) => void;
   onEditError: (form: HTMLFormElement) => void;
 }) {
+  const [editDraft, setEditDraft] = useState(initialEditDraft);
   const formId = `edit-${item.id}`;
   const recipientName = wishlist.isOwn ? 'you' : wishlist.owner.displayName;
   const hasClaimControls = !wishlist.isOwn && item.claimVisibility === 'visible';
@@ -104,12 +108,14 @@ export function WishlistItemRow({
           <span className="edit-saved-status" role="status" aria-live="polite">
             {wasJustEdited ? 'Changes saved.' : ''}
           </span>
-          <WishMoreActions>
+          <WishMoreActions initiallyOpen={Boolean(initialEditDraft)}>
             <ActionDialog
               className="edit-panel"
               title="Edit this wish"
               protectDraft
+              initiallyOpen={Boolean(initialEditDraft)}
               onOpen={onEditorOpened}
+              onClose={() => setEditDraft(undefined)}
               trigger="Edit this wish"
             >
               {({ close, requestClose, enhanced }) => (
@@ -131,7 +137,12 @@ export function WishlistItemRow({
                       <>
                         <ActionFields wishlistId={wishlist.id} itemId={item.id} />
                         <fieldset className="edit-form-fields" disabled={isPending}>
-                          <ItemFields item={item} formId={formId} recipientName={recipientName} />
+                          <ItemFields
+                            draft={editDraft}
+                            item={editDraft ? undefined : item}
+                            formId={formId}
+                            recipientName={recipientName}
+                          />
                           <div className="form-actions">
                             <button name="intent" value="edit-item" className="button-primary">
                               {isSaving ? 'Saving…' : 'Save changes'}

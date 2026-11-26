@@ -2,9 +2,21 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import type { SharedWishlistItem } from '../app/lib/db/shared-wishlists';
-import SharedWishlistPage from '../app/routes/shared-wishlist';
+import SharedWishlistPage, { ErrorBoundary } from '../app/routes/shared-wishlist';
 
 describe('shared wishlist reservation presentation', () => {
+  it('gives guests a way to recover from a stopped link without family sign-in', () => {
+    const html = renderToStaticMarkup(
+      <ErrorBoundary
+        params={{ token: 'a'.repeat(22) }}
+        error={{ status: 404, statusText: 'Not Found', internal: false, data: null }}
+      />
+    );
+    expect(html).toContain('send you a new link');
+    expect(html).not.toContain('href="/"');
+    expect(html).toContain('href="/shared/cookies"');
+  });
+
   it.each(['available', 'reserved', 'yours', 'bought'] as const)(
     'marks reserved and bought rows using only the guest-visible state: %s',
     (reservation: SharedWishlistItem['reservation']) => {

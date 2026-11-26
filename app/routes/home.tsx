@@ -22,7 +22,7 @@ import {
   createWorkersAiProductExtractor,
   ProductMetadataError
 } from '../lib/product-metadata';
-import { productFormDraft } from '../lib/wishlist-form-draft';
+import { productFormDraft, submittedWishDraft } from '../lib/wishlist-form-draft';
 import { redirect } from 'react-router';
 import { SiteHeader } from '../components/site-header';
 import { WishlistTags } from '../components/wishlist-tags';
@@ -93,8 +93,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     organiserEmailForRequest(env, identity.email)
   );
 
+  const formData = await request.formData();
   try {
-    const formData = await request.formData();
     const intent = formString(formData, 'intent');
     const wishlistId = formString(formData, 'wishlistId');
 
@@ -121,11 +121,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
           return {
             wishlistId,
-            product: productFormDraft(
-              formData,
-              { productUrl: '', title: '', price: '', imageUrl: '', aiAssisted: false },
-              typeof productUrl === 'string' ? productUrl.slice(0, 2048) : ''
-            ),
+            product: submittedWishDraft(formData),
             fetchError: error.message,
             diagnostics: error instanceof ProductMetadataError ? error.diagnostics : undefined
           };
@@ -189,6 +185,25 @@ export async function action({ request, context }: Route.ActionArgs) {
     return redirect(`/?list=${encodeURIComponent(wishlistId)}#wishlist`);
   } catch (error) {
     if (error instanceof WishlistInputError) {
+      const wishlistId = formData.get('wishlistId');
+      const intent = formData.get('intent');
+      if (typeof wishlistId === 'string') {
+        if (intent === 'add-item' && formData.get('enhancedAdd') !== 'true') {
+          return { error: error.message, wishlistId, draft: submittedWishDraft(formData) };
+        }
+        const itemId = formData.get('itemId');
+        if (
+          intent === 'edit-item' &&
+          typeof itemId === 'string' &&
+          formData.get('enhancedEdit') !== 'true'
+        ) {
+          return {
+            error: error.message,
+            wishlistId,
+            failedEdit: { itemId, draft: submittedWishDraft(formData) }
+          };
+        }
+      }
       return { error: error.message };
     }
 
@@ -234,6 +249,13 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
                 key={activeWishlist.id}
                 wishlist={activeWishlist}
                 eligibleBuyers={eligibleBuyers}
+                failedEdit={
+                  actionData &&
+                  'failedEdit' in actionData &&
+                  actionData.wishlistId === activeWishlist.id
+                    ? actionData.failedEdit
+                    : undefined
+                }
               />
               <AddWishPanel wishlist={activeWishlist} actionData={actionData} />
             </div>

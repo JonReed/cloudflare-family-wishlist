@@ -1,3 +1,4 @@
+import type { ProductFormDraft } from '../../lib/wishlist-form-draft';
 import type { FamilyWishlist } from '../../lib/db/wishlists';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { WishlistItemRow } from './item-row';
@@ -18,10 +19,12 @@ function focusEditError(form: HTMLFormElement): void {
 
 export function WishlistSheet({
   wishlist,
-  eligibleBuyers
+  eligibleBuyers,
+  failedEdit
 }: {
   wishlist: FamilyWishlist;
   eligibleBuyers: FamilyWishlist['owner'][];
+  failedEdit?: { itemId: string; draft: ProductFormDraft };
 }) {
   const [lastEditedItemId, setLastEditedItemId] = useState<string | null>(null);
   const sheetRef = useRef<HTMLElement>(null);
@@ -103,6 +106,7 @@ export function WishlistSheet({
               wishlist={wishlist}
               item={item}
               eligibleBuyers={eligibleBuyers}
+              initialEditDraft={failedEdit?.itemId === item.id ? failedEdit.draft : undefined}
               wasJustEdited={lastEditedItemId === item.id}
               onItemEdited={handleItemEdited}
               onEditorOpened={handleEditorOpened}

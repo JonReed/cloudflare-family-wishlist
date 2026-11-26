@@ -56,7 +56,9 @@ export function ActionDialog({
   className,
   compact = false,
   protectDraft = false,
+  initiallyOpen = false,
   onOpen,
+  onClose,
   children
 }: {
   trigger: ReactNode;
@@ -65,11 +67,13 @@ export function ActionDialog({
   className: string;
   compact?: boolean;
   protectDraft?: boolean;
+  initiallyOpen?: boolean;
   onOpen?: () => void;
+  onClose?: () => void;
   children: (actions: DialogActions) => ReactNode;
 }) {
   const enhanced = useSyncExternalStore(subscribe, supportsDialog, serverSnapshot);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -126,6 +130,7 @@ export function ActionDialog({
   if (!enhanced)
     return (
       <details
+        open={initiallyOpen}
         className={className}
         onToggle={(event) => {
           if (event.currentTarget.open) onOpen?.();
@@ -191,6 +196,7 @@ export function ActionDialog({
           onClose={() => {
             restoreFocus.current = true;
             setOpen(false);
+            onClose?.();
           }}
         >
           <h2 id={titleId} tabIndex={-1} data-dialog-initial-focus={!compact ? '' : undefined}>

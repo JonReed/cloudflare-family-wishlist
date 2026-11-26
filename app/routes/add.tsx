@@ -1,5 +1,6 @@
 import { data, Form, redirect, useNavigation } from 'react-router';
 
+import { DefaultAddWishSubmit } from '../components/wishlist/form-fields';
 import { ProductImageField } from '../components/product-image-field';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
@@ -13,22 +14,20 @@ import {
   WishlistInputError,
   type ItemInput
 } from '../lib/db/wishlists';
-import { fillMissingProductDraft } from '../lib/product-draft';
+import {
+  productFormDraft,
+  submittedWishDraft,
+  type ProductFormDraft
+} from '../lib/wishlist-form-draft';
 import { normaliseProductUrl } from '../lib/product-url';
 import {
   createBrowserRunProductRenderer,
   createWorkersAiProductExtractor,
   fetchProductMetadata,
-  ProductMetadataError,
-  type ProductMetadata
+  ProductMetadataError
 } from '../lib/product-metadata';
 
 import type { Route } from './+types/add';
-
-type ProductDraft = ProductMetadata & {
-  notes: string;
-  priority: 'low' | 'normal' | 'high';
-};
 
 export function meta() {
   return [
@@ -40,7 +39,7 @@ export function meta() {
   ];
 }
 
-function blankProduct(productUrl = ''): ProductDraft {
+function blankProduct(productUrl = ''): ProductFormDraft {
   return {
     productUrl,
     title: '',
@@ -61,29 +60,6 @@ function itemInput(formData: FormData): ItemInput {
     price: formData.get('price'),
     priority: formData.get('priority')
   };
-}
-
-function formValue(formData: FormData, name: string, maxLength: number): string {
-  const value = formData.get(name);
-  return typeof value === 'string' ? value.slice(0, maxLength) : '';
-}
-
-function formDraft(formData: FormData): ProductDraft {
-  const priority = formValue(formData, 'priority', 16);
-
-  return {
-    productUrl: formValue(formData, 'productUrl', 2048),
-    title: formValue(formData, 'title', 160),
-    price: formValue(formData, 'price', 10),
-    imageUrl: formValue(formData, 'imageUrl', 2048),
-    notes: formValue(formData, 'notes', 2000),
-    priority: priority === 'low' || priority === 'high' ? priority : 'normal',
-    aiAssisted: false
-  };
-}
-
-function productFormDraft(formData: FormData, product: ProductMetadata): ProductDraft {
-  return fillMissingProductDraft(formDraft(formData), product);
 }
 
 function selectedWishlistIds(formData: FormData): string[] {
@@ -125,7 +101,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   );
   const formData = await request.formData();
   const wishlistIds = selectedWishlistIds(formData);
-  const intent = formValue(formData, 'intent', 32);
+  const intent = formData.get('intent');
 
   if (intent === 'fetch-product') {
     try {
@@ -155,7 +131,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
 
       return {
-        draft: formDraft(formData),
+        draft: submittedWishDraft(formData),
         selectedWishlistIds: wishlistIds,
         fetchError: error.message,
         diagnostics: error instanceof ProductMetadataError ? error.diagnostics : undefined
@@ -175,7 +151,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       return data(
         {
           error: error.message,
-          draft: formDraft(formData),
+          draft: submittedWishDraft(formData),
           selectedWishlistIds: wishlistIds
         },
         { status: 400 }
@@ -221,6 +197,7 @@ export default function AddWish({ loaderData, actionData }: Route.ComponentProps
             data-product-import-form
             data-product-auto-fetch={!actionData && product.productUrl ? 'true' : undefined}
           >
+            <DefaultAddWishSubmit disabled={isSaving} />
             {actionError ? (
               <div role="alert" className="form-alert profile-alert">
                 <strong>Sorry, that didn’t work.</strong> {actionError}

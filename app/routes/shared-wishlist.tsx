@@ -1,4 +1,4 @@
-import { data, redirect } from 'react-router';
+import { data, isRouteErrorResponse, redirect } from 'react-router';
 
 import { Brand } from '../components/brand';
 import { WishlistTags } from '../components/wishlist-tags';
@@ -27,6 +27,25 @@ export function meta() {
     { title: 'Shared wishlist' },
     { name: 'description', content: 'Gift ideas shared with family and friends.' }
   ];
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const missing = isRouteErrorResponse(error) && error.status === 404;
+  return (
+    <div className="site-shell">
+      <main className="error-page">
+        <section className="error-sheet">
+          <h1>{missing ? 'This sharing link is unavailable' : 'This wishlist couldn’t load'}</h1>
+          <p>
+            {missing
+              ? 'Ask the person who shared the wishlist to send you a new link.'
+              : 'Try opening the link again in a moment.'}
+          </p>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
 }
 
 function notFound(): never {

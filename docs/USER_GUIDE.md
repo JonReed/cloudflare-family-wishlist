@@ -22,6 +22,7 @@ separate bar at the bottom of the screen, with no acceptance step.
 Add a wish on the list you want it to appear on. A name is enough: a shop link, picture, notes,
 approximate price in pounds and priority are optional. High-priority wishes appear first.
 Experiences and homemade gifts belong here just as much as products.
+Press Enter in the wish name to add it. If a field needs correcting, the form keeps your draft.
 
 Long wish names show two lines to keep the list compact. Choose **Show full title** to read the rest,
 then **Show less** to fold it away. This works on shared lists too. Without JavaScript, names appear
@@ -127,6 +128,8 @@ For hosting or update problems, the organiser can use the
 3. After buying the gift, choose **Mark as bought**. **Done when:** it says **You’ve bought this**.
    People using a different sharing link still see only **Reserved**.
 4. If you change your mind, choose **Leave for someone else**. **Done when:** the wish is available again.
+
+If the sharing link is unavailable, ask the person who sent it for a new one.
 
 To return on another device, open the same sharing link. **Done when:** its reserved gifts show
 **You’re getting this** or **You’ve bought this**, with the same controls. Everyone using that link

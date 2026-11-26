@@ -2,7 +2,7 @@ import type { FamilyWishlist } from '../../lib/db/wishlists';
 import type { Route } from '../../routes/+types/home';
 import { ProductDiagnostics } from '../product-diagnostics';
 import { AddWishForm } from '../add-wish-form';
-import { wishlistFormAction, ActionFields } from './form-fields';
+import { wishlistFormAction, ActionFields, DefaultAddWishSubmit } from './form-fields';
 import { ItemFields } from './item-fields';
 
 function clearAddedWishForm(form: HTMLFormElement): void {
@@ -102,11 +102,16 @@ export function AddWishPanel({
           <>
             <ActionFields wishlistId={wishlist.id} />
             <fieldset className="add-form-fields" disabled={isPending}>
+              <DefaultAddWishSubmit />
               <ItemFields
                 formId={addFormId}
                 recipientName={recipientName}
                 urlFirst
-                draft={fetchedDraft}
+                draft={
+                  actionData && 'draft' in actionData && actionData.wishlistId === wishlist.id
+                    ? actionData.draft
+                    : fetchedDraft
+                }
                 urlAction={urlAction}
                 urlStatus={urlStatus}
               />

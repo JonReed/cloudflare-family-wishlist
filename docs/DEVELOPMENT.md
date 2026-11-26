@@ -114,7 +114,8 @@ The extraction entry point remains `app/lib/product-metadata.ts`, with implement
 `app/lib/product-metadata/`. Keep dependencies one-way and retain the public entry point for callers.
 
 Product metadata lookup is progressive enhancement. Keep the ordinary `fetch-product` form intent
-working without JavaScript. The `/add?url=` loader must render without fetching the external page;
+working without JavaScript. On both add forms, Enter in the wish name submits the add action.
+Preserve the submitted fields on validation errors, including ordinary document posts. A rejected native edit reopens the editor for that wish. The `/add?url=` loader must render without fetching the external page;
 `data-product-auto-fetch` starts a lookup after hydration, and failed form submissions must not
 automatically start another lookup. Keep `public/product-import.js` limited to the same-origin convenience
 layer, and initialise each new form once when client navigation mounts it as well as on first load.

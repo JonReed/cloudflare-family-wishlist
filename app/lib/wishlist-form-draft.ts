@@ -1,3 +1,4 @@
+import { fillMissingProductDraft } from './product-draft';
 import type { ProductMetadata } from './product-metadata';
 
 export type ProductFormDraft = ProductMetadata & {
@@ -14,23 +15,19 @@ function isDraftPriority(value: string): value is ProductFormDraft['priority'] {
   return value === 'low' || value === 'normal' || value === 'high';
 }
 
-export function productFormDraft(
-  formData: FormData,
-  product: ProductMetadata,
-  productUrl = product.productUrl
-): ProductFormDraft {
-  const existingTitle = boundedDraftValue(formData, 'title', 160);
-  const existingPrice = boundedDraftValue(formData, 'price', 32);
-  const existingImageUrl = boundedDraftValue(formData, 'imageUrl', 2048);
-  const rawPriority = boundedDraftValue(formData, 'priority', 16);
-
+export function submittedWishDraft(formData: FormData): ProductFormDraft {
+  const priority = boundedDraftValue(formData, 'priority', 16);
   return {
-    ...product,
-    productUrl,
-    title: existingTitle.trim() ? existingTitle : product.title,
-    price: existingPrice.trim() ? existingPrice : product.price,
-    imageUrl: existingImageUrl.trim() ? existingImageUrl : product.imageUrl,
+    productUrl: boundedDraftValue(formData, 'productUrl', 2048),
+    title: boundedDraftValue(formData, 'title', 160),
+    price: boundedDraftValue(formData, 'price', 32),
+    imageUrl: boundedDraftValue(formData, 'imageUrl', 2048),
     notes: boundedDraftValue(formData, 'notes', 2000),
-    priority: isDraftPriority(rawPriority) ? rawPriority : 'normal'
+    priority: isDraftPriority(priority) ? priority : 'normal',
+    aiAssisted: false
   };
+}
+
+export function productFormDraft(formData: FormData, product: ProductMetadata): ProductFormDraft {
+  return fillMissingProductDraft(submittedWishDraft(formData), product);
 }

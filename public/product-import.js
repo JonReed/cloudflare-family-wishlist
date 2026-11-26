@@ -138,7 +138,7 @@ function enhanceProductForms() {
         priceInput,
         imageInput,
         form.querySelector('[data-product-image-remove]'),
-        form.querySelector('button[value="add-item"]')
+        ...form.querySelectorAll('button[value="add-item"]')
       ]) {
         if (!(control instanceof HTMLInputElement || control instanceof HTMLButtonElement))
           continue;
@@ -249,6 +249,12 @@ function enhanceProductForms() {
       }
     };
 
+    urlInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.isComposing && urlInput.value.trim()) {
+        event.preventDefault();
+        void fetchDetails(urlInput.value, true);
+      }
+    });
     urlInput.addEventListener('paste', () => {
       // Paste fires before the browser updates the input. Waiting one task also
       // handles replacing a selection or pasting into a partly completed URL.

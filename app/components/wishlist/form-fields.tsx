@@ -1,3 +1,12 @@
+// Browsers use the first submit button for Enter, even when a secondary lookup appears first visually.
+export function DefaultAddWishSubmit({ disabled = false }: { disabled?: boolean }) {
+  return (
+    <button type="submit" name="intent" value="add-item" hidden disabled={disabled}>
+      Add wish
+    </button>
+  );
+}
+
 export function ActionFields({ wishlistId, itemId }: { wishlistId: string; itemId?: string }) {
   return (
     <>
