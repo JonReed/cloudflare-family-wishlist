@@ -193,8 +193,9 @@ not change the position or width of the image, metadata or claim controls above 
 saving closes the editor and dropdown, updates the wish in place, shows “Changes saved.” in the footer,
 and returns keyboard focus to “Edit this wish”. Opening an editor clears the previous confirmation.
 A failed save keeps the editor open with its draft and moves focus to its local error; an
-unenhanced save retains the ordinary form redirect. Label only the exceptional **Top wish** and
-**Nice to have** priorities; ordinary wishes need no “Would love” marker. Present top wishes first,
+unenhanced save retains the ordinary form redirect. Give **Top wish** a brick-red line on the left
+and **Nice to have** a muted grey line. Normal wishes have a plain left edge and no priority label.
+Keep the row content aligned across all three priorities. Present top wishes first,
 ordinary wishes second and nice-to-have wishes last, with newer additions first inside each group.
 
 Use the reusable native action dialog for editing and removal when JavaScript is available, so the
@@ -311,7 +312,7 @@ detail and physical direction do not depend on fragile CSS drawing.
 - Evergreen: the primary action and identity colour.
 - Kraft: tape, edging and physical detail.
 - Brick red: high-priority and destructive emphasis.
-- Sage: ordinary priority and calm status.
+- Sage: reserved and bought wish backgrounds.
 
 Colours must retain sufficient contrast without resorting to saturated software-product blues.
 

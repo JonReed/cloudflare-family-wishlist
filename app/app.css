@@ -813,14 +813,14 @@
   border-top: 0;
 }
 
-.wish-row::before {
+.wish-row-high::before,
+.wish-row-low::before {
   position: absolute;
   top: 1.65rem;
   bottom: 1.75rem;
   left: 0;
   width: 3px;
   content: '';
-  background: var(--mint);
 }
 
 .wish-row-low::before {
