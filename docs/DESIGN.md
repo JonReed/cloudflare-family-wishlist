@@ -324,6 +324,30 @@ Colours must retain sufficient contrast without resorting to saturated software-
 - Wishlist items are rows separated by rules. They are not nested cards.
 - Buttons are rectangular and tactile. Links remain recognisable as links.
 
+### Icons
+
+Think of the star someone would draw beside their favourite idea on a paper list. Give **Top wish**
+a slightly uneven five-point outline in the same brick ink as the label. Keep the star and words
+together outside the title on both family and shared lists. **Nice to have** stays text-only.
+
+Use the evergreen tick beside **Bought** and **Reserved**. It can sit alongside the star when both
+apply. A chain link identifies **Share this list**, an outward arrow follows the shop and Gravatar
+links, and the **Edit this wish** chevron points up while its disclosure is open. Keep navigation,
+form labels and confirmation buttons text-led so the marks stand out where they carry meaning.
+
+Use two overlapping sheets for clipboard copy actions and a landscape print for **Add a picture**
+and **Change picture**. In phone instructions, draw the Share control the reader is looking for:
+the upward arrow leaving a square on iPhone and iPad, or the three connected dots on Android.
+On Manage, place a brick-red outline warning triangle beside **Access needs attention** and
+**Removal needs attention** so the organiser can pick out rows that need follow-up.
+
+To draw a new symbol, add a named path to [the shared Icon component](../app/components/icon.tsx).
+Draw on its 24 × 24 grid with about two units of breathing room. Match the parcel mark’s 1.9-unit
+stroke, use rounded ends and joins, and let the surrounding text supply the ink colour. Check the
+outline at its rendered size of 16 CSS pixels. Place it beside a visible label inside the same link,
+button or status. The component hides the drawing from assistive technology so the words are heard
+once. Check wrapped rows on a phone and preserve the full touch target on controls.
+
 ### Imagery
 
 The family selector uses

@@ -3,6 +3,7 @@ import { data, Form, redirect } from 'react-router';
 import { AddFamilyMemberForm } from '../components/add-family-member-form';
 import { FamilyMemberRemoval } from '../components/family-member-removal';
 import { FamilySharing } from '../components/family-sharing';
+import { Icon } from '../components/icon';
 import { FamilyPersonAvatar } from '../components/member-avatar';
 import { PageContents } from '../components/page-contents';
 import { SiteFooter } from '../components/site-footer';
@@ -307,6 +308,9 @@ function FamilyPersonRow({
         <div className="family-person-heading">
           <h3>{person.displayName}</h3>
           <span className={`family-person-status family-person-status-${person.status}`}>
+            {person.status === 'attention' || person.status === 'removing' ? (
+              <Icon name="attention" />
+            ) : null}
             {person.status === 'joined'
               ? person.role === 'admin'
                 ? 'Family organiser'
@@ -330,12 +334,12 @@ function FamilyPersonRow({
         <div className="family-invite-copy">
           <button
             type="button"
-            className="button-quiet"
+            className="button-quiet icon-label"
             data-copy-family-invitation
             data-invitation-url={invitationUrl}
             data-invitation-email={person.email}
           >
-            Copy sign-in details
+            <Icon name="copy" /> <span data-copy-label>Copy sign-in details</span>
           </button>
           <span className="family-copy-status" role="status" aria-live="polite" />
           {person.memberId ? (

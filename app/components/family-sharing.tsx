@@ -3,6 +3,7 @@ import { useFetcher } from 'react-router';
 
 import type { ActiveFamilyShareLink, ShareableWishlist } from '../lib/db/shared-wishlists';
 import { StopSharingForm } from './stop-sharing-form';
+import { Icon } from './icon';
 
 type ListedShareLink = Omit<ActiveFamilyShareLink, 'token'> & { shareUrl: string };
 
@@ -110,8 +111,8 @@ export function FamilySharing({
               readOnly
               data-share-link
             />
-            <button type="button" className="button-secondary" data-copy-share-link>
-              Copy link
+            <button type="button" className="button-secondary icon-label" data-copy-share-link>
+              <Icon name="copy" /> <span data-copy-label>Copy link</span>
             </button>
           </div>
           <p className="share-copy-status" role="status" aria-live="polite" />
@@ -221,8 +222,12 @@ export function FamilySharing({
                     >
                       {link.shareUrl}
                     </a>
-                    <button type="button" className="family-share-copy-button" data-copy-share-link>
-                      Copy link
+                    <button
+                      type="button"
+                      className="family-share-copy-button icon-label"
+                      data-copy-share-link
+                    >
+                      <Icon name="copy" /> <span data-copy-label>Copy link</span>
                     </button>
                   </div>
                   <p className="share-copy-status" role="status" aria-live="polite" />

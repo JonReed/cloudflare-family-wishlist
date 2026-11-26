@@ -10,7 +10,7 @@ class CopyElement {
 
 class CopyButton extends CopyElement {
   disabled = false;
-  textContent = 'Copy sign-in details';
+  readonly copyLabel = { textContent: 'Copy sign-in details' };
   readonly status = { textContent: '' };
   readonly parentElement = { querySelector: () => this.status };
 
@@ -20,6 +20,10 @@ class CopyButton extends CopyElement {
 
   closest() {
     return this;
+  }
+
+  querySelector(selector: string) {
+    return selector === '[data-copy-label]' ? this.copyLabel : null;
   }
 }
 
@@ -69,7 +73,7 @@ describe('family sign-in details helper', () => {
       'Our Family Wishlist is ready for you.\n\nOpen https://wishlist.example/\n' +
         'Sign in with jamie@example.com. You’ll get a one-time code by email.'
     );
-    expect(button.textContent).toBe('Details copied');
+    expect(button.copyLabel.textContent).toBe('Details copied');
     expect(button.status.textContent).toBe('Ready to paste into a message.');
   });
 
@@ -95,7 +99,7 @@ describe('family sign-in details helper', () => {
       expect(button.status.textContent).toBe(
         'Copy these details: https://wishlist.example/ — sign in with jamie@example.com.'
       );
-      expect(button.textContent).toBe('Copy sign-in details');
+      expect(button.copyLabel.textContent).toBe('Copy sign-in details');
     }
   );
 

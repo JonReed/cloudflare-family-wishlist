@@ -18,7 +18,8 @@
 
     try {
       await navigator.clipboard.writeText(address);
-      button.textContent = 'Link copied';
+      const label = button.querySelector('[data-copy-label]') ?? button;
+      label.textContent = 'Link copied';
       if (status) status.textContent = 'Ready to paste into a message.';
     } catch {
       source.focus();

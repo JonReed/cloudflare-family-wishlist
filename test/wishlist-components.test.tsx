@@ -86,9 +86,7 @@ describe('extracted wishlist components', () => {
     expect(html).toContain('About £15.00');
     expect(html.indexOf('About £15.00')).toBeLessThan(html.indexOf('class="wish-footer"'));
     expect(html).toContain('class="wish-more"');
-    expect(html).toContain(
-      '<summary><span>Edit this wish <span aria-hidden="true">▾</span></span></summary>'
-    );
+    expect(html).toMatch(/<summary>Edit this wish <svg [^>]*aria-hidden="true"/);
   });
 
   it('keeps saved feedback outside the edit control and preserves the external shop link', () => {
@@ -116,10 +114,18 @@ describe('extracted wishlist components', () => {
       { ...ownItem, claimVisibility: 'visible', claim: null, priority: 'high' },
       false
     );
-    expect(html).toContain('priority-high');
+    expect(html).toMatch(
+      /class="priority priority-high"><svg [^>]*aria-hidden="true"[^>]*>.*?<\/svg> Top wish<\/span>/
+    );
     expect(html).toContain('value="claim-item"');
     expect(html).toContain('I’ll get this');
     expect(html.indexOf('class="wish-footer"')).toBeLessThan(html.indexOf('value="claim-item"'));
+  });
+
+  it('keeps the lower priority label text-only', () => {
+    expect(rowHtml({ ...ownItem, priority: 'low' })).toContain(
+      '<span class="priority priority-low">Nice to have</span>'
+    );
   });
 
   it('offers assignment only for a visible guest reservation with eligible buyers', () => {
@@ -184,8 +190,8 @@ describe('extracted wishlist components', () => {
         expect(html).toContain('Cancel claim');
       } else {
         expect(html).toContain('wish-row-bought');
-        expect(html).toContain(
-          '<span class="wish-gift-label"><span aria-hidden="true">✓</span> Bought</span>'
+        expect(html).toMatch(
+          /<span class="wish-gift-label"><svg [^>]*aria-hidden="true"[^>]*>.*?<\/svg> Bought<\/span>/
         );
         expect(html).toContain('You’ve bought this');
         expect(html).toContain('Mark as not bought');

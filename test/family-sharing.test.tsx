@@ -255,8 +255,8 @@ describe('family sharing', () => {
     expect(shared[0]?.items[0]?.reservation).toBe('reserved');
     expect(shared[1]?.items[0]?.reservation).toBe('available');
     expect(html).toContain('wish-row-reserved');
-    expect(html).toContain(
-      '<span class="wish-gift-label"><span aria-hidden="true">✓</span> Reserved</span>'
+    expect(html).toMatch(
+      /<span class="wish-gift-label"><svg [^>]*aria-hidden="true"[^>]*>.*?<\/svg> Reserved<\/span>/
     );
     expect(html).not.toContain('wish-row-bought');
     expect(html).not.toContain('You’ve bought this');

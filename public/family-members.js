@@ -22,7 +22,8 @@
 
     try {
       await navigator.clipboard.writeText(message);
-      button.textContent = 'Details copied';
+      const label = button.querySelector('[data-copy-label]') ?? button;
+      label.textContent = 'Details copied';
       if (status) status.textContent = 'Ready to paste into a message.';
     } catch {
       if (status)

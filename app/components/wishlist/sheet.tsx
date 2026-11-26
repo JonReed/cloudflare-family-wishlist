@@ -2,6 +2,7 @@ import type { FamilyWishlist } from '../../lib/db/wishlists';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { WishlistItemRow } from './item-row';
 import { MemberAvatar } from '../member-avatar';
+import { Icon } from '../icon';
 
 function focusEditedWishSummary(form: HTMLFormElement): void {
   const editor = form.closest('details');
@@ -82,7 +83,7 @@ export function WishlistSheet({
             className="share-list-shortcut"
             href={`/family?list=${encodeURIComponent(wishlist.id)}#family-sharing`}
           >
-            Share this list
+            <Icon name="link" /> Share this list
           </a>
         </div>
       </header>

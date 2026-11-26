@@ -1,4 +1,5 @@
 import { normaliseProductImageUrl } from '../lib/product-url';
+import { Icon } from './icon';
 
 export function ProductImageField({
   formId,
@@ -33,7 +34,8 @@ export function ProductImageField({
 
           <div className="product-image-actions">
             <details className="product-image-editor">
-              <summary className="button-quiet">
+              <summary className="button-quiet icon-label">
+                <Icon name="picture" />
                 <span data-product-image-present="" hidden={!hasPreview}>
                   Change picture
                 </span>

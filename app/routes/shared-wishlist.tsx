@@ -4,6 +4,8 @@ import { Brand } from '../components/brand';
 import { WishlistTags } from '../components/wishlist-tags';
 import { SiteFooter } from '../components/site-footer';
 import { WishGiftLabel } from '../components/wishlist/gift-label';
+import { Icon } from '../components/icon';
+import { WishPriorityLabel } from '../components/wishlist/priority-label';
 import { WishTitle } from '../components/wishlist/wish-title';
 import { cloudflareContext } from '../lib/context';
 import {
@@ -127,8 +129,6 @@ function formatPrice(amountMinor: number, currency: string): string {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amountMinor / 100);
 }
 
-const priorityLabels = { low: 'Nice to have', high: 'Top wish' } as const;
-
 function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }) {
   const isBought = item.reservation === 'bought';
   const isReserved = item.reservation === 'reserved' || item.reservation === 'yours';
@@ -163,11 +163,7 @@ function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }
             {isBought || isReserved ? (
               <WishGiftLabel state={isBought ? 'bought' : 'reserved'} />
             ) : null}
-            {item.priority === 'normal' ? null : (
-              <span className={`priority priority-${item.priority}`}>
-                {priorityLabels[item.priority]}
-              </span>
-            )}
+            <WishPriorityLabel priority={item.priority} />
           </div>
           {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
           <div className="wish-meta">
@@ -176,7 +172,7 @@ function SharedWish({ item, token }: { item: SharedWishlistItem; token: string }
             ) : null}
             {item.productUrl ? (
               <a href={item.productUrl} target="_blank" rel="noreferrer">
-                See where to find it <span aria-hidden="true">↗</span>
+                See where to find it <Icon name="arrow-up-right" />
               </a>
             ) : null}
           </div>

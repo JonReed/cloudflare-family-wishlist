@@ -15,7 +15,8 @@ describe('product image field', () => {
     expect(html).not.toContain('Here’s the picture we’ll use');
     expect(html).not.toContain('Check that it shows the right product');
     expect(html).not.toContain('If you have another picture online');
-    expect(html).toContain('Change picture');
+    expect(html).toMatch(/<summary[^>]*><svg [^>]*aria-hidden="true"/);
+    expect(html).toContain('<span data-product-image-present="">Change picture</span>');
     expect(html).toContain('Remove picture');
     expect(html).toContain('src="https://cdn.example.com/products/scarf.webp"');
     expect(html).toContain('referrerPolicy="no-referrer"');
@@ -29,7 +30,8 @@ describe('product image field', () => {
     expect(html).not.toContain('No picture yet');
     expect(html).toContain('Picture');
     expect(html).not.toContain('a picture can make the wish easier to recognise');
-    expect(html).toContain('Add a picture');
+    expect(html).toMatch(/<summary[^>]*><svg [^>]*aria-hidden="true"/);
+    expect(html).toContain('<span data-product-image-missing="">Add a picture</span>');
     expect(html).toContain('<details class="product-image-editor">');
     expect(html).toContain('data-product-image-remove="" hidden=""');
   });

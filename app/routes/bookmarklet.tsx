@@ -1,4 +1,5 @@
 import { GiftIcon } from '../components/brand';
+import { Icon } from '../components/icon';
 import { PageContents } from '../components/page-contents';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
@@ -127,7 +128,10 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
                 <div>
                   <h3>Share a product</h3>
                   <p>
-                    Open a product in Chrome or a shopping app and tap its <strong>Share</strong>{' '}
+                    Open a product in Chrome or a shopping app and tap its{' '}
+                    <strong className="icon-label">
+                      <Icon name="share-android" /> Share
+                    </strong>{' '}
                     button. Choose <strong>Family Wishlist</strong> in Android’s Share menu. If it
                     is not visible, tap <strong>More</strong> or scroll through the available apps.
                   </p>
@@ -171,12 +175,12 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             <div className="shortcut-actions">
               <button
                 type="button"
-                className="button-primary"
+                className="button-primary icon-label"
                 data-copy-shortcut-prefix
                 data-shortcut-prefix={`${loaderData.addPageHref}?url=`}
                 hidden
               >
-                Copy your wishlist address
+                <Icon name="copy" /> Copy your wishlist address
               </button>
               <a href="/Wishlist.shortcut?v=83dbc204" className="button-secondary">
                 Download the Apple Shortcut
@@ -251,10 +255,14 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
             </ol>
 
             <div className="shortcut-use-note">
-              <strong>To use it:</strong> open a product, tap Share, then choose{' '}
-              <strong>Wishlist</strong>. Apple does not let a shared shortcut choose its own Share
-              Sheet position. If Wishlist is below Favourites, scroll to the bottom, tap{' '}
-              <strong>Edit Actions</strong>, then add <strong>Wishlist</strong> to Favourites once.
+              <strong>To use it:</strong> open a product, tap{' '}
+              <strong className="icon-label">
+                <Icon name="share-ios" /> Share
+              </strong>
+              , then choose <strong>Wishlist</strong>. Apple does not let a shared shortcut choose
+              its own Share Sheet position. If Wishlist is below Favourites, scroll to the bottom,
+              tap <strong>Edit Actions</strong>, then add <strong>Wishlist</strong> to Favourites
+              once.
             </div>
 
             <details className="shortcut-manual-setup">
@@ -332,10 +340,14 @@ export default function BookmarkletSetup({ loaderData }: Route.ComponentProps) {
               <div>
                 <h3>Prefer to copy and paste?</h3>
                 <p>
-                  On the product page, tap <strong>Share</strong>, then <strong>Copy Link</strong>.
-                  Return here and tap <strong>Use copied link</strong>. If that button is not shown
-                  or clipboard access is refused, press and hold the box below, tap{' '}
-                  <strong>Paste</strong>, then tap <strong>Open draft</strong>.
+                  On the product page, tap{' '}
+                  <strong className="icon-label">
+                    <Icon name="share-ios" /> Share
+                  </strong>
+                  , then <strong>Copy Link</strong>. Return here and tap{' '}
+                  <strong>Use copied link</strong>. If that button is not shown or clipboard access
+                  is refused, press and hold the box below, tap <strong>Paste</strong>, then tap{' '}
+                  <strong>Open draft</strong>.
                 </p>
               </div>
               <div className="clipboard-actions">

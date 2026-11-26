@@ -685,10 +685,23 @@
   line-height: 1.65;
 }
 
+.ui-icon {
+  flex: none;
+}
+
+.icon-label:not([hidden]),
+.family-person-status-attention,
+.family-person-status-removing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .share-list-shortcut {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
+  gap: 0.35rem;
   color: var(--leaf);
   font-size: 0.8rem;
   font-weight: 800;
@@ -955,6 +968,9 @@
 }
 
 .priority-high {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   color: var(--rust);
 }
 
@@ -1091,6 +1107,10 @@
 
 .wish-more > summary::-webkit-details-marker {
   display: none;
+}
+
+.wish-more[open] > summary .ui-icon {
+  transform: rotate(180deg);
 }
 
 .form-actions {
@@ -2401,7 +2421,9 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.family-person-status-waiting {
+.family-person-status-waiting,
+.family-person-status-attention,
+.family-person-status-removing {
   color: var(--rust);
 }
 

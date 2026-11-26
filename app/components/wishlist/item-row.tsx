@@ -8,6 +8,8 @@ import { ItemFields } from './item-fields';
 import { RemoveWishForm } from '../remove-wish-form';
 import { ActionDialog } from '../action-dialog';
 import { WishGiftLabel } from './gift-label';
+import { Icon } from '../icon';
+import { WishPriorityLabel } from './priority-label';
 import { WishTitle } from './wish-title';
 
 function formatPrice(amountMinor: number, currency: string): string {
@@ -16,11 +18,6 @@ function formatPrice(amountMinor: number, currency: string): string {
     currency
   }).format(amountMinor / 100);
 }
-
-const priorityLabels = {
-  low: 'Nice to have',
-  high: 'Top wish'
-} as const;
 
 export function WishlistItemRow({
   wishlist,
@@ -82,11 +79,7 @@ export function WishlistItemRow({
             <div className="wish-heading">
               <WishTitle itemId={item.id} title={item.title} />
               {isBought ? <WishGiftLabel state="bought" /> : null}
-              {item.priority === 'normal' ? null : (
-                <span className={`priority priority-${item.priority}`}>
-                  {priorityLabels[item.priority]}
-                </span>
-              )}
+              <WishPriorityLabel priority={item.priority} />
             </div>
 
             {item.notes ? <p className="wish-notes">{item.notes}</p> : null}
@@ -103,7 +96,7 @@ export function WishlistItemRow({
           <div className="wish-meta">
             {item.productUrl ? (
               <a href={item.productUrl} target="_blank" rel="noreferrer">
-                See where to find it <span aria-hidden="true">↗</span>
+                See where to find it <Icon name="arrow-up-right" />
               </a>
             ) : null}
           </div>

@@ -1,6 +1,7 @@
 import { data, Form, redirect, useNavigation } from 'react-router';
 
 import { AccessSignOut } from '../components/access-sign-out';
+import { Icon } from '../components/icon';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { MemberAvatar } from '../components/member-avatar';
@@ -145,7 +146,7 @@ export default function Profile({ loaderData, actionData }: Route.ComponentProps
                     rel="noreferrer"
                     className="profile-photo-link"
                   >
-                    Add or change your photo on Gravatar <span aria-hidden="true">↗</span>
+                    Add or change your photo on Gravatar <Icon name="arrow-up-right" />
                   </a>
                 </div>
               </div>

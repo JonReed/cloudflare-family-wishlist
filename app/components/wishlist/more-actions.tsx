@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { Icon } from '../icon';
 
 /** A native disclosure, enhanced with outside-click and Escape dismissal. */
 export function WishMoreActions({ children }: { children: ReactNode }) {
@@ -39,9 +40,7 @@ export function WishMoreActions({ children }: { children: ReactNode }) {
       }}
     >
       <summary>
-        <span>
-          Edit this wish <span aria-hidden="true">▾</span>
-        </span>
+        Edit this wish <Icon name="chevron" />
       </summary>
       <div className="wish-item-actions">{children}</div>
     </details>

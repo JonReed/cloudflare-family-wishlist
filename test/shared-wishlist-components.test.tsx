@@ -23,7 +23,7 @@ describe('shared wishlist reservation presentation', () => {
                 imageUrl: null,
                 priceAmountMinor: 1500,
                 priceCurrency: 'GBP',
-                priority: 'normal' as const,
+                priority: 'high' as const,
                 reservation
               }
             ]
@@ -55,6 +55,9 @@ describe('shared wishlist reservation presentation', () => {
       );
 
       expect(html).toContain('A good book');
+      expect(html).toMatch(
+        /class="priority priority-high"><svg [^>]*aria-hidden="true"[^>]*>.*?<\/svg> Top wish<\/span>/
+      );
       expect(html).not.toContain('guest-sharing-intro');
       expect(html).not.toContain('Keep or recover');
       expect(html).not.toContain('recoveryCode');
@@ -68,9 +71,9 @@ describe('shared wishlist reservation presentation', () => {
       expect(html).toContain('The illustrated edition');
       expect(html).toContain('href="https://example.com/book" target="_blank" rel="noreferrer"');
       if (reservation === 'bought') {
-        expect(html).toContain('class="wish-row shared-wish-row wish-row-normal wish-row-bought"');
-        expect(html).toContain(
-          '<span class="wish-gift-label"><span aria-hidden="true">✓</span> Bought</span>'
+        expect(html).toContain('class="wish-row shared-wish-row wish-row-high wish-row-bought"');
+        expect(html).toMatch(
+          /<span class="wish-gift-label"><svg [^>]*aria-hidden="true"[^>]*>.*?<\/svg> Bought<\/span>/
         );
         expect(html).not.toContain('wish-row-reserved');
         expect(html).toContain('You’ve bought this');
@@ -87,10 +90,10 @@ describe('shared wishlist reservation presentation', () => {
           expect(html).toContain('I’ll get this');
         } else {
           expect(html).toContain(
-            'class="wish-row shared-wish-row wish-row-normal wish-row-reserved"'
+            'class="wish-row shared-wish-row wish-row-high wish-row-reserved"'
           );
-          expect(html).toContain(
-            '<span class="wish-gift-label"><span aria-hidden="true">✓</span> Reserved</span>'
+          expect(html).toMatch(
+            /<span class="wish-gift-label"><svg [^>]*aria-hidden="true"[^>]*>.*?<\/svg> Reserved<\/span>/
           );
           expect(html).not.toContain('I’ll get this');
         }
